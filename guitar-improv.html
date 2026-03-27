@@ -95,6 +95,25 @@
     border-bottom: 2px solid var(--amber);
   }
 
+  /* ── GLOBAL KEY SELECTOR ── */
+  .global-key-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 0 4px;
+    border-left: 1px solid var(--border);
+    margin-left: 4px;
+  }
+  .global-key-wrap .ctrl-label { white-space: nowrap; }
+  .global-key-wrap select {
+    border-color: var(--amber-dim);
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+  .global-key-wrap select:focus,
+  .global-key-wrap select:hover { border-color: var(--amber); }
+
   /* ── LAYOUT ── */
   .page { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
   .page.active { display: block; }
@@ -320,6 +339,36 @@
     box-shadow: inset 0 1px 2px rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.4);
   }
   .note-dot.hidden { display: none; }
+
+  /* ── OVERLAY TECNICA (bend / vibrato) ── */
+  .note-dot { position: relative; }
+  body.show-tech .note-dot[data-tech]::before {
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    font-family: monospace;
+    pointer-events: none;
+    line-height: 1;
+    z-index: 10;
+  }
+  body.show-tech .note-dot[data-tech='bend']::before {
+    content: '↑';
+    color: #f87171;
+    text-shadow: 0 0 6px rgba(248,113,113,0.7);
+  }
+  body.show-tech .note-dot[data-tech='vibrato']::before {
+    content: '~';
+    color: #4ade80;
+    font-size: 14px;
+    text-shadow: 0 0 6px rgba(74,222,128,0.7);
+  }
+  body.show-tech .note-dot[data-tech='slide']::before {
+    content: '/';
+    color: #a78bfa;
+    text-shadow: 0 0 6px rgba(167,139,250,0.7);
+  }
 
   /* Fret markers */
   .fret-markers {
@@ -807,6 +856,27 @@
   }
   .tap-btn:hover { border-color: var(--amber-dim); color: var(--text); }
   .tap-btn:active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
+
+  /* ── METRONOMO ── */
+  .metro-panel {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 14px;
+  }
+  .metro-panel .ctrl-label { font-size: 11px; white-space: nowrap; }
+  #metro-btn { min-width: 90px; }
+  #metro-btn.metro-playing {
+    color: #f87171;
+    border-color: #f87171;
+    background: rgba(248,113,113,0.08);
+  }
+  #metro-btn.metro-playing:hover { background: rgba(248,113,113,0.18); }
 
   /* Beat LEDs */
   .beat-row {
@@ -1420,6 +1490,23 @@
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
     <button class="nav-btn" onclick="showPage('jam')">🎸 Basi</button>
   </nav>
+  <div class="global-key-wrap">
+    <span class="ctrl-label">KEY</span>
+    <select id="global-key" onchange="setGlobalKey(this.value)">
+      <option value="0">C</option>
+      <option value="1">C# / Db</option>
+      <option value="2">D</option>
+      <option value="3">D# / Eb</option>
+      <option value="4">E</option>
+      <option value="5">F</option>
+      <option value="6">F# / Gb</option>
+      <option value="7">G</option>
+      <option value="8">G# / Ab</option>
+      <option value="9" selected>A</option>
+      <option value="10">A# / Bb</option>
+      <option value="11">B</option>
+    </select>
+  </div>
 </header>
 
 <!-- ═══════════════════════════════ FRETBOARD PAGE ═════════════════════════════════ -->
@@ -1492,6 +1579,7 @@
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
         <button class="pos-btn active" id="mode-all-btn" onclick="setFbMode('all')">Tutte le note</button>
         <button class="pos-btn" id="mode-nps-btn" onclick="setFbMode('nps')">3 note per corda</button>
+        <button class="pos-btn" id="tech-btn" onclick="toggleTech()" style="margin-left:8px">Tecnica off</button>
         <span id="nps-position-wrap" style="display:none;margin-left:8px;display:none;gap:4px;align-items:center">
           <span class="ctrl-label">Posizione:</span>
           <span id="nps-pos-tabs" style="display:flex;gap:4px;flex-wrap:wrap"></span>
@@ -1524,6 +1612,11 @@
     <div class="legend-item"><div class="legend-dot" style="background:var(--green);box-shadow:0 0 8px rgba(34,197,94,0.4)"></div> Quinta (5)</div>
     <div class="legend-item"><div class="legend-dot" style="background:var(--purple);box-shadow:0 0 8px rgba(168,85,247,0.4)"></div> Settima (7)</div>
     <div class="legend-item"><div class="legend-dot" style="background:var(--bg3);border:1px solid #333"></div> Altre note</div>
+    <div class="legend-item" id="legend-tech" style="display:none;margin-left:8px;border-left:1px solid var(--border);padding-left:12px;gap:10px">
+      <span style="color:#f87171;font-size:13px;font-family:monospace">↑</span> Bend &nbsp;
+      <span style="color:#4ade80;font-size:15px;font-family:monospace">~</span> Vibrato &nbsp;
+      <span style="color:#a78bfa;font-size:13px;font-family:monospace">/</span> Slide
+    </div>
   </div>
 </div>
 
@@ -2032,6 +2125,12 @@ function _makeWaveshaper(ctx, amount = 60) {
   return ws;
 }
 
+// ── CLEANUP HELPER — disconnette i nodi audio dopo lo stop per evitare memory leak ──
+function _autoDisconnect(node, stopTime) {
+  const delay = Math.max(0, (stopTime - getAudioCtx().currentTime) + 0.08) * 1000;
+  setTimeout(() => { try { node.disconnect(); } catch(e) {} }, delay);
+}
+
 // ── GUITAR SINGLE NOTE (click on fretboard) ─────────────────────────────────
 // Karplus-Strong inspired: noise burst → resonant filter → harmonics → amp sim
 function playNote(freq, time, duration = 0.8) {
@@ -2058,6 +2157,7 @@ function playNote(freq, time, duration = 0.8) {
   transGain.connect(dest);
   transNoise.start(now);
   transNoise.stop(now + 0.025);
+  _autoDisconnect(transNoise, now + 0.025);
 
   // ── String body: fundamental + harmonics ──
   const bodyGain = ctx.createGain();
@@ -2113,6 +2213,9 @@ function playNote(freq, time, duration = 0.8) {
     hEnv.connect(bodyLPF);
     osc.start(now);
     osc.stop(now + duration + 0.05);
+    _autoDisconnect(osc, now + duration + 0.05);
+    _autoDisconnect(hg, now + duration + 0.05);
+    _autoDisconnect(hEnv, now + duration + 0.05);
   });
 }
 
@@ -2150,6 +2253,7 @@ function drumKick(ctx, dest, time) {
   env.gain.setValueAtTime(1.6, time);
   env.gain.exponentialRampToValueAtTime(0.001, time + 0.45);
   osc.start(time); osc.stop(time + 0.5);
+  _autoDisconnect(osc, time + 0.5);
 
   // Snap attack — short bandpass noise
   const sLen = Math.floor(ctx.sampleRate * 0.025);
@@ -2165,6 +2269,7 @@ function drumKick(ctx, dest, time) {
   snapG.gain.exponentialRampToValueAtTime(0.001, time + 0.025);
   snap.connect(snapF); snapF.connect(snapG); snapG.connect(dest);
   snap.start(time); snap.stop(time + 0.03);
+  _autoDisconnect(snap, time + 0.03);
 }
 
 function drumSnare(ctx, dest, time) {
@@ -2186,6 +2291,7 @@ function drumSnare(ctx, dest, time) {
   nEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
   noise.connect(hp); hp.connect(bp); bp.connect(nEnv); nEnv.connect(dest);
   noise.start(time); noise.stop(time + 0.22);
+  _autoDisconnect(noise, time + 0.22);
 
   // Drum head tone (pitched thud)
   const osc = ctx.createOscillator();
@@ -2197,6 +2303,7 @@ function drumSnare(ctx, dest, time) {
   oEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.09);
   osc.connect(oEnv); oEnv.connect(dest);
   osc.start(time); osc.stop(time + 0.1);
+  _autoDisconnect(osc, time + 0.1);
 }
 
 function drumHihat(ctx, dest, time, open = false, gainVal = 0.4) {
@@ -2220,6 +2327,7 @@ function drumHihat(ctx, dest, time, open = false, gainVal = 0.4) {
 
   noise.connect(hpf); hpf.connect(bpf); bpf.connect(env); env.connect(dest);
   noise.start(time); noise.stop(time + decay + 0.02);
+  _autoDisconnect(noise, time + decay + 0.02);
 }
 
 // ─── CHORD SYNTH (rhythm guitar) ─────────────────────────────────────────────
@@ -2264,6 +2372,7 @@ function playChordSynth(ctx, dest, rootMidi, chordType, startTime, endTime) {
       osc.connect(g); g.connect(hp);
       osc.start(startTime + strumDelay + di * 0.001);
       osc.stop(endTime + 0.1);
+      _autoDisconnect(osc, endTime + 0.1);
     });
   });
 }
@@ -2293,6 +2402,7 @@ function playBassSynth(ctx, dest, rootMidi, time, duration) {
   const sG = ctx.createGain(); sG.gain.value = 0.6;
   sine.connect(sG); sG.connect(lpf);
   sine.start(time); sine.stop(time + duration + 0.05);
+  _autoDisconnect(sine, time + duration + 0.05);
 
   // Pluck character — triangle at 2× with faster decay
   const tri = ctx.createOscillator();
@@ -2302,6 +2412,7 @@ function playBassSynth(ctx, dest, rootMidi, time, duration) {
   tEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
   tri.connect(tEnv); tEnv.connect(lpf);
   tri.start(time); tri.stop(time + 0.15);
+  _autoDisconnect(tri, time + 0.15);
 
   // Bite — short noise transient (finger/pick attack)
   const bLen = Math.floor(ctx.sampleRate * 0.02);
@@ -2315,6 +2426,7 @@ function playBassSynth(ctx, dest, rootMidi, time, duration) {
   const biteG = ctx.createGain(); biteG.gain.value = 0.35;
   bite.connect(biteBP); biteBP.connect(biteG); biteG.connect(masterG);
   bite.start(time); bite.stop(time + 0.022);
+  _autoDisconnect(bite, time + 0.022);
 }
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
@@ -2325,6 +2437,17 @@ const FRET_WIDTHS = []; // will be computed
 
 // NPS state
 const FB_STATE = { mode: 'all', npsPosition: 0 };
+
+function toggleTech() {
+  const active = document.body.classList.toggle('show-tech');
+  const btn = document.getElementById('tech-btn');
+  if (btn) {
+    btn.textContent = active ? 'Tecnica on' : 'Tecnica off';
+    btn.classList.toggle('active', active);
+  }
+  const leg = document.getElementById('legend-tech');
+  if (leg) leg.style.display = active ? 'flex' : 'none';
+}
 
 function setFbMode(mode) {
   FB_STATE.mode = mode;
@@ -2587,6 +2710,10 @@ function renderFretboard() {
         if (labelMode === 'name') dot.textContent = NOTES[noteIndex];
         else if (labelMode === 'interval') dot.textContent = INTERVAL_NAMES[interval];
         else dot.textContent = DEGREE_NAMES[interval];
+        // Tecnica overlay: ↑ bend su ♭3/♭7, ~ vibrato sulla tonica, / slide su 2ª/4ª
+        if (interval === 3 || interval === 10) dot.dataset.tech = 'bend';       // ♭3, ♭7 — target bend classico
+        else if (interval === 0)               dot.dataset.tech = 'vibrato';    // tonica — risoluzione vibrato
+        else if (interval === 2 || interval === 5) dot.dataset.tech = 'slide';  // 2ª, 4ª — slide approach
         dot.onclick = () => {
           const ctx = getAudioCtx();
           playNote(noteToFreq(noteIndex, s < 3 ? 5 : 4), ctx.currentTime, 0.6);
@@ -3002,6 +3129,7 @@ const BACKING_TRACKS = {
 };
 
 // 16-step drum patterns (16th notes per bar)
+// "fill" = pattern rullante usato nell'ultimo bar di ogni giro (sostituisce snare/hihat normale)
 const DRUM_PATTERNS = {
   rock: {
     kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
@@ -3009,13 +3137,15 @@ const DRUM_PATTERNS = {
     hihat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
     ohat:  [0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,0],
     crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    fill:  [0,0,0,0, 0,0,0,0, 1,0,1,0, 1,1,1,1],
   },
   blues: {
     kick:  [1,0,0,0, 0,0,1,0, 1,0,0,0, 0,0,0,0],
     snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1],
-    hihat: [1,0,0,1, 0,0,1,0, 1,0,0,1, 0,0,1,0], // shuffle triplet feel
+    hihat: [1,0,0,1, 0,0,1,0, 1,0,0,1, 0,0,1,0],
     ohat:  [0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,0],
     crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    fill:  [0,0,0,0, 0,0,1,0, 1,0,1,0, 1,0,1,1],
   },
   metal: {
     kick:  [1,0,1,0, 1,0,1,0, 1,0,1,0, 0,0,1,0],
@@ -3023,6 +3153,7 @@ const DRUM_PATTERNS = {
     hihat: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
     ohat:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
     crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    fill:  [1,0,1,0, 1,1,0,0, 1,0,1,1, 1,1,1,1],
   },
   funk: {
     kick:  [1,0,0,0, 1,0,0,1, 0,0,1,0, 0,0,0,0],
@@ -3030,6 +3161,7 @@ const DRUM_PATTERNS = {
     hihat: [1,1,0,1, 1,0,1,1, 0,1,1,0, 1,0,1,1],
     ohat:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,1,0,0],
     crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    fill:  [0,0,1,0, 1,0,1,0, 0,1,0,1, 1,0,1,1],
   },
   ballad: {
     kick:  [1,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0],
@@ -3037,6 +3169,7 @@ const DRUM_PATTERNS = {
     hihat: [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
     ohat:  [0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,0,0],
     crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    fill:  [0,0,0,0, 0,0,0,0, 1,0,0,0, 1,0,1,0],
   },
 };
 
@@ -3124,11 +3257,18 @@ function btScheduleNote(absStep, time) {
   BT.notesInQueue.push({ step: ps, loopStep: ls, time });
 
   // ── DRUMS ──
-  if (pat.kick[ps])  drumKick(ctx, BT.drumGain, time);
-  if (pat.snare[ps]) drumSnare(ctx, BT.drumGain, time);
-  if (pat.hihat[ps]) drumHihat(ctx, BT.drumGain, time, false, 0.38);
-  if (pat.ohat[ps])  drumHihat(ctx, BT.drumGain, time, true,  0.32);
-  if (pat.crash[ps]) drumHihat(ctx, BT.drumGain, time, true,  0.55);
+  // Inietta il fill nell'ultimo bar di ogni giro (dopo il primo)
+  const inFillBar = pat.fill && BT.loopTotalSteps > 16 &&
+                    ls >= BT.loopTotalSteps - 16 &&
+                    absStep >= BT.loopTotalSteps;
+  const snareHit = inFillBar ? pat.fill[ps] : pat.snare[ps];
+  const hihatHit = inFillBar ? 0            : pat.hihat[ps];
+
+  if (pat.kick[ps]) drumKick(ctx, BT.drumGain, time);
+  if (snareHit)     drumSnare(ctx, BT.drumGain, time);
+  if (hihatHit)     drumHihat(ctx, BT.drumGain, time, false, 0.38);
+  if (pat.ohat[ps]) drumHihat(ctx, BT.drumGain, time, true,  0.32);
+  if (pat.crash[ps])drumHihat(ctx, BT.drumGain, time, true,  0.55);
 
   const chord = btChordAt(absStep);
   const rootMidi = 48 + BT.rootIdx + chord.s;
@@ -3240,8 +3380,12 @@ function jamChangeBPM(d) { jamSetBPM(BT.bpm + d); }
 
 function jamTap() {
   const now = performance.now();
+  // Reset se l'ultimo tap è stato più di 3 secondi fa (nuova sessione di tap)
+  if (BT.tapTimes.length && now - BT.tapTimes[BT.tapTimes.length - 1] > 3000) {
+    BT.tapTimes = [];
+  }
   BT.tapTimes.push(now);
-  if (BT.tapTimes.length > 5) BT.tapTimes.shift();
+  if (BT.tapTimes.length > 8) BT.tapTimes.shift();
   if (BT.tapTimes.length >= 2) {
     let s = 0;
     for (let i = 1; i < BT.tapTimes.length; i++) s += BT.tapTimes[i] - BT.tapTimes[i-1];
@@ -4420,6 +4564,77 @@ function showPage(name) {
   });
 }
 
+// ─── METRONOMO STANDALONE ─────────────────────────────────────────────────────
+const METRO = { timerID: null, playing: false, nextTime: 0, beat: 0 };
+
+function metroStart() {
+  if (METRO.playing) return;
+  const ctx = getAudioCtx();
+  METRO.playing = true;
+  METRO.beat = 0;
+  METRO.nextTime = ctx.currentTime + 0.05;
+  metroLoop();
+  const btn = document.getElementById('metro-btn');
+  if (btn) { btn.textContent = '■ Stop'; btn.classList.add('metro-playing'); }
+}
+
+function metroStop() {
+  METRO.playing = false;
+  clearTimeout(METRO.timerID);
+  const btn = document.getElementById('metro-btn');
+  if (btn) { btn.textContent = '▶ Metronomo'; btn.classList.remove('metro-playing'); }
+}
+
+function metroToggle() { METRO.playing ? metroStop() : metroStart(); }
+
+function metroTick(ctx, time, isDownbeat) {
+  const osc = ctx.createOscillator();
+  const g   = ctx.createGain();
+  osc.type = 'square';
+  osc.frequency.value = isDownbeat ? 1200 : 880;
+  g.gain.setValueAtTime(isDownbeat ? 0.22 : 0.12, time);
+  g.gain.exponentialRampToValueAtTime(0.001, time + 0.032);
+  osc.connect(g);
+  g.connect(_masterOut);
+  osc.start(time);
+  osc.stop(time + 0.04);
+  _autoDisconnect(osc, time + 0.04);
+}
+
+function metroLoop() {
+  if (!METRO.playing) return;
+  const ctx = getAudioCtx();
+  const subEl = document.getElementById('metro-sub');
+  const sub = subEl ? parseInt(subEl.value) : 4;
+  // un beat a BT.bpm, subdiviso in "sub" parti per quarto
+  const step = (60 / BT.bpm) / (sub / 4);
+  while (METRO.nextTime < ctx.currentTime + 0.15) {
+    const isDownbeat = METRO.beat % sub === 0;
+    metroTick(ctx, METRO.nextTime, isDownbeat);
+    METRO.nextTime += step;
+    METRO.beat++;
+  }
+  METRO.timerID = setTimeout(metroLoop, 25);
+}
+
+// ─── GLOBAL KEY ──────────────────────────────────────────────────────────────
+// Propaga la tonalità selezionata nell'header a tutte le sezioni dell'app
+function setGlobalKey(idx) {
+  const v = parseInt(idx);
+  // Sincronizza tutti i selettori di tonalità
+  ['fb-key', 'jam-key', 'prog-key'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = v;
+  });
+  // CAGED e Penta5 usano state object
+  if (typeof CAGED_STATE !== 'undefined') { CAGED_STATE.keyIdx = v; renderCaged(); }
+  if (typeof P5_STATE !== 'undefined')    { P5_STATE.keyIdx = v; renderPenta5(); }
+  // Re-render sezioni attive
+  renderFretboard();
+  renderProgressions();
+  if (typeof BT !== 'undefined') jamUpdateSettings();
+}
+
 // ─── INIT ────────────────────────────────────────────────────────────────────
 
 window.addEventListener('DOMContentLoaded', function() {
@@ -4438,6 +4653,22 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="page-jam" class="page">
   <h2>Basi di Accompagnamento</h2>
   <div class="subtitle">// suona improvvisazioni live su basi generate in tempo reale — drums, basso e accordi</div>
+
+  <!-- Metronomo standalone -->
+  <div class="metro-panel">
+    <span class="ctrl-label">Metronomo</span>
+    <button id="metro-btn" class="tap-btn" onclick="metroToggle()">▶ Metronomo</button>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Suddivisione</div>
+      <select id="metro-sub">
+        <option value="4">Quarti (♩)</option>
+        <option value="8">Ottavi (♪♪)</option>
+        <option value="12">Terzine (♪♪♪)</option>
+        <option value="16">Sedicesimi</option>
+      </select>
+    </div>
+    <span class="ctrl-label" style="color:var(--text-dim);font-size:10px">// usa il BPM del jam · indipendente dalla base</span>
+  </div>
 
   <div class="jam-controls-row">
     <div class="ctrl-group">
