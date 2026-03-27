@@ -44,14 +44,20 @@
   header {
     background: var(--bg2);
     border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    height: 60px;
     position: sticky;
     top: 0;
     z-index: 100;
+    display: flex;
+    flex-direction: column;   /* struttura a 2 righe sempre, niente flex-wrap tricks */
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 0 24px;
+    height: 52px;
+    flex-shrink: 0;
   }
 
   .logo {
@@ -68,10 +74,11 @@
   nav {
     display: flex;
     gap: 4px;
-    flex: 1;
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    padding: 5px 24px 8px;
+    border-top: 1px solid var(--border);
   }
   nav::-webkit-scrollbar { display: none; }
 
@@ -733,18 +740,15 @@
     .page { padding: 16px 12px; }
     h2 { font-size: 26px; }
 
-    /* Header a 2 righe: logo+key in cima, nav in basso */
-    header {
-      flex-wrap: wrap;
-      height: auto;
-      padding: 8px 12px 0;
-      gap: 0;
-      row-gap: 0;
+    /* Header: compatta le due righe su mobile */
+    .header-top {
+      padding: 0 12px;
+      height: 44px;
+      gap: 8px;
     }
     .logo {
       font-size: 18px;
       flex: 1;
-      line-height: 36px;
     }
     .global-key-wrap {
       border-left: none;
@@ -754,17 +758,11 @@
     .global-key-wrap .ctrl-label { display: none; }
     .global-key-wrap select { padding: 4px 8px; font-size: 12px; width: 72px; min-width: 72px; max-width: 72px; }
     nav {
-      order: 3;
-      flex: 0 0 100%;     /* forza riga propria (width:100% non basta su alcuni browser) */
-      margin: 0 -12px;    /* estende fino ai bordi dell'header */
-      padding: 5px 12px 8px; /* padding-left allinea primo btn al contenuto */
+      padding: 5px 12px 8px;
       gap: 4px;
-      border-top: 1px solid var(--border);
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
     }
     .nav-btn {
-      font-size: 12px;    /* da 10px: leggibile su mobile */
+      font-size: 12px;
       padding: 8px 13px;
       min-height: 38px;
       border-radius: 6px;
@@ -1548,7 +1546,28 @@
 <body>
 
 <header>
-  <div class="logo">GUITAR <span>IMPROV</span> LAB</div>
+  <!-- Riga 1: logo + key selector — struttura fissa, niente flex-wrap -->
+  <div class="header-top">
+    <div class="logo">GUITAR <span>IMPROV</span> LAB</div>
+    <div class="global-key-wrap">
+      <span class="ctrl-label">KEY</span>
+      <select id="global-key" onchange="setGlobalKey(this.value)">
+        <option value="0">C</option>
+        <option value="1">C# / Db</option>
+        <option value="2">D</option>
+        <option value="3">D# / Eb</option>
+        <option value="4">E</option>
+        <option value="5">F</option>
+        <option value="6">F# / Gb</option>
+        <option value="7">G</option>
+        <option value="8">G# / Ab</option>
+        <option value="9" selected>A</option>
+        <option value="10">A# / Bb</option>
+        <option value="11">B</option>
+      </select>
+    </div>
+  </div>
+  <!-- Riga 2: nav sempre sotto, scrollabile -->
   <nav>
     <button class="nav-btn active" onclick="showPage('fretboard')">Fretboard</button>
     <button class="nav-btn" onclick="showPage('scales')">Scale Library</button>
@@ -1560,23 +1579,6 @@
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
     <button class="nav-btn" onclick="showPage('jam')">🎸 Basi</button>
   </nav>
-  <div class="global-key-wrap">
-    <span class="ctrl-label">KEY</span>
-    <select id="global-key" onchange="setGlobalKey(this.value)">
-      <option value="0">C</option>
-      <option value="1">C# / Db</option>
-      <option value="2">D</option>
-      <option value="3">D# / Eb</option>
-      <option value="4">E</option>
-      <option value="5">F</option>
-      <option value="6">F# / Gb</option>
-      <option value="7">G</option>
-      <option value="8">G# / Ab</option>
-      <option value="9" selected>A</option>
-      <option value="10">A# / Bb</option>
-      <option value="11">B</option>
-    </select>
-  </div>
 </header>
 
 <!-- ═══════════════════════════════ FRETBOARD PAGE ═════════════════════════════════ -->
