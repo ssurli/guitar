@@ -751,15 +751,23 @@
     .global-key-wrap .ctrl-label { display: none; }
     .global-key-wrap select { padding: 4px 8px; font-size: 12px; }
     nav {
-      order: 3;           /* va sotto logo e global-key */
-      width: 100%;
-      padding: 4px 0 6px;
-      gap: 2px;
+      order: 3;
+      flex: 0 0 100%;     /* forza riga propria (width:100% non basta su alcuni browser) */
+      margin: 0 -12px;    /* estende fino ai bordi dell'header */
+      padding: 5px 12px 8px; /* padding-left allinea primo btn al contenuto */
+      gap: 4px;
+      border-top: 1px solid var(--border);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .nav-btn {
-      font-size: 10px;
-      padding: 7px 10px;  /* target touch più alto */
-      min-height: 34px;
+      font-size: 12px;    /* da 10px: leggibile su mobile */
+      padding: 8px 13px;
+      min-height: 38px;
+      border-radius: 6px;
+    }
+    .nav-btn.active {
+      border-bottom-width: 3px;
     }
 
     /* Controlli pagina */
