@@ -772,16 +772,10 @@
     }
 
     /* Controlli pagina */
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;  /* 2 colonne stabili invece di flex-wrap imprevedibile */
-      gap: 8px;
-      align-items: end;
-    }
-    select { padding: 9px 10px; font-size: 13px; min-height: 40px; width: 100%; }
+    .controls { gap: 8px; }
+    .ctrl-group { flex: 1 1 140px; min-width: 0; }
+    select { padding: 9px 10px; font-size: 13px; min-height: 40px; }
     .play-btn, .pos-btn, .tap-btn { min-height: 40px; font-size: 11px; padding: 9px 14px; }
-    /* bottone play prende 2 colonne se è l'unico nella riga */
-    .controls > .play-btn { grid-column: span 2; justify-self: start; }
 
     /* Metronomo compatto */
     .metro-panel { gap: 8px; padding: 8px 12px; }
@@ -789,10 +783,6 @@
     /* Jam page: 1 colonna su mobile */
     .jam-controls-row { grid-template-columns: 1fr 1fr; }
     .mix-row { grid-template-columns: 1fr; }
-
-    /* Header: spazio verticale tra logo e nav */
-    header { row-gap: 0; }
-    nav { padding-bottom: 8px; }
   }
 
   /* ── GLOW FX ── */
