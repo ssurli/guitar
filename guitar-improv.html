@@ -37,7 +37,7 @@
     color: var(--text);
     font-family: 'DM Sans', sans-serif;
     min-height: 100vh;
-    overflow-x: hidden;
+    overflow-x: clip; /* clip invece di hidden: non crea scroll container, i figli overflow-x:auto funzionano su iOS */
   }
 
   /* ── HEADER ── */
@@ -178,6 +178,7 @@
     border-radius: 12px;
     padding: 20px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     margin-bottom: 20px;
   }
 
@@ -768,6 +769,14 @@
 
     /* Metronomo compatto */
     .metro-panel { gap: 8px; padding: 8px 12px; }
+
+    /* Jam page: 1 colonna su mobile */
+    .jam-controls-row { grid-template-columns: 1fr 1fr; }
+    .mix-row { grid-template-columns: 1fr; }
+
+    /* Header: spazio verticale tra logo e nav */
+    header { row-gap: 0; }
+    nav { padding-bottom: 8px; }
   }
 
   /* ── GLOW FX ── */
@@ -1314,6 +1323,7 @@
     border-radius: 8px;
     padding: 12px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     margin-top: 20px;
   }
   .caged-neck-title {
@@ -1369,6 +1379,7 @@
     border-radius: 12px;
     padding: 18px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .p5-info {
@@ -1456,6 +1467,7 @@
     padding: 18px;
     margin-top: 20px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .p5-overview-title {
     font-family: 'Space Mono', monospace;
