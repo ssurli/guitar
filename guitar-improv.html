@@ -1,0 +1,4564 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guitar Improv Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --bg2: #141414;
+    --bg3: #1c1c1c;
+    --panel: #1a1a1a;
+    --border: #2a2a2a;
+    --amber: #f59e0b;
+    --amber-dim: #92600a;
+    --amber-glow: rgba(245,158,11,0.15);
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --green: #22c55e;
+    --purple: #a855f7;
+    --cyan: #06b6d4;
+    --text: #e5e5e5;
+    --text-dim: #6b6b6b;
+    --text-mid: #a0a0a0;
+    --fret-color: #3d3020;
+    --string-color: #c8a84b;
+    --nut: #d4af6a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 3px;
+    color: var(--amber);
+    text-shadow: 0 0 20px rgba(245,158,11,0.4);
+    white-space: nowrap;
+  }
+
+  .logo span { color: var(--text-mid); }
+
+  nav {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+
+  .nav-btn {
+    background: none;
+    border: none;
+    color: var(--text-mid);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 6px 14px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all .2s;
+    white-space: nowrap;
+    text-transform: uppercase;
+  }
+  .nav-btn:hover { color: var(--text); background: var(--bg3); }
+  .nav-btn.active {
+    color: var(--amber);
+    background: var(--amber-glow);
+    border-bottom: 2px solid var(--amber);
+  }
+
+  /* ── LAYOUT ── */
+  .page { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 2px;
+    color: var(--amber);
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-bottom: 24px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* ── CONTROLS BAR ── */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+
+  .ctrl-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ctrl-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+  }
+
+  select {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color .2s;
+  }
+  select:focus, select:hover { border-color: var(--amber); }
+
+  /* ── FRETBOARD ── */
+  .fretboard-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+  }
+
+  .fretboard {
+    position: relative;
+    display: inline-block;
+    min-width: 700px;
+  }
+
+  .fret-numbers {
+    display: flex;
+    margin-left: 26px;   /* solo string-name, il resto è inline */
+    margin-bottom: 6px;
+  }
+
+  .fret-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .strings-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .string-row {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 44px;
+  }
+
+  .string-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    color: var(--string-color);
+    width: 26px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .nut-col {
+    width: 14px;
+    flex-shrink: 0;
+    background: linear-gradient(90deg, #8b7040, var(--nut), #8b7040);
+    height: 100%;
+    border-radius: 2px;
+  }
+
+  /* Open string column (before nut) */
+  .open-col {
+    width: 40px;
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+  }
+  .open-col::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 0; right: 0;
+    height: var(--str-h, 1px);
+    background: linear-gradient(180deg,
+      rgba(255,220,120,0.9) 0%,
+      var(--string-color) 40%,
+      rgba(100,70,20,0.8) 100%);
+    transform: translateY(-50%);
+    border-radius: 1px;
+  }
+
+  .fret-cell {
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    height: 44px;
+  }
+
+  .fret-cell::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: var(--str-h, 1px);
+    background: linear-gradient(180deg,
+      rgba(255,220,120,0.9) 0%,
+      var(--string-color) 40%,
+      rgba(100,70,20,0.8) 100%);
+    transform: translateY(-50%);
+    z-index: 0;
+    border-radius: 1px;
+  }
+
+  .fret-cell::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 0;
+    bottom: 2px;
+    width: 1px;
+    background: var(--fret-color);
+    z-index: 0;
+  }
+
+  .note-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    position: relative;
+    z-index: 2;
+    transition: transform .12s, box-shadow .12s;
+    cursor: pointer;
+    user-select: none;
+    /* 3D inner highlight */
+    box-shadow: inset 0 2px 4px rgba(255,255,255,0.25), inset 0 -2px 3px rgba(0,0,0,0.35);
+  }
+
+  .note-dot:hover { transform: scale(1.18); }
+
+  .note-dot.root {
+    background: radial-gradient(circle at 35% 30%, #fde68a 0%, var(--amber) 45%, #b45309 100%);
+    color: #000;
+    box-shadow: 0 0 14px rgba(245,158,11,0.7), inset 0 2px 4px rgba(255,255,200,0.4), inset 0 -2px 3px rgba(0,0,0,0.3);
+  }
+  .note-dot.third {
+    background: radial-gradient(circle at 35% 30%, #bfdbfe 0%, var(--blue) 45%, #1e3a8a 100%);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 3px rgba(0,0,0,0.3);
+  }
+  .note-dot.fifth {
+    background: radial-gradient(circle at 35% 30%, #bbf7d0 0%, var(--green) 45%, #14532d 100%);
+    color: #000;
+    box-shadow: 0 0 10px rgba(34,197,94,0.5), inset 0 2px 4px rgba(255,255,255,0.35), inset 0 -2px 3px rgba(0,0,0,0.3);
+  }
+  .note-dot.seventh {
+    background: radial-gradient(circle at 35% 30%, #e9d5ff 0%, var(--purple) 45%, #4a1d96 100%);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(168,85,247,0.5), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 3px rgba(0,0,0,0.3);
+  }
+  .note-dot.other {
+    background: radial-gradient(circle at 35% 30%, #2d2d2d 0%, #1a1a1a 100%);
+    color: var(--text-dim);
+    border: 1px solid #3a3a3a;
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.4);
+  }
+  .note-dot.hidden { display: none; }
+
+  /* Fret markers */
+  .fret-markers {
+    display: flex;
+    margin-left: 26px;   /* solo string-name */
+    margin-top: 4px;
+    position: relative;
+  }
+
+  .fret-marker-dot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .fret-marker-dot .inner {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--amber-dim);
+  }
+  .fret-marker-dot.double .inner {
+    width: 6px;
+    height: 6px;
+    box-shadow: 6px 0 0 var(--amber-dim);
+  }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+    align-items: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-mid);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .legend-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── INFO CARD ── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .info-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color .2s;
+  }
+  .info-card:hover { border-color: var(--amber-dim); }
+
+  .info-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: var(--amber);
+    margin-bottom: 6px;
+  }
+
+  .info-card p {
+    font-size: 13px;
+    color: var(--text-mid);
+    line-height: 1.6;
+  }
+
+  .scale-intervals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .interval-tag {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-mid);
+  }
+  .interval-tag.root-tag { background: rgba(245,158,11,0.2); border-color: var(--amber); color: var(--amber); }
+  .interval-tag.third-tag { background: rgba(59,130,246,0.2); border-color: var(--blue); color: var(--blue); }
+  .interval-tag.fifth-tag { background: rgba(34,197,94,0.2); border-color: var(--green); color: var(--green); }
+  .interval-tag.seventh-tag { background: rgba(168,85,247,0.2); border-color: var(--purple); color: var(--purple); }
+
+  /* ── MODES PAGE ── */
+  .modes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .mode-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .mode-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--mode-color, var(--amber));
+    opacity: 0.8;
+  }
+  .mode-card:hover { border-color: var(--mode-color, var(--amber)); transform: translateY(-2px); }
+  .mode-card.selected { border-color: var(--mode-color, var(--amber)); background: rgba(245,158,11,0.05); }
+
+  .mode-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--mode-color, var(--amber));
+    margin-bottom: 4px;
+  }
+
+  .mode-card .degree {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .mode-card .mood {
+    font-size: 13px;
+    color: var(--text-mid);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+
+  .mode-card .use-over {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .mode-card .use-over span {
+    color: var(--mode-color, var(--amber));
+    font-weight: 700;
+  }
+
+  /* ── PROGRESSIONS PAGE ── */
+  .prog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+
+  .prog-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color .2s;
+  }
+  .prog-card:hover { border-color: var(--amber-dim); }
+
+  .prog-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 1px;
+    color: var(--amber);
+    margin-bottom: 6px;
+  }
+
+  .chords-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+  }
+
+  .chord-pill {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .suggestions-list {
+    margin-top: 10px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+
+  .sugg-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+
+  .sugg-badge {
+    background: var(--amber-glow);
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .sugg-badge.penta { background: rgba(34,197,94,0.1); border-color: #166534; color: var(--green); }
+  .sugg-badge.mode { background: rgba(168,85,247,0.1); border-color: #581c87; color: var(--purple); }
+  .sugg-badge.blues { background: rgba(6,182,212,0.1); border-color: #164e63; color: var(--cyan); }
+
+  .sugg-text {
+    color: var(--text-mid);
+    line-height: 1.4;
+  }
+
+  /* ── PRACTICE PAGE ── */
+  .practice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 700px) {
+    .practice-grid { grid-template-columns: 1fr; }
+  }
+
+  .practice-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .practice-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 1px;
+    color: var(--amber);
+    margin-bottom: 12px;
+  }
+
+  .tip-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .tip-list li {
+    display: flex;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-mid);
+    line-height: 1.5;
+    align-items: flex-start;
+  }
+
+  .tip-list li::before {
+    content: '▸';
+    color: var(--amber);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ── POSITION toggle ── */
+  .pos-toggle {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .pos-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .pos-btn:hover { border-color: var(--amber-dim); color: var(--text); }
+  .pos-btn.active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
+
+  /* ── AUDIO BUTTON ── */
+  .play-btn {
+    background: var(--amber-glow);
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.5px;
+  }
+  .play-btn:hover { background: rgba(245,158,11,0.25); }
+  .play-btn:active { transform: scale(0.97); }
+
+  /* ── SCALE NOTES ROW ── */
+  .scale-notes-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+
+  .scale-note-pill {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    transition: all .2s;
+  }
+  .scale-note-pill.is-root { background: rgba(245,158,11,0.2); border-color: var(--amber); color: var(--amber); }
+
+  /* responsive */
+  @media (max-width: 600px) {
+    .page { padding: 16px 12px; }
+    h2 { font-size: 26px; }
+    .logo { font-size: 20px; }
+  }
+
+  /* ── GLOW FX ── */
+  .amber-glow-text {
+    color: var(--amber);
+    text-shadow: 0 0 20px rgba(245,158,11,0.5);
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+  .full-fret-wrap { overflow-x: auto; }
+
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+  .notice {
+    background: rgba(245,158,11,0.08);
+    border: 1px solid var(--amber-dim);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-mid);
+    margin-bottom: 20px;
+  }
+  .notice strong { color: var(--amber); }
+
+  /* ══════════════════════════════════════════════════════════
+     JAM / BACKING TRACK ENGINE
+  ══════════════════════════════════════════════════════════ */
+
+  .jam-main {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 900px) { .jam-main { grid-template-columns: 1fr; } }
+
+  .jam-player {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .jam-controls-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .jam-transport {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .btn-play-big {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: var(--amber);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    color: #000;
+    box-shadow: 0 0 20px rgba(245,158,11,0.4);
+    transition: all .2s;
+    flex-shrink: 0;
+    font-family: monospace;
+  }
+  .btn-play-big:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(245,158,11,0.6); }
+  .btn-play-big.playing { background: var(--red); color: #fff; box-shadow: 0 0 20px rgba(239,68,68,0.5); }
+
+  .bpm-block { display: flex; flex-direction: column; align-items: center; }
+  .bpm-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    color: var(--amber);
+    line-height: 1;
+    min-width: 80px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .bpm-lbl {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .bpm-adj { display: flex; flex-direction: column; gap: 4px; }
+  .bpm-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    font-size: 14px;
+    width: 28px; height: 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex; align-items: center; justify-content: center;
+    font-family: monospace;
+  }
+  .bpm-btn:hover { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
+
+  .tap-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .15s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    align-self: center;
+  }
+  .tap-btn:hover { border-color: var(--amber-dim); color: var(--text); }
+  .tap-btn:active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
+
+  /* Beat LEDs */
+  .beat-row {
+    display: flex; gap: 4px;
+    margin-bottom: 20px;
+  }
+  .beat-led {
+    flex: 1;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--bg3);
+    border: 1px solid #222;
+    transition: background .04s;
+  }
+  .beat-led.beat-1  { background: #1a1000; border-color: #2a1a00; }
+  .beat-led.active  { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 6px rgba(245,158,11,0.8); }
+  .beat-led.beat-1.active { background: #ff6a00; border-color: #ff8800; box-shadow: 0 0 10px rgba(255,106,0,0.9); }
+
+  /* Chord blocks */
+  .chord-display {
+    display: flex; gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  .chord-block {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    min-width: 64px;
+    text-align: center;
+    transition: border-color .1s, background .1s, transform .1s;
+    position: relative;
+    overflow: hidden;
+  }
+  .chord-block.chord-active {
+    background: var(--amber-glow);
+    border-color: var(--amber);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(245,158,11,0.2);
+  }
+  .chord-block .chord-root {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .chord-block.chord-active .chord-root { color: var(--amber); }
+  .chord-block .chord-qual {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .chord-block .chord-progress {
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 3px;
+    background: var(--amber);
+    width: 0;
+  }
+
+  /* Mix sliders */
+  .mix-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .mix-slot { display: flex; flex-direction: column; gap: 4px; }
+  .vol-lbl {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    height: 6px;
+    outline: none;
+    cursor: pointer;
+    width: 100%;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 6px rgba(245,158,11,0.5);
+    cursor: pointer;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--amber);
+    border: none;
+    cursor: pointer;
+  }
+
+  /* Mode info panel */
+  .mode-info-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: sticky;
+    top: 80px;
+  }
+  .mode-info-panel h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--amber);
+    margin-bottom: 10px;
+  }
+  .mode-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    border: 1px solid;
+    margin-bottom: 14px;
+  }
+  .msect-lbl {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+  .hint-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text-mid);
+    line-height: 1.5;
+  }
+  .hint-box strong { color: var(--text); }
+
+  /* loop indicator */
+  .loop-info {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .loop-tag {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     TRIADI
+  ══════════════════════════════════════════════════════════ */
+  .triad-type-tabs {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .triad-tab {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    padding: 7px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .triad-tab:hover { border-color: var(--amber-dim); color: var(--text); }
+  .triad-tab.active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
+
+  .triad-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  @media(max-width:800px){ .triad-layout { grid-template-columns:1fr; } }
+
+  .triad-info-col {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: sticky;
+    top: 80px;
+  }
+  .triad-info-col h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 1px;
+    color: var(--amber);
+    margin-bottom: 4px;
+  }
+  .triad-formula {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .triad-mood {
+    font-size: 13px;
+    color: var(--text-mid);
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .triad-degrees {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .tdeg {
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    border: 1px solid;
+  }
+
+  .inv-tabs {
+    display: flex; gap: 4px;
+    margin-bottom: 20px;
+  }
+  .inv-tab {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all .15s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .inv-tab:hover { border-color: var(--amber-dim); color: var(--text); }
+  .inv-tab.active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
+
+  /* String set selector */
+  .strset-tabs {
+    display: flex; gap: 4px; flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .strset-tab {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .strset-tab:hover { border-color: var(--amber-dim); color: var(--text); }
+  .strset-tab.active { background: rgba(59,130,246,0.15); border-color: var(--blue); color: var(--blue); }
+
+  /* Mini fretboard grid */
+  .triad-shapes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .triad-shape-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color .2s;
+    cursor: pointer;
+  }
+  .triad-shape-card:hover { border-color: var(--amber-dim); }
+  .triad-shape-card.selected-shape { border-color: var(--amber); background: rgba(245,158,11,0.05); }
+
+  .shape-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  /* Mini fretboard SVG */
+  .mini-fb { display: block; width: 100%; }
+
+  .shape-notes-row {
+    display: flex; gap: 4px; flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .shape-note {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid;
+  }
+
+  /* ══════════════════════════════ CAGED ══════════════════════════════ */
+  .caged-row {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .caged-card {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 14px 14px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: border-color .2s, transform .15s;
+    min-width: 120px;
+    flex: 1;
+  }
+  .caged-card:hover { transform: translateY(-2px); }
+  .caged-card.caged-active { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+
+  .caged-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+  .caged-pos-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .chord-svg-wrap { width: 100%; }
+
+  /* chord diagram SVG is sized by viewBox */
+  .chord-note-pills {
+    display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;
+  }
+  .cnpill {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+
+  .caged-detail {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 4px;
+  }
+  .caged-detail h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--amber);
+    margin-bottom: 10px;
+  }
+  .caged-detail-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 16px;
+    font-size: 13px;
+    color: var(--text-mid);
+    font-family: 'Space Mono', monospace;
+  }
+  .caged-detail-grid .lbl { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; align-self: center; }
+  .caged-detail-grid .val { color: var(--text); }
+
+  .caged-neck-wrap {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    overflow-x: auto;
+    margin-top: 20px;
+  }
+  .caged-neck-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  /* ══════════════════════════════ 5 BOX PENTA ══════════════════════════════ */
+  .p5-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+    align-items: start;
+  }
+  @media(max-width:860px){ .p5-layout { grid-template-columns:1fr; } }
+
+  .p5-box-tabs {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .p5-tab {
+    background: var(--bg3);
+    border: 2px solid var(--border);
+    color: var(--text-mid);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    padding: 6px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex; flex-direction: column; align-items: center; gap: 1px;
+  }
+  .p5-tab small {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 400;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .p5-tab:hover { border-color: var(--amber-dim); color: var(--text); }
+  .p5-tab.active { border-color: var(--amber); color: var(--amber); background: var(--amber-glow); }
+  .p5-tab.active small { color: var(--amber); opacity: 0.7; }
+
+  .p5-fretboard-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    overflow-x: auto;
+  }
+
+  .p5-info {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: sticky;
+    top: 80px;
+  }
+  .p5-info h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--amber);
+    margin-bottom: 6px;
+  }
+  .p5-nav-btns {
+    display: flex; gap: 8px;
+    margin-top: 16px;
+  }
+  .p5-nav-btn {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .15s;
+    text-align: center;
+  }
+  .p5-nav-btn:hover { border-color: var(--amber-dim); color: var(--amber); }
+
+  .p5-fingerpattern {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 14px;
+  }
+  .p5-fp-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+  }
+  .p5-fp-sname {
+    width: 14px;
+    color: var(--string-color);
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .p5-fp-dot {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .p5-fp-dot.root { background: var(--amber); color: #000; box-shadow: 0 0 8px rgba(245,158,11,0.5); }
+  .p5-fp-dot.note { background: var(--bg3); border: 1px solid #444; color: var(--text-mid); }
+  .p5-fp-dot.empty { background: transparent; border: 1px solid #222; color: transparent; }
+
+  .p5-caged-link {
+    margin-top: 14px;
+    padding: 10px 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text-mid);
+    line-height: 1.5;
+  }
+  .p5-caged-link strong { color: var(--amber); }
+
+  /* All-boxes overview */
+  .p5-overview-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-top: 20px;
+    overflow-x: auto;
+  }
+  .p5-overview-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  /* ── DASHED POSITION LINES ── */
+  .pos-dash-line {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 0;
+    border-left: 2px dashed rgba(245,158,11,0.3);
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  /* ── COMPACT MINI DIAGRAM ── */
+  .mini-diag-wrap {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 10px;
+  }
+  .mini-diag-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 8px 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer;
+    transition: border-color .15s, transform .1s;
+    flex-shrink: 0;
+  }
+  .mini-diag-card:hover { border-color: var(--amber-dim); transform: translateY(-1px); }
+  .mini-diag-card.diag-active { border-color: var(--amber); background: var(--amber-glow); }
+  .mini-diag-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 8px; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .mini-diag-fret {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 12px; color: var(--amber); letter-spacing: 1px;
+  }
+
+  /* ── NPS mode name tags ── */
+  .nps-mode-tag {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px; text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 6px; border-radius: 3px;
+    border: 1px solid; margin-right: 4px; margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">GUITAR <span>IMPROV</span> LAB</div>
+  <nav>
+    <button class="nav-btn active" onclick="showPage('fretboard')">Fretboard</button>
+    <button class="nav-btn" onclick="showPage('scales')">Scale Library</button>
+    <button class="nav-btn" onclick="showPage('modes')">Modi</button>
+    <button class="nav-btn" onclick="showPage('progressions')">Progressioni</button>
+    <button class="nav-btn" onclick="showPage('practice')">Pratica</button>
+    <button class="nav-btn" onclick="showPage('triads')">Triadi</button>
+    <button class="nav-btn" onclick="showPage('caged')">CAGED</button>
+    <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
+    <button class="nav-btn" onclick="showPage('jam')">🎸 Basi</button>
+  </nav>
+</header>
+
+<!-- ═══════════════════════════════ FRETBOARD PAGE ═════════════════════════════════ -->
+<div id="page-fretboard" class="page active">
+  <h2>Visualizzatore Manico</h2>
+  <div class="subtitle">// seleziona tonalità e scala per visualizzare le note sul manico</div>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Tonalità</div>
+      <select id="fb-key" onchange="renderFretboard()">
+        <option value="0">C</option>
+        <option value="1">C# / Db</option>
+        <option value="2">D</option>
+        <option value="3">D# / Eb</option>
+        <option value="4">E</option>
+        <option value="5">F</option>
+        <option value="6">F# / Gb</option>
+        <option value="7">G</option>
+        <option value="8">G# / Ab</option>
+        <option value="9">A</option>
+        <option value="10">A# / Bb</option>
+        <option value="11">B</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Scala / Modo</div>
+      <select id="fb-scale" onchange="renderFretboard()">
+        <optgroup label="Maggiore">
+          <option value="major">Maggiore (Ionia)</option>
+          <option value="penta_major">Pentatonica Maggiore</option>
+          <option value="lydian">Lidia</option>
+          <option value="mixolydian">Misolidia</option>
+        </optgroup>
+        <optgroup label="Minore">
+          <option value="natural_minor">Minore Naturale (Eolia)</option>
+          <option value="harmonic_minor">Minore Armonica</option>
+          <option value="melodic_minor">Minore Melodica</option>
+          <option value="penta_minor">Pentatonica Minore</option>
+          <option value="blues">Blues</option>
+          <option value="dorian">Dorica</option>
+          <option value="phrygian">Frigia</option>
+        </optgroup>
+        <optgroup label="Altro">
+          <option value="locrian">Locria</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Frets</div>
+      <select id="fb-frets" onchange="renderFretboard()">
+        <option value="12">12 tasti</option>
+        <option value="15" selected>15 tasti</option>
+        <option value="22">22 tasti</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Mostra note</div>
+      <select id="fb-label" onchange="renderFretboard()">
+        <option value="name">Nome nota</option>
+        <option value="interval">Intervallo</option>
+        <option value="degree">Grado</option>
+      </select>
+    </div>
+    <div class="ctrl-group" style="justify-content: flex-end; margin-top: 18px;">
+      <button class="play-btn" onclick="playScale()">▶ Play scala</button>
+    </div>
+    <div class="ctrl-group" style="margin-top:14px;width:100%">
+      <div class="ctrl-label" style="margin-bottom:6px">Modalità visualizzazione</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <button class="pos-btn active" id="mode-all-btn" onclick="setFbMode('all')">Tutte le note</button>
+        <button class="pos-btn" id="mode-nps-btn" onclick="setFbMode('nps')">3 note per corda</button>
+        <span id="nps-position-wrap" style="display:none;margin-left:8px;display:none;gap:4px;align-items:center">
+          <span class="ctrl-label">Posizione:</span>
+          <span id="nps-pos-tabs" style="display:flex;gap:4px;flex-wrap:wrap"></span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scale notes summary -->
+  <div id="scale-notes-display" class="scale-notes-row"></div>
+
+  <div id="nps-info-row" style="display:none;margin-bottom:12px">
+    <div class="notice" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span>3 note per corda &mdash; posizione <strong id="nps-pos-label">1</strong>
+      &nbsp;·&nbsp; tasto di partenza: <strong id="nps-start-fret-label">—</strong></span>
+      <button class="play-btn" onclick="playNpsPattern()" style="margin-left:auto">▶ Play pattern</button>
+    </div>
+  </div>
+
+  <div class="fretboard-wrap">
+    <div id="fretboard" class="fretboard"></div>
+  </div>
+
+  <!-- NPS mini diagrams row (shown only in 3NPS mode) -->
+  <div id="nps-mini-diagrams" class="mini-diag-wrap" style="margin-top:14px"></div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--amber);box-shadow:0 0 8px rgba(245,158,11,0.5)"></div> Tonica (1)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--blue);box-shadow:0 0 8px rgba(59,130,246,0.4)"></div> Terza (3)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green);box-shadow:0 0 8px rgba(34,197,94,0.4)"></div> Quinta (5)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--purple);box-shadow:0 0 8px rgba(168,85,247,0.4)"></div> Settima (7)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--bg3);border:1px solid #333"></div> Altre note</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SCALE LIBRARY ═════════════════════════════════ -->
+<div id="page-scales" class="page">
+  <h2>Scale Library</h2>
+  <div class="subtitle">// tutte le scale per improvvisazione — formule e carattere</div>
+
+  <div class="info-grid" id="scales-grid"></div>
+</div>
+
+<!-- ═══════════════════════════════ MODES PAGE ════════════════════════════════════ -->
+<div id="page-modes" class="page">
+  <h2>I Sette Modi</h2>
+  <div class="subtitle">// la stessa scala di Do maggiore, sette caratteri diversi</div>
+
+  <div class="notice">
+    <strong>Come funziona:</strong> Ogni modo usa le stesse note della scala maggiore, ma parte da un grado diverso.
+    Risultato: 7 "colori" emotivi distinti. Clicca un modo per visualizzarlo sul manico.
+  </div>
+
+  <div class="modes-grid" id="modes-grid"></div>
+</div>
+
+<!-- ═══════════════════════════════ PROGRESSIONS ══════════════════════════════════ -->
+<div id="page-progressions" class="page">
+  <h2>Progressioni & Scale</h2>
+  <div class="subtitle">// quali scale usare su ogni progressione accordi</div>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Tonalità base</div>
+      <select id="prog-key" onchange="renderProgressions()">
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C" selected>C</option>
+        <option value="D">D</option>
+        <option value="E">E</option>
+        <option value="G">G</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="prog-grid" id="prog-grid"></div>
+</div>
+
+<!-- ═══════════════════════════════ TRIADI PAGE ══════════════════════════════ -->
+<div id="page-triads" class="page">
+  <h2>Triadi</h2>
+  <div class="subtitle">// forme, inversioni e posizioni sul manico per tutti i tipi di triade</div>
+
+  <div class="controls" style="margin-bottom:16px">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Tonalità</div>
+      <select id="tr-key" onchange="renderTriads()">
+        <option value="0">C</option><option value="1">C# / Db</option>
+        <option value="2">D</option><option value="3">D# / Eb</option>
+        <option value="4">E</option><option value="5">F</option>
+        <option value="6">F# / Gb</option><option value="7">G</option>
+        <option value="8">G# / Ab</option><option value="9">A</option>
+        <option value="10">A# / Bb</option><option value="11">B</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="triad-type-tabs" id="triad-type-tabs"></div>
+
+  <div class="triad-layout">
+    <div class="triad-info-col" id="triad-info-col"></div>
+    <div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+        <div>
+          <div class="ctrl-label" style="margin-bottom:6px">Inversione</div>
+          <div class="inv-tabs" id="inv-tabs">
+            <button class="inv-tab active" onclick="setInversion(0)">Fondamentale</button>
+            <button class="inv-tab" onclick="setInversion(1)">1ª Inversione</button>
+            <button class="inv-tab" onclick="setInversion(2)">2ª Inversione</button>
+          </div>
+        </div>
+        <div>
+          <div class="ctrl-label" style="margin-bottom:6px">Set di corde</div>
+          <div class="strset-tabs" id="strset-tabs">
+            <button class="strset-tab active" onclick="setStringSet(0)">e B G</button>
+            <button class="strset-tab" onclick="setStringSet(1)">B G D</button>
+            <button class="strset-tab" onclick="setStringSet(2)">G D A</button>
+            <button class="strset-tab" onclick="setStringSet(3)">D A E</button>
+            <button class="strset-tab" onclick="setStringSet(4)">All</button>
+          </div>
+        </div>
+      </div>
+      <div class="triad-shapes-grid" id="triad-shapes-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ CAGED PAGE ═══════════════════════════════ -->
+<div id="page-caged" class="page">
+  <h2>Sistema CAGED</h2>
+  <div class="subtitle">// 5 posizioni dell'accordo su tutto il manico — collegamento tra triadi e improvvisazione</div>
+
+  <div class="notice">
+    <strong>Come funziona:</strong> Le 5 forme degli accordi aperti (C–A–G–E–D) si ripetono in ordine
+    lungo tutto il manico per qualsiasi tonalità. Conoscerle ti permette di non restare "bloccato"
+    in una sola posizione e di capire dove si trovano le note dell'accordo mentre improvvisi.
+  </div>
+
+  <div class="controls" style="margin-bottom:20px">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Tonalità</div>
+      <select id="caged-key" onchange="renderCaged()">
+        <option value="0">C</option><option value="1">C# / Db</option>
+        <option value="2">D</option><option value="3">D# / Eb</option>
+        <option value="4">E</option><option value="5">F</option>
+        <option value="6">F# / Gb</option><option value="7">G</option>
+        <option value="8">G# / Ab</option><option value="9">A</option>
+        <option value="10">A# / Bb</option><option value="11">B</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Qualità</div>
+      <div style="display:flex;gap:4px;margin-top:2px">
+        <button class="pos-btn active" id="caged-maj-btn" onclick="setCagedQuality('major')">Maggiore</button>
+        <button class="pos-btn" id="caged-min-btn" onclick="setCagedQuality('minor')">Minore</button>
+      </div>
+    </div>
+    <div class="ctrl-group" style="margin-top:18px">
+      <button class="play-btn" onclick="playCagedArpeggio()">▶ Play tutti e 5</button>
+    </div>
+  </div>
+
+  <div class="caged-row" id="caged-cards"></div>
+
+  <div class="caged-detail" id="caged-detail"></div>
+
+  <div class="caged-neck-wrap">
+    <div class="caged-neck-title">Vista manico completo — tutte e 5 le posizioni</div>
+    <div id="caged-neck-svg"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 5 BOX PENTATONICA ═══════════════════════════ -->
+<div id="page-penta5" class="page">
+  <h2>5 Box della Pentatonica</h2>
+  <div class="subtitle">// i 5 pattern fondamentali — posizioni, connessioni e relazione con il CAGED</div>
+
+  <div class="notice">
+    <strong>Il segreto:</strong> Ogni box della pentatonica minore coincide con una forma CAGED.
+    Imparare i 5 box significa imparare anche dove si trova la tonica in ogni posizione del manico.
+    I box si connettono uno all'altro — l'ultimo fret di un box è il primo del successivo.
+  </div>
+
+  <div class="controls" style="margin-bottom:16px">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Tonalità</div>
+      <select id="p5-key" onchange="renderPenta5()">
+        <option value="0">C</option><option value="1">C# / Db</option>
+        <option value="2">D</option><option value="3">D# / Eb</option>
+        <option value="4" selected>E</option><option value="5">F</option>
+        <option value="6">F# / Gb</option><option value="7">G</option>
+        <option value="8">G# / Ab</option><option value="9">A</option>
+        <option value="10">A# / Bb</option><option value="11">B</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Tipo</div>
+      <div style="display:flex;gap:4px;margin-top:2px">
+        <button class="pos-btn active" id="p5-min-btn" onclick="setP5Quality('minor')">Minore</button>
+        <button class="pos-btn" id="p5-maj-btn" onclick="setP5Quality('major')">Maggiore</button>
+      </div>
+    </div>
+    <div class="ctrl-group" style="margin-top:18px">
+      <button class="play-btn" id="p5-play-btn" onclick="playP5Box()">▶ Play box</button>
+    </div>
+  </div>
+
+  <div class="p5-box-tabs" id="p5-box-tabs"></div>
+
+  <div class="p5-layout">
+    <div>
+      <div class="p5-fretboard-wrap">
+        <div id="p5-fretboard"></div>
+      </div>
+      <div class="p5-overview-wrap">
+        <div class="p5-overview-title">Vista completa — tutti e 5 i box</div>
+        <div id="p5-overview-svg"></div>
+      </div>
+    </div>
+    <div class="p5-info" id="p5-info"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ PRACTICE PAGE ════════════════════════════════ -->
+<div id="page-practice" class="page">
+  <h2>Guida alla Pratica</h2>
+  <div class="subtitle">// strategie per sviluppare l'improvvisazione</div>
+
+  <div class="practice-grid" id="practice-grid"></div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const NOTES_FLAT = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+
+// Open string tuning in semitones (0=C)
+const OPEN_STRINGS = [4, 11, 7, 2, 9, 4]; // e=E4 B=B3 G=G3 D=D3 A=A2 E=E2 (semitoni da C)
+const STRING_NAMES = ['e','B','G','D','A','E'];
+// We render from high to low (e at top)
+
+const SCALES = {
+  major:          { name:'Maggiore (Ionia)',      intervals:[0,2,4,5,7,9,11], formula:'1 2 3 4 5 6 7',      mood:'Brillante, solare, felice. La base di tutto.',           color: '#f59e0b' },
+  natural_minor:  { name:'Minore Naturale (Eolia)',intervals:[0,2,3,5,7,8,10], formula:'1 2 ♭3 4 5 ♭6 ♭7',   mood:'Malinconica, profonda, introspettiva.',                  color: '#3b82f6' },
+  harmonic_minor: { name:'Minore Armonica',        intervals:[0,2,3,5,7,8,11], formula:'1 2 ♭3 4 5 ♭6 7',    mood:'Drammatica, orientaleggiante. Usata molto nel metal.',   color: '#8b5cf6' },
+  melodic_minor:  { name:'Minore Melodica',        intervals:[0,2,3,5,7,9,11], formula:'1 2 ♭3 4 5 6 7',     mood:'Jazz/fusion. Più scorrevole della armonica.',            color: '#06b6d4' },
+  penta_major:    { name:'Pentatonica Maggiore',   intervals:[0,2,4,7,9],      formula:'1 2 3 5 6',          mood:'Positiva, country, rock classico, Randy Rhoads pulito.', color: '#f59e0b' },
+  penta_minor:    { name:'Pentatonica Minore',     intervals:[0,3,5,7,10],     formula:'1 ♭3 4 5 ♭7',        mood:'Rock, blues, hard rock. La più usata per l\'impro.',     color: '#ef4444' },
+  blues:          { name:'Blues',                  intervals:[0,3,5,6,7,10],   formula:'1 ♭3 4 ♭5 5 ♭7',     mood:'Tensione e risoluzione. La blue note (♭5) è la magia.',  color: '#06b6d4' },
+  dorian:         { name:'Dorica (Dorian)',        intervals:[0,2,3,5,7,9,10], formula:'1 2 ♭3 4 5 6 ♭7',    mood:'Minore ma con la 6ª maggiore. Carlos Santana, jazz-rock.',color:'#22c55e' },
+  phrygian:       { name:'Frigia (Phrygian)',      intervals:[0,1,3,5,7,8,10], formula:'1 ♭2 ♭3 4 5 ♭6 ♭7',  mood:'Scura, spagnola, flamenco, metal. Randy Rhoads la amava.',color:'#ef4444' },
+  lydian:         { name:'Lidia (Lydian)',         intervals:[0,2,4,6,7,9,11], formula:'1 2 3 ♯4 5 6 7',     mood:'Sognante, epica. Joe Satriani, Steve Vai.',               color:'#f59e0b' },
+  mixolydian:     { name:'Misolidia (Mixolydian)', intervals:[0,2,4,5,7,9,10], formula:'1 2 3 4 5 6 ♭7',     mood:'Blues-rock, boogie. Slash, AC/DC. Maggiore con 7ª piatta.',color:'#fb923c' },
+  locrian:        { name:'Locria (Locrian)',       intervals:[0,1,3,5,6,8,10], formula:'1 ♭2 ♭3 4 ♭5 ♭6 ♭7', mood:'Instabile, dissonante. Sul VII accordo. Raramente usata.', color:'#6b7280' },
+};
+
+const MODES_DATA = [
+  { key:'major',       degree:'I grado',  name:'Ionia',       greekName:'Ionian',    color:'#f59e0b', useOver:'Accordi maggiori (Imaj7)',           example:'C D E F G A B' },
+  { key:'dorian',      degree:'II grado', name:'Dorica',      greekName:'Dorian',    color:'#22c55e', useOver:'Accordi minori (IIm7, Vm7)',          example:'D E F G A B C' },
+  { key:'phrygian',    degree:'III grado',name:'Frigia',      greekName:'Phrygian',  color:'#ef4444', useOver:'Accordi minori (IIIm7), Flamenco',    example:'E F G A B C D' },
+  { key:'lydian',      degree:'IV grado', name:'Lidia',       greekName:'Lydian',    color:'#f59e0b', useOver:'Accordi maggiori (IVmaj7#11)',         example:'F G A B C D E' },
+  { key:'mixolydian',  degree:'V grado',  name:'Misolidia',   greekName:'Mixolydian',color:'#fb923c', useOver:'Accordi dominanti (V7)',               example:'G A B C D E F' },
+  { key:'natural_minor',degree:'VI grado',name:'Eolia',       greekName:'Aeolian',   color:'#3b82f6', useOver:'Accordi minori (VIm7), tonica minore',example:'A B C D E F G' },
+  { key:'locrian',     degree:'VII grado',name:'Locria',      greekName:'Locrian',   color:'#6b7280', useOver:'Accordi semi-dim (VIIm7♭5)',           example:'B C D E F G A' },
+];
+
+const PROGRESSIONS = [
+  {
+    name: 'I – IV – V (Rock classico)',
+    genre: 'Rock, Blues, Country',
+    getChords: k => [`${k}`, `${k}IV`, `${k}V`],
+    chordNames: key => {
+      const roots = ['C','D','E','F','G','A','B'];
+      const idx = roots.indexOf(key);
+      return [`${key}`, `${getScaleDegree(key,5)}`, `${getScaleDegree(key,7)}`];
+    },
+    chordDisplay: key => [`${key}`, `${getScaleDegree(key,5)}`, `${getScaleDegree(key,7)}`],
+    suggestions: [
+      { badge:'PENTATONICA', type:'penta', text:'Pentatonica Maggiore / Minore — la più naturale' },
+      { badge:'SCALA', type:'main', text:'Scala Maggiore — per melodie più complesse' },
+      { badge:'MIXOLIDIA', type:'mode', text:'Misolidia sul V accordo per tensione' },
+    ]
+  },
+  {
+    name: 'I – V – VI – IV (Pop-rock)',
+    genre: 'Rock, Pop, Hard rock',
+    chordDisplay: key => [`${key}`, `${getScaleDegree(key,7)}`, `${getScaleDegree(key,9)}m`, `${getScaleDegree(key,5)}`],
+    suggestions: [
+      { badge:'PENTATONICA', type:'penta', text:'Pentatonica Maggiore sulla tonica' },
+      { badge:'SCALA', type:'main', text:'Scala Maggiore per coprire tutto' },
+      { badge:'DORICA', type:'mode', text:'Dorica per sapore più blues sul VI minore' },
+    ]
+  },
+  {
+    name: 'I – VI – IV – V',
+    genre: 'Classic rock, 50s-60s',
+    chordDisplay: key => [`${key}`, `${getScaleDegree(key,9)}m`, `${getScaleDegree(key,5)}`, `${getScaleDegree(key,7)}`],
+    suggestions: [
+      { badge:'PENTATONICA', type:'penta', text:'Pentatonica Minore / Maggiore' },
+      { badge:'BLUES', type:'blues', text:'Blues scale per più espressione' },
+    ]
+  },
+  {
+    name: 'Im – ♭VII – ♭VI – ♭VII (Metal/Rock minore)',
+    genre: 'Heavy Metal, Hard Rock',
+    chordDisplay: key => [`${key}m`, `${getScaleDegree(key,10)}`, `${getScaleDegree(key,8)}`, `${getScaleDegree(key,10)}`],
+    suggestions: [
+      { badge:'PENTA MIN', type:'penta', text:'Pentatonica Minore — aggressiva e diretta' },
+      { badge:'AEOLIA', type:'mode', text:'Minore Naturale / Eolia — suono oscuro' },
+      { badge:'FRIGIA', type:'mode', text:'Frigia sul Im per suono spagnolo/metal' },
+      { badge:'ARMON.', type:'main', text:'Minore Armonica — drammatica, molto metal' },
+    ]
+  },
+  {
+    name: 'IIm – V – I (Jazz/Fusion turnaround)',
+    genre: 'Jazz, Fusion',
+    chordDisplay: key => [`${getScaleDegree(key,2)}m7`, `${getScaleDegree(key,7)}7`, `${key}maj7`],
+    suggestions: [
+      { badge:'DORICA', type:'mode', text:'Dorica sul IIm7' },
+      { badge:'MISOL.', type:'mode', text:'Misolidia sul V7 — tensione dominante' },
+      { badge:'IONIA', type:'main', text:'Ionia / Maggiore sul Imaj7' },
+      { badge:'LIDIA', type:'mode', text:'Lidia sul Imaj7 per suono più aperto' },
+    ]
+  },
+  {
+    name: 'I – ♭III – IV (Rock blues)',
+    genre: 'Blues-rock, Classic rock',
+    chordDisplay: key => [`${key}7`, `${getScaleDegree(key,3)}`, `${getScaleDegree(key,5)}7`],
+    suggestions: [
+      { badge:'BLUES', type:'blues', text:'Blues scale — è praticamente scritta per questo' },
+      { badge:'PENTA MIN', type:'penta', text:'Pentatonica Minore — mai sbagliata' },
+      { badge:'MISOL.', type:'mode', text:'Misolidia per suono più maggiore/bluesy' },
+    ]
+  },
+];
+
+function getScaleDegree(key, semitones) {
+  const noteIdx = NOTES.indexOf(key);
+  if (noteIdx === -1) return key;
+  return NOTES[(noteIdx + semitones) % 12];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPACT MINI DIAGRAM ENGINE  (standard vertical chord-diagram style)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// fretsPerString: array of 6 (index 0=e high, 5=E low), each array of fret numbers
+// Returns SVG string for a compact vertical guitar diagram
+function drawMiniDiagram(fretsPerString, rootColor = '#f59e0b', noteColor = '#3b82f6',
+                          rootNote = -1, keyIdx = -1, scaleIntervals = null,
+                          title = '', showFretNum = true) {
+  // Layout constants
+  const nStrings = 6;
+  const SX = 14;            // left pad
+  const SY = 18;            // top pad (space for fret number)
+  const SW = 13;            // string spacing
+  const SH = 14;            // fret height
+  const W = SX + (nStrings-1)*SW + 14;
+
+  // Find visible fret range
+  const allFrets = fretsPerString.flat().filter(f => f >= 0);
+  if (!allFrets.length) return '<svg width="100" height="80"></svg>';
+  const minF = Math.max(0, Math.min(...allFrets));
+  const maxF = Math.max(...allFrets);
+  const displayStart = minF === 0 ? 0 : minF;
+  const nFrets = Math.max(4, maxF - displayStart + 1);
+  const H = SY + nFrets * SH + 10;
+
+  // Build scale set for interval coloring
+  const scaleSet = scaleIntervals
+    ? new Set(scaleIntervals.map(iv => (keyIdx + iv + 12) % 12))
+    : null;
+
+  // Interval color lookup
+  function getNoteColor(stringIdx, fret) {
+    if (!scaleIntervals || keyIdx < 0) return noteColor;
+    const noteIdx = (OPEN_STRINGS[stringIdx] + fret) % 12;
+    const interval = (noteIdx - keyIdx + 12) % 12;
+    if (interval === 0) return '#f59e0b';          // root - amber
+    if (interval === scaleIntervals[2]) return '#3b82f6';  // 3rd - blue
+    if (interval === scaleIntervals[4]) return '#22c55e';  // 5th - green
+    if (scaleIntervals.length >= 7 && interval === scaleIntervals[6]) return '#a855f7'; // 7th
+    return '#6b7280';  // other
+  }
+
+  // Chord diagram: strings go left=low E (s=5), right=high e (s=0)
+  const strOrder = [5,4,3,2,1,0]; // left to right
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block">`;
+  svg += `<rect width="${W}" height="${H}" fill="#141414" rx="5"/>`;
+
+  // Fret number label (top-left)
+  if (showFretNum && displayStart > 0) {
+    svg += `<text x="2" y="${SY+SH/2+3}" font-size="7" fill="${rootColor}" font-family="monospace" font-weight="bold">${displayStart}fr</text>`;
+  }
+
+  // Nut (only if starts at 0)
+  if (displayStart === 0) {
+    svg += `<rect x="${SX}" y="${SY}" width="${(nStrings-1)*SW}" height="3" fill="#d4af6a" rx="1"/>`;
+  }
+
+  // Fret lines
+  for (let fi = 0; fi <= nFrets; fi++) {
+    const y = SY + fi * SH + (displayStart === 0 ? 3 : 0);
+    svg += `<line x1="${SX}" y1="${y}" x2="${SX+(nStrings-1)*SW}" y2="${y}" stroke="#2a2a2a" stroke-width="0.8"/>`;
+  }
+
+  // String lines
+  for (let i = 0; i < nStrings; i++) {
+    const x = SX + i * SW;
+    const topY = SY + (displayStart === 0 ? 3 : 0);
+    svg += `<line x1="${x}" y1="${topY}" x2="${x}" y2="${SY+nFrets*SH+(displayStart===0?3:0)}" stroke="#3a3020" stroke-width="0.8"/>`;
+  }
+
+  // Note dots
+  for (let i = 0; i < nStrings; i++) {
+    const strIdx = strOrder[i];
+    const frets = fretsPerString[strIdx] || [];
+    const x = SX + i * SW;
+
+    frets.forEach(fret => {
+      if (fret < displayStart || fret > displayStart + nFrets) return;
+      const fretRel = fret - displayStart;
+      const y = SY + fretRel * SH - SH/2 + (displayStart === 0 ? 3 : 0);
+      const col = getNoteColor(strIdx, fret);
+      const r = 5;
+      svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="${col}" opacity="0.92"/>`;
+      // Show root 'R' label
+      const noteIdx = (OPEN_STRINGS[strIdx] + fret) % 12;
+      const interval = keyIdx >= 0 ? (noteIdx - keyIdx + 12) % 12 : -1;
+      if (interval === 0) {
+        svg += `<text x="${x}" y="${y+2.5}" text-anchor="middle" font-size="5" fill="#000" font-weight="bold" font-family="monospace">R</text>`;
+      }
+    });
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// Compute fretsPerString for a scale box from offset data
+// offsets: [6] arrays of fret offsets from anchor; offsets[0]=e, offsets[5]=E
+// anchor: fret on low E
+function offsetsToFrets(offsets, anchor) {
+  return offsets.map(ofs => ofs.map(fo => anchor + fo));
+}
+
+// Compute anchor fret on low E for a scale given key and anchorOffset (semitones above root)
+function computeAnchor(keyIdx, anchorOffset) {
+  const rootFret = (keyIdx - OPEN_STRINGS[5] + 24) % 12;
+  let anchor = rootFret + anchorOffset;
+  while (anchor > 17) anchor -= 12;
+  return anchor;
+}
+
+// ── VERIFIED 3NPS OFFSETS (all 12 keys tested, 504 checks) ──
+// Offsets from anchor (root fret on low E). Order: [e,B,G,D,A,E]
+const NPS_POSITIONS = [
+  { ao:0,  mode:'Ionia',      modeKey:'major',        offs:[[-1,0,2],[0,2,4],[-1,1,2],[-1,1,2],[-1,0,2],[0,2,4]]  },
+  { ao:2,  mode:'Dorica',     modeKey:'dorian',       offs:[[0,2,3],[0,2,3],[-1,0,2],[-1,0,2],[0,2,4],[0,2,3]]   },
+  { ao:4,  mode:'Frigia',     modeKey:'phrygian',     offs:[[0,1,3],[0,1,3],[0,2,4],[0,2,3],[0,2,3],[0,1,3]]     },
+  { ao:5,  mode:'Lidia',      modeKey:'lydian',       offs:[[-1,0,2],[-1,0,2],[-1,1,3],[-1,1,2],[-1,1,2],[0,2,4]]},
+  { ao:7,  mode:'Misolidia',  modeKey:'mixolydian',   offs:[[0,2,4],[0,2,3],[-1,1,2],[-1,0,2],[-1,0,2],[0,2,4]]  },
+  { ao:9,  mode:'Eolia',      modeKey:'natural_minor',offs:[[0,2,3],[0,1,3],[-1,0,2],[0,2,4],[0,2,3],[0,2,3]]    },
+  { ao:11, mode:'Locria',     modeKey:'locrian',      offs:[[0,1,3],[-1,1,3],[0,2,3],[0,2,3],[0,1,3],[0,1,3]]    },
+];
+
+// ─── AUDIO ENGINE ────────────────────────────────────────────────────────────
+
+let audioCtx = null;
+let _reverbNode = null;    // shared convolution reverb
+let _masterComp = null;    // master compressor
+let _masterOut = null;     // master output gain
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    _buildMasterChain();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function _buildMasterChain() {
+  const ctx = audioCtx;
+  // Master output gain
+  _masterOut = ctx.createGain();
+  _masterOut.gain.value = 0.82;
+
+  // Master compressor
+  _masterComp = ctx.createDynamicsCompressor();
+  _masterComp.threshold.value = -14;
+  _masterComp.knee.value = 6;
+  _masterComp.ratio.value = 4;
+  _masterComp.attack.value = 0.003;
+  _masterComp.release.value = 0.18;
+
+  // Reverb (impulse response synthesized)
+  _reverbNode = ctx.createConvolver();
+  _reverbNode.buffer = _makeReverb(ctx, 1.4, 0.22);
+
+  const reverbGain = ctx.createGain();
+  reverbGain.gain.value = 0.18;
+
+  _masterOut.connect(_masterComp);
+  _masterComp.connect(ctx.destination);
+  _masterOut.connect(_reverbNode);
+  _reverbNode.connect(reverbGain);
+  reverbGain.connect(ctx.destination);
+}
+
+// Synthesize a plate reverb impulse response
+function _makeReverb(ctx, duration, decay) {
+  const sr = ctx.sampleRate;
+  const len = Math.floor(sr * duration);
+  const buf = ctx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay * 3);
+    }
+  }
+  return buf;
+}
+
+// Waveshaper for soft amp clipping (warm tube-like saturation)
+function _makeWaveshaper(ctx, amount = 60) {
+  const ws = ctx.createWaveShaper();
+  const n = 256;
+  const curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = (i * 2) / n - 1;
+    curve[i] = ((Math.PI + amount) * x) / (Math.PI + amount * Math.abs(x));
+  }
+  ws.curve = curve;
+  ws.oversample = '4x';
+  return ws;
+}
+
+// ── GUITAR SINGLE NOTE (click on fretboard) ─────────────────────────────────
+// Karplus-Strong inspired: noise burst → resonant filter → harmonics → amp sim
+function playNote(freq, time, duration = 0.8) {
+  const ctx = getAudioCtx();
+  const dest = _masterOut;
+  const now = time || ctx.currentTime;
+
+  // ── Pick transient (percussive click/pluck) ──
+  const transLen = Math.floor(ctx.sampleRate * 0.018);
+  const transBuf = ctx.createBuffer(1, transLen, ctx.sampleRate);
+  const td = transBuf.getChannelData(0);
+  for (let i = 0; i < transLen; i++) td[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / transLen, 2);
+  const transNoise = ctx.createBufferSource();
+  transNoise.buffer = transBuf;
+  const transFilter = ctx.createBiquadFilter();
+  transFilter.type = 'bandpass';
+  transFilter.frequency.value = Math.min(4200, freq * 4);
+  transFilter.Q.value = 1.2;
+  const transGain = ctx.createGain();
+  transGain.gain.setValueAtTime(0.55, now);
+  transGain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
+  transNoise.connect(transFilter);
+  transFilter.connect(transGain);
+  transGain.connect(dest);
+  transNoise.start(now);
+  transNoise.stop(now + 0.025);
+
+  // ── String body: fundamental + harmonics ──
+  const bodyGain = ctx.createGain();
+  bodyGain.gain.setValueAtTime(0, now);
+  bodyGain.gain.linearRampToValueAtTime(0.42, now + 0.004);
+  bodyGain.gain.setValueAtTime(0.38, now + 0.05);
+  bodyGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+  // Tone shaping: bright pick → gradually darkens (string loses highs)
+  const bodyLPF = ctx.createBiquadFilter();
+  bodyLPF.type = 'lowpass';
+  bodyLPF.frequency.setValueAtTime(Math.min(8000, freq * 18), now);
+  bodyLPF.frequency.exponentialRampToValueAtTime(Math.max(800, freq * 4), now + duration * 0.6);
+  bodyLPF.Q.value = 0.5;
+
+  // Warmth notch around 300Hz (guitar body resonance)
+  const bodyPeak = ctx.createBiquadFilter();
+  bodyPeak.type = 'peaking';
+  bodyPeak.frequency.value = 300;
+  bodyPeak.Q.value = 1.5;
+  bodyPeak.gain.value = 3;
+
+  // Soft waveshaper (amp saturation)
+  const shaper = _makeWaveshaper(ctx, 30);
+
+  bodyLPF.connect(bodyPeak);
+  bodyPeak.connect(shaper);
+  shaper.connect(bodyGain);
+  bodyGain.connect(dest);
+
+  // Harmonics: fundamental (sine-heavy) + 2nd + 3rd partial
+  const harmonics = [
+    { mul: 1,   type: 'sine',     vol: 0.55 },
+    { mul: 2,   type: 'sine',     vol: 0.22 },
+    { mul: 3,   type: 'triangle', vol: 0.12 },
+    { mul: 4,   type: 'sine',     vol: 0.06 },
+  ];
+
+  harmonics.forEach(({ mul, type, vol }) => {
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.value = freq * mul;
+    // Slight detuning for chorus warmth
+    osc.detune.value = (Math.random() - 0.5) * 4;
+    const hg = ctx.createGain();
+    hg.gain.value = vol;
+    // Higher harmonics decay faster
+    const hEnv = ctx.createGain();
+    hEnv.gain.setValueAtTime(1, now);
+    hEnv.gain.exponentialRampToValueAtTime(0.001, now + duration * (1 / mul));
+    osc.connect(hg);
+    hg.connect(hEnv);
+    hEnv.connect(bodyLPF);
+    osc.start(now);
+    osc.stop(now + duration + 0.05);
+  });
+}
+
+function noteToFreq(noteIndex, octave = 4) {
+  const semitones = (octave - 4) * 12 + (noteIndex - 9);
+  return 440 * Math.pow(2, semitones / 12);
+}
+
+function playScale() {
+  const ctx = getAudioCtx();
+  const keyIndex = parseInt(document.getElementById('fb-key').value);
+  const scaleKey = document.getElementById('fb-scale').value;
+  const scale = SCALES[scaleKey];
+  if (!scale) return;
+  const now = ctx.currentTime;
+  scale.intervals.forEach((interval, i) => {
+    const noteIdx = (keyIndex + interval) % 12;
+    playNote(noteToFreq(noteIdx, 4), now + i * 0.22, 0.55);
+  });
+  playNote(noteToFreq(keyIndex, 5), now + scale.intervals.length * 0.22, 0.7);
+}
+
+// ─── DRUMS ────────────────────────────────────────────────────────────────────
+
+function drumKick(ctx, dest, time) {
+  // Sub body — pitch-swept sine
+  const env = ctx.createGain();
+  env.connect(dest);
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(160, time);
+  osc.frequency.exponentialRampToValueAtTime(34, time + 0.07);
+  osc.frequency.exponentialRampToValueAtTime(28, time + 0.22);
+  osc.connect(env);
+  env.gain.setValueAtTime(1.6, time);
+  env.gain.exponentialRampToValueAtTime(0.001, time + 0.45);
+  osc.start(time); osc.stop(time + 0.5);
+
+  // Snap attack — short bandpass noise
+  const sLen = Math.floor(ctx.sampleRate * 0.025);
+  const sBuf = ctx.createBuffer(1, sLen, ctx.sampleRate);
+  const sd = sBuf.getChannelData(0);
+  for (let i = 0; i < sLen; i++) sd[i] = (Math.random()*2-1) * Math.pow(1 - i/sLen, 3);
+  const snap = ctx.createBufferSource();
+  snap.buffer = sBuf;
+  const snapF = ctx.createBiquadFilter();
+  snapF.type = 'bandpass'; snapF.frequency.value = 1200; snapF.Q.value = 0.8;
+  const snapG = ctx.createGain();
+  snapG.gain.setValueAtTime(0.7, time);
+  snapG.gain.exponentialRampToValueAtTime(0.001, time + 0.025);
+  snap.connect(snapF); snapF.connect(snapG); snapG.connect(dest);
+  snap.start(time); snap.stop(time + 0.03);
+}
+
+function drumSnare(ctx, dest, time) {
+  // Noise layer (snare wires)
+  const nLen = Math.floor(ctx.sampleRate * 0.25);
+  const nBuf = ctx.createBuffer(1, nLen, ctx.sampleRate);
+  const nd = nBuf.getChannelData(0);
+  for (let i = 0; i < nLen; i++) nd[i] = Math.random() * 2 - 1;
+  const noise = ctx.createBufferSource();
+  noise.buffer = nBuf;
+
+  // Two bandpass for different snare character
+  const hp = ctx.createBiquadFilter();
+  hp.type = 'highpass'; hp.frequency.value = 1800;
+  const bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 0.6;
+  const nEnv = ctx.createGain();
+  nEnv.gain.setValueAtTime(0.9, time);
+  nEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
+  noise.connect(hp); hp.connect(bp); bp.connect(nEnv); nEnv.connect(dest);
+  noise.start(time); noise.stop(time + 0.22);
+
+  // Drum head tone (pitched thud)
+  const osc = ctx.createOscillator();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(240, time);
+  osc.frequency.exponentialRampToValueAtTime(110, time + 0.05);
+  const oEnv = ctx.createGain();
+  oEnv.gain.setValueAtTime(0.55, time);
+  oEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.09);
+  osc.connect(oEnv); oEnv.connect(dest);
+  osc.start(time); osc.stop(time + 0.1);
+}
+
+function drumHihat(ctx, dest, time, open = false, gainVal = 0.4) {
+  // Metallic hihat: multiple detuned oscillators + noise
+  const len = Math.floor(ctx.sampleRate * (open ? 0.35 : 0.06));
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const noise = ctx.createBufferSource();
+  noise.buffer = buf;
+
+  const hpf = ctx.createBiquadFilter();
+  hpf.type = 'highpass'; hpf.frequency.value = 8500;
+  const bpf = ctx.createBiquadFilter();
+  bpf.type = 'bandpass'; bpf.frequency.value = 11000; bpf.Q.value = 0.5;
+
+  const decay = open ? 0.28 : 0.042;
+  const env = ctx.createGain();
+  env.gain.setValueAtTime(gainVal, time);
+  env.gain.exponentialRampToValueAtTime(0.001, time + decay);
+
+  noise.connect(hpf); hpf.connect(bpf); bpf.connect(env); env.connect(dest);
+  noise.start(time); noise.stop(time + decay + 0.02);
+}
+
+// ─── CHORD SYNTH (rhythm guitar) ─────────────────────────────────────────────
+function playChordSynth(ctx, dest, rootMidi, chordType, startTime, endTime) {
+  const intervals = CHORD_IV[chordType] || CHORD_IV.maj;
+  const dur = endTime - startTime;
+
+  const masterG = ctx.createGain();
+  masterG.gain.setValueAtTime(0, startTime);
+  masterG.gain.linearRampToValueAtTime(0.38, startTime + 0.04);
+  masterG.gain.setValueAtTime(0.24, startTime + 0.25);
+  masterG.gain.setValueAtTime(0.22, endTime - 0.1);
+  masterG.gain.linearRampToValueAtTime(0, endTime);
+
+  // Cabinet EQ (guitar speaker simulation)
+  const hp = ctx.createBiquadFilter();
+  hp.type = 'highpass'; hp.frequency.value = 80;
+  const lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 5000;
+  const mid = ctx.createBiquadFilter();
+  mid.type = 'peaking'; mid.frequency.value = 800; mid.gain.value = 4; mid.Q.value = 1.2;
+
+  // Light overdrive
+  const shaper = _makeWaveshaper(ctx, 45);
+
+  hp.connect(lp); lp.connect(mid); mid.connect(shaper);
+  shaper.connect(masterG); masterG.connect(dest);
+
+  // Strum: slightly offset each string start
+  intervals.forEach((iv, i) => {
+    const freq = midiToFreq(rootMidi + iv);
+    const strumDelay = i * 0.008;
+
+    // Two detuned oscillators per note (chorus-like)
+    [0, 7, -7].forEach((detune, di) => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.value = freq;
+      osc.detune.value = detune;
+      const g = ctx.createGain();
+      g.gain.value = 0.11 / intervals.length;
+      osc.connect(g); g.connect(hp);
+      osc.start(startTime + strumDelay + di * 0.001);
+      osc.stop(endTime + 0.1);
+    });
+  });
+}
+
+// ─── BASS SYNTH ──────────────────────────────────────────────────────────────
+function playBassSynth(ctx, dest, rootMidi, time, duration) {
+  const freq = midiToFreq(rootMidi - 24);
+
+  const masterG = ctx.createGain();
+  masterG.gain.setValueAtTime(0, time);
+  masterG.gain.linearRampToValueAtTime(0.85, time + 0.018);  // punchy attack
+  masterG.gain.exponentialRampToValueAtTime(0.5, time + 0.08);
+  masterG.gain.setValueAtTime(0.42, time + duration - 0.06);
+  masterG.gain.linearRampToValueAtTime(0, time + duration);
+  masterG.connect(dest);
+
+  // Bass EQ chain
+  const lpf = ctx.createBiquadFilter();
+  lpf.type = 'lowpass'; lpf.frequency.value = 700;
+  const boost = ctx.createBiquadFilter();
+  boost.type = 'peaking'; boost.frequency.value = 80; boost.gain.value = 5; boost.Q.value = 1;
+  lpf.connect(boost); boost.connect(masterG);
+
+  // Sub sine (fundamental)
+  const sine = ctx.createOscillator();
+  sine.type = 'sine'; sine.frequency.value = freq;
+  const sG = ctx.createGain(); sG.gain.value = 0.6;
+  sine.connect(sG); sG.connect(lpf);
+  sine.start(time); sine.stop(time + duration + 0.05);
+
+  // Pluck character — triangle at 2× with faster decay
+  const tri = ctx.createOscillator();
+  tri.type = 'triangle'; tri.frequency.value = freq * 2;
+  const tEnv = ctx.createGain();
+  tEnv.gain.setValueAtTime(0.3, time);
+  tEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
+  tri.connect(tEnv); tEnv.connect(lpf);
+  tri.start(time); tri.stop(time + 0.15);
+
+  // Bite — short noise transient (finger/pick attack)
+  const bLen = Math.floor(ctx.sampleRate * 0.02);
+  const bBuf = ctx.createBuffer(1, bLen, ctx.sampleRate);
+  const bData = bBuf.getChannelData(0);
+  for (let i = 0; i < bLen; i++) bData[i] = (Math.random()*2-1) * (1 - i/bLen);
+  const bite = ctx.createBufferSource();
+  bite.buffer = bBuf;
+  const biteBP = ctx.createBiquadFilter();
+  biteBP.type = 'bandpass'; biteBP.frequency.value = 600; biteBP.Q.value = 1;
+  const biteG = ctx.createGain(); biteG.gain.value = 0.35;
+  bite.connect(biteBP); biteBP.connect(biteG); biteG.connect(masterG);
+  bite.start(time); bite.stop(time + 0.022);
+}
+
+// ─── AUDIO ───────────────────────────────────────────────────────────────────
+
+// ─── FRETBOARD ────────────────────────────────────────────────────────────────
+
+const FRET_WIDTHS = []; // will be computed
+
+// NPS state
+const FB_STATE = { mode: 'all', npsPosition: 0 };
+
+function setFbMode(mode) {
+  FB_STATE.mode = mode;
+  document.getElementById('mode-all-btn').classList.toggle('active', mode === 'all');
+  document.getElementById('mode-nps-btn').classList.toggle('active', mode === 'nps');
+  const wrap = document.getElementById('nps-position-wrap');
+  wrap.style.display = mode === 'nps' ? 'flex' : 'none';
+  document.getElementById('nps-info-row').style.display = mode === 'nps' ? 'block' : 'none';
+  renderFretboard();
+}
+
+// Compute all NPS positions for current scale.
+// Returns array of positions, each = array of 6 elements (one per string),
+// each element = array of fret numbers to highlight on that string.
+function computeNpsPositions(keyIndex, scaleIntervals, fretMax) {
+  // OPEN_STRINGS: semitone of open string (high e first)
+  // Build sorted list of all scale notes on the fretboard per string
+  const scaleSet = new Set(scaleIntervals.map(i => (keyIndex + i) % 12));
+  const notesPerString = [];
+  for (let s = 0; s < 6; s++) {
+    const open = OPEN_STRINGS[s];
+    const frets = [];
+    for (let f = 0; f <= fretMax; f++) {
+      if (scaleSet.has((open + f) % 12)) frets.push(f);
+    }
+    notesPerString.push(frets);
+  }
+
+  // A "3NPS position" is defined by a starting fret on the low E string (s=5 in our order)
+  // We generate positions by scanning all valid starting offsets.
+  // For each candidate startFret, assign exactly 3 consecutive scale notes per string
+  // starting from that window.
+  const positions = [];
+
+  // Try each possible "window start" — the lowest fret used on string 5 (low E)
+  const lowEFrets = notesPerString[5]; // low E is index 5 (high e = 0)
+  for (let i = 0; i + 2 < lowEFrets.length; i++) {
+    const windowStart = lowEFrets[i];
+    const windowEnd = windowStart + 5; // max 5-fret span for a position
+    const positionFrets = [];
+    let valid = true;
+
+    for (let s = 5; s >= 0; s--) { // low E → high e
+      const available = notesPerString[s].filter(f => f >= windowStart && f <= windowStart + 6);
+      if (available.length < 3) { valid = false; break; }
+      // Take exactly 3 notes starting from the window
+      positionFrets[s] = available.slice(0, 3);
+    }
+
+    if (!valid) continue;
+
+    // Check overall span is playable (≤ 5 frets)
+    const allFrets = positionFrets.flat().filter(f => f > 0);
+    const span = allFrets.length ? Math.max(...allFrets) - Math.min(...allFrets) : 0;
+    if (span > 6) continue;
+
+    // Deduplicate: skip if same as last position
+    const sig = positionFrets.map(a => a.join(',')).join('|');
+    if (positions.length && positions[positions.length-1].sig === sig) continue;
+
+    positions.push({ fretsByString: positionFrets, startFret: windowStart, sig });
+  }
+
+  return positions;
+}
+
+function playNpsPattern() {
+  const keyIndex = parseInt(document.getElementById('fb-key').value);
+  const scaleKey = document.getElementById('fb-scale').value;
+  const scale = SCALES[scaleKey];
+  const positions = computeNpsPositions(keyIndex, scale.intervals, 22);
+  if (!positions.length) return;
+  const pos = positions[FB_STATE.npsPosition] || positions[0];
+  const ctx = getAudioCtx();
+  let t = ctx.currentTime + 0.05;
+  // Play low E → high e, each string low→high fret
+  for (let s = 5; s >= 0; s--) {
+    const fretsOnStr = pos.fretsByString[s] || [];
+    fretsOnStr.forEach(f => {
+      const noteIndex = (OPEN_STRINGS[s] + f) % 12;
+      playNote(noteToFreq(noteIndex, s < 3 ? 5 : 4), t, 0.35);
+      t += 0.18;
+    });
+  }
+}
+
+function getIntervalRole(interval, scaleIntervals) {
+  if (interval === 0) return 'root';
+  if (interval === scaleIntervals[2]) return 'third';
+  if (interval === scaleIntervals[4]) return 'fifth';
+  if (scaleIntervals.length >= 7 && interval === scaleIntervals[6]) return 'seventh';
+  return 'other';
+}
+
+const INTERVAL_NAMES = {
+  0:'1', 1:'♭2', 2:'2', 3:'♭3', 4:'3', 5:'4', 6:'♭5', 7:'5', 8:'♭6', 9:'6', 10:'♭7', 11:'7'
+};
+const DEGREE_NAMES = {
+  0:'T', 1:'♭II', 2:'II', 3:'III♭', 4:'III', 5:'IV', 6:'IV#', 7:'V', 8:'VI♭', 9:'VI', 10:'VII♭', 11:'VII'
+};
+
+function renderFretboard() {
+  const keyIndex = parseInt(document.getElementById('fb-key').value);
+  const scaleKey = document.getElementById('fb-scale').value;
+  const fretCount = parseInt(document.getElementById('fb-frets').value);
+  const labelMode = document.getElementById('fb-label').value;
+  const scale = SCALES[scaleKey];
+  const scaleSet = new Set(scale.intervals.map(i => (keyIndex + i) % 12));
+
+  // ── NPS mode ──
+  let npsPositions = [];
+  let npsActiveSet = null;
+
+  if (FB_STATE.mode === 'nps') {
+    npsPositions = computeNpsPositions(keyIndex, scale.intervals, fretCount);
+    if (FB_STATE.npsPosition >= npsPositions.length) FB_STATE.npsPosition = 0;
+
+    const tabsWrap = document.getElementById('nps-pos-tabs');
+    tabsWrap.innerHTML = '';
+    npsPositions.forEach((p, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'pos-btn' + (i === FB_STATE.npsPosition ? ' active' : '');
+      btn.textContent = 'Pos. ' + (i + 1);
+      btn.onclick = () => { FB_STATE.npsPosition = i; renderFretboard(); };
+      tabsWrap.appendChild(btn);
+    });
+
+    const pos = npsPositions[FB_STATE.npsPosition];
+    if (pos) {
+      npsActiveSet = new Set();
+      pos.fretsByString.forEach((frets, s) => frets.forEach(f => npsActiveSet.add(s + ',' + f)));
+      document.getElementById('nps-pos-label').textContent = FB_STATE.npsPosition + 1;
+      document.getElementById('nps-start-fret-label').textContent =
+        pos.startFret === 0 ? 'aperta' : pos.startFret;
+    }
+  }
+
+  // Fret widths: index = guitar fret number (1-based); 0 unused
+  const fretWidths = [0]; // index 0 placeholder
+  for (let f = 1; f <= fretCount; f++) {
+    fretWidths.push(Math.round(58 - f * 1.1));
+  }
+  const OPEN_COL_W = 40; // width of open-string column (before nut)
+  const NUT_W = 14;
+
+  // Scale notes summary
+  const notesDisplay = document.getElementById('scale-notes-display');
+  notesDisplay.innerHTML = '<span style="font-family:Space Mono,monospace;font-size:11px;color:var(--text-dim);margin-right:8px;text-transform:uppercase;letter-spacing:1px">Note:</span>';
+  scale.intervals.forEach(interval => {
+    const noteIdx = (keyIndex + interval) % 12;
+    const pill = document.createElement('div');
+    pill.className = 'scale-note-pill' + (interval === 0 ? ' is-root' : '');
+    pill.textContent = NOTES[noteIdx];
+    notesDisplay.appendChild(pill);
+  });
+
+  const fb = document.getElementById('fretboard');
+  fb.innerHTML = '';
+
+  // ── Fret numbers row ──
+  // Layout: [open 40px]["0"] [nut 14px][""] [fret1 label] [fret2 label] ...
+  const numRow = document.createElement('div');
+  numRow.className = 'fret-numbers';
+
+  // open col header
+  const openHdr = document.createElement('div');
+  openHdr.className = 'fret-num';
+  openHdr.style.width = OPEN_COL_W + 'px';
+  openHdr.textContent = '0';
+  numRow.appendChild(openHdr);
+
+  // nut header spacer
+  const nutHdr = document.createElement('div');
+  nutHdr.className = 'fret-num';
+  nutHdr.style.width = NUT_W + 'px';
+  numRow.appendChild(nutHdr);
+
+  // fret 1..N labels
+  for (let f = 1; f <= fretCount; f++) {
+    const d = document.createElement('div');
+    d.className = 'fret-num';
+    d.style.width = fretWidths[f] + 'px';
+    d.textContent = f;
+    numRow.appendChild(d);
+  }
+  fb.appendChild(numRow);
+
+  // ── String rows ──
+  const strContainer = document.createElement('div');
+  strContainer.className = 'strings-container';
+
+  // String thickness: e=0.6px, B=0.8px, G=1px, D=1.4px, A=1.8px, E=2.2px
+  const STRING_HEIGHTS = ['0.65px', '0.85px', '1.1px', '1.5px', '1.9px', '2.3px'];
+
+  for (let s = 0; s < 6; s++) {
+    const row = document.createElement('div');
+    row.className = 'string-row';
+    row.style.setProperty('--str-h', STRING_HEIGHTS[s]);
+
+    // String name
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'string-name';
+    nameDiv.textContent = STRING_NAMES[s];
+    row.appendChild(nameDiv);
+
+    const openNote = OPEN_STRINGS[s]; // semitone of open string
+
+    // ── Open string column (before nut) ──
+    const openCell = document.createElement('div');
+    openCell.className = 'open-col';
+    const openNoteIndex = openNote % 12;
+    const openInterval = (openNoteIndex - keyIndex + 12) % 12;
+    const openInScale = scaleSet.has(openNoteIndex);
+    const openInNps = npsActiveSet ? npsActiveSet.has(s + ',0') : false;
+    const openShouldShow = FB_STATE.mode === 'all' ? openInScale : openInNps;
+    const openIsDimmed = FB_STATE.mode === 'nps' && openInScale && !openInNps;
+
+    if (openShouldShow) {
+      const dot = document.createElement('div');
+      const role = getIntervalRole(openInterval, scale.intervals);
+      dot.className = `note-dot ${role}`;
+      dot.style.width = '28px'; dot.style.height = '28px'; dot.style.fontSize = '9px';
+      dot.title = '○ corda a vuoto';
+      if (labelMode === 'name') dot.textContent = NOTES[openNoteIndex];
+      else if (labelMode === 'interval') dot.textContent = INTERVAL_NAMES[openInterval];
+      else dot.textContent = DEGREE_NAMES[openInterval];
+      dot.onclick = () => { const ctx = getAudioCtx(); playNote(noteToFreq(openNoteIndex, s < 3 ? 5 : 4), ctx.currentTime, 0.6); };
+      openCell.appendChild(dot);
+    } else if (openIsDimmed) {
+      const dot = document.createElement('div');
+      dot.className = 'note-dot other';
+      dot.style.cssText = 'opacity:0.15;transform:scale(0.7);pointer-events:none;width:28px;height:28px;font-size:9px';
+      dot.textContent = NOTES[openNoteIndex];
+      openCell.appendChild(dot);
+    }
+    row.appendChild(openCell);
+
+    // ── Nut ──
+    const nut = document.createElement('div');
+    nut.className = 'nut-col';
+    row.appendChild(nut);
+
+    // ── Fret cells: f = 1..fretCount ──
+    for (let f = 1; f <= fretCount; f++) {
+      const cell = document.createElement('div');
+      cell.className = 'fret-cell';
+      cell.style.width = fretWidths[f] + 'px';
+
+      const noteIndex = (openNote + f) % 12;
+      const inScale = scaleSet.has(noteIndex);
+      const interval = (noteIndex - keyIndex + 12) % 12;
+      const inNps = npsActiveSet ? npsActiveSet.has(s + ',' + f) : false;
+      const shouldShow = FB_STATE.mode === 'all' ? inScale : inNps;
+      const isDimmed = FB_STATE.mode === 'nps' && inScale && !inNps;
+
+      if (shouldShow) {
+        const dot = document.createElement('div');
+        const role = getIntervalRole(interval, scale.intervals);
+        dot.className = `note-dot ${role}`;
+        if (labelMode === 'name') dot.textContent = NOTES[noteIndex];
+        else if (labelMode === 'interval') dot.textContent = INTERVAL_NAMES[interval];
+        else dot.textContent = DEGREE_NAMES[interval];
+        dot.onclick = () => {
+          const ctx = getAudioCtx();
+          playNote(noteToFreq(noteIndex, s < 3 ? 5 : 4), ctx.currentTime, 0.6);
+        };
+        cell.appendChild(dot);
+      } else if (isDimmed) {
+        const dot = document.createElement('div');
+        dot.className = 'note-dot other';
+        dot.style.cssText = 'opacity:0.18;transform:scale(0.75);pointer-events:none';
+        dot.textContent = NOTES[noteIndex];
+        cell.appendChild(dot);
+      }
+
+      row.appendChild(cell);
+    }
+
+    strContainer.appendChild(row);
+  }
+  fb.appendChild(strContainer);
+
+  // ── Dashed position lines (every 3 frets) ──
+  // Add vertical dashed lines overlaid on the strings-container
+  strContainer.style.position = 'relative';
+  const dashFrets = [3,5,7,9,12,15,17,19,21];
+  let xAccum = OPEN_COL_W + NUT_W;
+  for (let f = 1; f <= fretCount; f++) {
+    xAccum += fretWidths[f];
+    if (dashFrets.includes(f)) {
+      const dash = document.createElement('div');
+      dash.style.cssText = `position:absolute;top:0;bottom:0;left:${xAccum}px;width:0;
+        border-left:2px dashed rgba(245,158,11,0.18);pointer-events:none;z-index:1`;
+      strContainer.appendChild(dash);
+    }
+  }
+
+  // ── NPS mini diagrams (shown below fretboard when in NPS mode) ──
+  const npsPanel = document.getElementById('nps-mini-diagrams');
+  if (npsPanel) {
+    npsPanel.innerHTML = '';
+    if (FB_STATE.mode === 'nps') {
+      npsPositions.forEach((pos, i) => {
+        const card = document.createElement('div');
+        card.className = 'mini-diag-card' + (i === FB_STATE.npsPosition ? ' diag-active' : '');
+        const fretMap = Array.from({length:6}, () => []);
+        pos.fretsByString.forEach((frets, s) => { fretMap[s] = frets; });
+        card.innerHTML = `
+          <div class="mini-diag-label">Pos ${i+1}</div>
+          <div class="mini-diag-fret">${pos.startFret === 0 ? 'aperta' : pos.startFret}</div>
+          ${drawMiniDiagram(fretMap, '#f59e0b', '#3b82f6', keyIndex, keyIndex, scale.intervals)}`;
+        card.onclick = () => { FB_STATE.npsPosition = i; renderFretboard(); };
+        npsPanel.appendChild(card);
+      });
+    }
+  }
+
+  // ── Fret markers (below strings) ──
+  const markerFrets = { 3:false, 5:false, 7:false, 9:false, 12:true, 15:false, 17:false, 19:false, 21:false, 24:true };
+  const markerRow = document.createElement('div');
+  markerRow.className = 'fret-markers';
+
+  // spacers for open-col and nut
+  const mOpen = document.createElement('div');
+  mOpen.style.cssText = `width:${OPEN_COL_W}px;flex-shrink:0`;
+  markerRow.appendChild(mOpen);
+  const mNut = document.createElement('div');
+  mNut.style.cssText = `width:${NUT_W}px;flex-shrink:0`;
+  markerRow.appendChild(mNut);
+
+  for (let f = 1; f <= fretCount; f++) {
+    const d = document.createElement('div');
+    d.className = 'fret-marker-dot' + (markerFrets[f] === true ? ' double' : '');
+    d.style.width = fretWidths[f] + 'px';
+    d.style.height = '12px';
+    if (markerFrets[f] !== undefined) {
+      const inner = document.createElement('div');
+      inner.className = 'inner';
+      d.appendChild(inner);
+    }
+    markerRow.appendChild(d);
+  }
+  fb.appendChild(markerRow);
+}
+
+// ─── SCALES PAGE ─────────────────────────────────────────────────────────────
+
+function renderScalesPage() {
+  const grid = document.getElementById('scales-grid');
+  grid.innerHTML = '';
+  Object.entries(SCALES).forEach(([scaleKey, s]) => {
+    const card = document.createElement('div');
+    card.className = 'info-card';
+    card.style.borderTopColor = s.color;
+    card.style.borderTopWidth = '3px';
+
+    // Build mini diagrams for positions 1-3
+    const keyIdx = 0; // show in C for reference
+    const diagrams = buildScaleMiniDiagrams(keyIdx, s.intervals, scaleKey);
+
+    const notes = s.intervals.map((iv, i) => {
+      let cls = '';
+      if (iv === 0) cls = 'root-tag';
+      else if (i === 2) cls = 'third-tag';
+      else if (i === 4) cls = 'fifth-tag';
+      else if (i === s.intervals.length - 1 && s.intervals.length >= 7) cls = 'seventh-tag';
+      return `<span class="interval-tag ${cls}">${s.formula.split(' ')[i] || iv}</span>`;
+    }).join('');
+
+    card.innerHTML = `
+      <h3 style="color:${s.color}">${s.name}</h3>
+      <p style="margin-bottom:8px;font-size:13px;color:var(--text-mid)">${s.mood}</p>
+      <div class="scale-intervals">${notes}</div>
+      <div style="margin-top:10px;margin-bottom:8px">
+        <div style="font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px">Posizioni (in C)</div>
+        <div class="mini-diag-wrap">${diagrams}</div>
+      </div>
+      <div style="margin-top:6px">
+        <button class="play-btn" style="font-size:10px;padding:4px 10px" onclick="loadScaleOnFretboard('${scaleKey}')">
+          ▶ Vedi sul manico
+        </button>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// Build mini diagram SVGs for a scale's positions
+function buildScaleMiniDiagrams(keyIdx, intervals, scaleKey) {
+  // Use NPS positions if 7-note scale, otherwise penta boxes
+  const isPenta = intervals.length <= 5;
+  const html = [];
+
+  if (isPenta) {
+    // For pentatonic: show the 5 box positions
+    const boxes = P5_MINOR_BOXES; // reference structure
+    const boxOffsets = P5_MINOR_BOXES.map(b => ({ ao: b.anchorOffset, offs: b.offsets }));
+    boxOffsets.slice(0,5).forEach((b, i) => {
+      const anchor = computeAnchor(keyIdx, b.ao);
+      const frets = offsetsToFrets(b.offs, anchor);
+      const svg = drawMiniDiagram(frets, '#f59e0b', '#ef4444', keyIdx, keyIdx, intervals);
+      const fretLabel = anchor === 0 ? 'open' : `${anchor}fr`;
+      html.push(`<div class="mini-diag-card" title="Box ${i+1} (tasto ${anchor})">
+        <div class="mini-diag-label">Box ${i+1}</div>
+        <div class="mini-diag-fret">${fretLabel}</div>${svg}</div>`);
+    });
+  } else {
+    // For 7-note scales: use NPS positions
+    NPS_POSITIONS.slice(0,4).forEach((p, i) => {
+      const anchor = computeAnchor(keyIdx, p.ao);
+      const frets = offsetsToFrets(p.offs, anchor);
+      const svg = drawMiniDiagram(frets, '#f59e0b', '#3b82f6', keyIdx, keyIdx, intervals);
+      const fretLabel = anchor === 0 ? 'open' : `${anchor}fr`;
+      html.push(`<div class="mini-diag-card" title="Pos ${i+1} – ${p.mode} (tasto ${anchor})">
+        <div class="mini-diag-label">${p.mode}</div>
+        <div class="mini-diag-fret">${fretLabel}</div>${svg}</div>`);
+    });
+  }
+  return html.join('');
+}
+
+// ─── MODES PAGE ──────────────────────────────────────────────────────────────
+
+function renderModesPage() {
+  const grid = document.getElementById('modes-grid');
+  grid.innerHTML = '';
+  MODES_DATA.forEach((m, idx) => {
+    const scaleData = SCALES[m.key];
+    const keyIdx = 0; // show in C
+
+    // Find the NPS position that matches this mode
+    const npsPos = NPS_POSITIONS.find(p => p.modeKey === m.key) || NPS_POSITIONS[idx];
+    const anchor = computeAnchor(keyIdx, npsPos ? npsPos.ao : idx * 2);
+    let diagHtml = '';
+    if (npsPos) {
+      const frets = offsetsToFrets(npsPos.offs, anchor);
+      const svg = drawMiniDiagram(frets, m.color, '#3b82f6', keyIdx, keyIdx, scaleData.intervals);
+      diagHtml = `<div style="margin:10px 0 8px">
+        <div style="font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px">Pattern 3NPS (in C, tasto ${anchor === 0 ? 'aperto' : anchor})</div>
+        <div style="display:inline-block">${svg}</div>
+      </div>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'mode-card';
+    card.style.setProperty('--mode-color', m.color);
+    card.innerHTML = `
+      <div class="degree">${m.degree} — ${m.greekName}</div>
+      <h3>${m.name}</h3>
+      <div class="mood">${SCALES[m.key].mood}</div>
+      <div style="font-family:Space Mono,monospace;font-size:11px;color:var(--text-dim);margin-bottom:6px">
+        Formula: <span style="color:${m.color}">${SCALES[m.key].formula}</span>
+      </div>
+      <div style="font-family:Space Mono,monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px">
+        Note da C: <span style="color:var(--text-mid)">${m.example}</span>
+      </div>
+      ${diagHtml}
+      <div class="use-over">Usa su: <span>${m.useOver}</span></div>
+      <div style="margin-top:10px">
+        <button class="play-btn" style="font-size:10px;padding:4px 10px" onclick="loadScaleOnFretboard('${m.key}')">
+          ▶ Manico
+        </button>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function loadScaleOnFretboard(scaleKey) {
+  document.getElementById('fb-scale').value = scaleKey;
+  showPage('fretboard');
+  renderFretboard();
+}
+
+// ─── PROGRESSIONS PAGE ────────────────────────────────────────────────────────
+
+function renderProgressions() {
+  const key = document.getElementById('prog-key').value;
+  const grid = document.getElementById('prog-grid');
+  grid.innerHTML = '';
+
+  PROGRESSIONS.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'prog-card';
+
+    const chords = p.chordDisplay(key);
+    const chordPills = chords.map(c => `<div class="chord-pill">${c}</div>`).join('');
+
+    const suggestionsHTML = p.suggestions.map(s => `
+      <div class="sugg-item">
+        <span class="sugg-badge ${s.type}">${s.badge}</span>
+        <span class="sugg-text">${s.text}</span>
+      </div>`).join('');
+
+    card.innerHTML = `
+      <h3>${p.name}</h3>
+      <div style="font-family:Space Mono,monospace;font-size:10px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${p.genre}</div>
+      <div class="chords-row">${chordPills}</div>
+      <div class="suggestions-list">${suggestionsHTML}</div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ─── PRACTICE PAGE ────────────────────────────────────────────────────────────
+
+const PRACTICE_DATA = [
+  {
+    title: 'Box Positions',
+    tips: [
+      'Inizia con il Box 1 della pentatonica minore al 5° tasto (Am). È il punto di partenza universale.',
+      'Impara tutti e 5 i box pattern. Collegali lungo il manico per non rimanere "bloccato".',
+      'Su ogni box, individua dove cadono tonica, terza e quinta — quelle sono le tue "note di riposo".',
+      'Esercizio: loop su un drone di La, muoviti tra i 5 box senza fermarti.',
+    ]
+  },
+  {
+    title: 'Senso della Tonalità',
+    tips: [
+      'Registra una progressione I–IV–V con GarageBand o un looper, poi improvvisa sopra.',
+      'Canta (o fischia) la frase prima di suonarla. Il cervello è il tuo migliore strumento.',
+      'Target note: punta deliberatamente su tonica o terza sul battere forte (1 e 3).',
+      'Usa il silenzio. Una pausa ben piazzata vale quanto una nota brillante.',
+    ]
+  },
+  {
+    title: 'Dai Pentatonici alle Scale Complesse',
+    tips: [
+      'Pentatonica minore → aggiungi ♭5 (blue note) → hai la Blues Scale. Entra subito.',
+      'Blues Scale → aggiungi 2ª e 6ª → sei nella Minore Naturale / Eolia.',
+      'Minore Naturale → alza il 7° grado di mezzo tono → Minore Armonica. Drammatica.',
+      'Ogni scala nuova va "sovrapposta" a quella che già conosci. Non ripartire da zero.',
+    ]
+  },
+  {
+    title: 'Modi nella Pratica',
+    tips: [
+      'Per studiare la Dorica: suona la scala di Sol maggiore, ma considera Re come tonica.',
+      'Frigia è perfetta su riff in Mi: scala di Do maggiore con Mi come tonica.',
+      'Esercizio: stessa progressione Am–G–F, improvvisa prima in Eolia, poi in Dorica, poi in Frigia. Nota la differenza.',
+      'Il "trick" dei modi: cambia dove senti il riposo (la tonica), non le note.',
+    ]
+  },
+  {
+    title: 'Tecnica & Espressione',
+    tips: [
+      'Bending: il tuo migliore amico. Un bending di un tono sulla ♭3 verso la 3ª fa tutta la differenza.',
+      'Vibrato: sviluppalo lentamente. Wide vibrato lento = blues. Stretto e rapido = rock classico.',
+      'String skipping: salta una corda per creare intervalli interessanti, non solo note adiacenti.',
+      'Dinamica: varia il picking (hard/soft). Parte del suono viene dalla mano destra.',
+    ]
+  },
+  {
+    title: 'Riferimenti Chitarristici',
+    tips: [
+      'Randy Rhoads: pentatonica minore + scala armonica su Crazy Train, Dee mostra la melodia.',
+      'Slash: pentatonica minore, bending massiccio, phrasing blues. Sweet Child O\' Mine intro = pentatonica.',
+      'Joe Satriani: Lidia per "Always With Me", Misolidia per i groove più muscolari.',
+      'Ritchie Blackmore: Frigia e Minore Armonica. Smoke on the Water riff = Mi pentatonica minor.',
+    ]
+  },
+];
+
+function renderPracticePage() {
+  const grid = document.getElementById('practice-grid');
+  grid.innerHTML = '';
+  PRACTICE_DATA.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'practice-card';
+    const tips = p.tips.map(t => `<li>${t}</li>`).join('');
+    card.innerHTML = `<h3>${p.title}</h3><ul class="tip-list">${tips}</ul>`;
+    grid.appendChild(card);
+  });
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BACKING TRACK ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const BACKING_TRACKS = {
+  major: {
+    displayName: 'Ionico (Maggiore)',    color: '#f59e0b',
+    mood: 'Brillante, solare. Rock classico, country, pop.',
+    suggestedScale: 'Maggiore · Pentatonica Maggiore · Lidia',
+    progressions: {
+      rock:   [{s:0,t:'maj',b:2},{s:5,t:'maj',b:1},{s:7,t:'maj',b:1}],
+      blues:  [{s:0,t:'dom7',b:2},{s:5,t:'dom7',b:1},{s:0,t:'dom7',b:1}],
+      metal:  [{s:0,t:'maj',b:2},{s:7,t:'maj',b:1},{s:5,t:'maj',b:1}],
+      funk:   [{s:0,t:'maj7',b:2},{s:5,t:'maj7',b:2}],
+      ballad: [{s:0,t:'maj',b:2},{s:9,t:'min',b:2},{s:5,t:'maj',b:2},{s:7,t:'maj',b:2}],
+    }
+  },
+  dorian: {
+    displayName: 'Dorico',              color: '#22c55e',
+    mood: 'Minore con la 6ª maggiore. Santana, jazz-rock, funk. Oye Como Va.',
+    suggestedScale: 'Dorica · Pentatonica Minore · Blues',
+    progressions: {
+      rock:   [{s:0,t:'min',b:2},{s:5,t:'maj',b:2}],
+      blues:  [{s:0,t:'min7',b:2},{s:5,t:'dom7',b:2}],
+      metal:  [{s:0,t:'min',b:2},{s:10,t:'maj',b:1},{s:5,t:'maj',b:1}],
+      funk:   [{s:0,t:'min7',b:2},{s:5,t:'dom7',b:1},{s:0,t:'min7',b:1}],
+      ballad: [{s:0,t:'min7',b:2},{s:5,t:'maj7',b:2},{s:10,t:'maj7',b:2},{s:7,t:'dom7',b:2}],
+    }
+  },
+  phrygian: {
+    displayName: 'Frigio',              color: '#ef4444',
+    mood: 'Oscuro, spagnolo, metal. Randy Rhoads, Flamenco. Im–♭II è il vamp classico.',
+    suggestedScale: 'Frigia · Pentatonica Minore · Min. Armonica',
+    progressions: {
+      rock:   [{s:0,t:'min',b:2},{s:1,t:'maj',b:2}],
+      blues:  [{s:0,t:'min',b:2},{s:1,t:'maj',b:1},{s:10,t:'maj',b:1}],
+      metal:  [{s:0,t:'min',b:1},{s:1,t:'maj',b:1},{s:0,t:'min',b:1},{s:10,t:'maj',b:1}],
+      funk:   [{s:0,t:'min7',b:2},{s:1,t:'maj',b:2}],
+      ballad: [{s:0,t:'min',b:2},{s:1,t:'maj',b:2},{s:8,t:'maj',b:2},{s:1,t:'maj',b:2}],
+    }
+  },
+  lydian: {
+    displayName: 'Lidio',               color: '#f59e0b',
+    mood: 'Sognante, epica, ascendente. Joe Satriani "Always With Me", Steve Vai.',
+    suggestedScale: 'Lidia · Pentatonica Maggiore',
+    progressions: {
+      rock:   [{s:0,t:'maj',b:2},{s:2,t:'maj',b:2}],
+      blues:  [{s:0,t:'maj7',b:2},{s:2,t:'dom7',b:2}],
+      metal:  [{s:0,t:'maj',b:2},{s:2,t:'maj',b:1},{s:4,t:'min',b:1}],
+      funk:   [{s:0,t:'maj7',b:2},{s:2,t:'maj7',b:2}],
+      ballad: [{s:0,t:'maj7',b:2},{s:2,t:'maj',b:2},{s:9,t:'min',b:2},{s:7,t:'maj',b:2}],
+    }
+  },
+  mixolydian: {
+    displayName: 'Misolidio',           color: '#fb923c',
+    mood: 'Blues-rock, boogie. Slash, AC/DC, Led Zeppelin. Maggiore con la ♭7.',
+    suggestedScale: 'Misolidia · Pentatonica Minore · Blues',
+    progressions: {
+      rock:   [{s:0,t:'dom7',b:2},{s:10,t:'maj',b:1},{s:5,t:'maj',b:1}],
+      blues:  [{s:0,t:'dom7',b:2},{s:5,t:'dom7',b:1},{s:7,t:'dom7',b:1}],
+      metal:  [{s:0,t:'dom7',b:2},{s:10,t:'maj',b:2}],
+      funk:   [{s:0,t:'dom7',b:2},{s:10,t:'maj',b:1},{s:5,t:'maj',b:1}],
+      ballad: [{s:0,t:'dom7',b:2},{s:5,t:'maj',b:2},{s:10,t:'maj',b:2},{s:7,t:'dom7',b:2}],
+    }
+  },
+  natural_minor: {
+    displayName: 'Eolio (Min. Naturale)', color: '#3b82f6',
+    mood: 'Malinconica, rock minore. Ozzy, Metallica, Dio. Im–♭VII–♭VI.',
+    suggestedScale: 'Eolia · Pentatonica Minore · Blues',
+    progressions: {
+      rock:   [{s:0,t:'min',b:2},{s:10,t:'maj',b:1},{s:8,t:'maj',b:1}],
+      blues:  [{s:0,t:'min7',b:2},{s:5,t:'min7',b:1},{s:7,t:'min7',b:1}],
+      metal:  [{s:0,t:'min',b:1},{s:10,t:'maj',b:1},{s:8,t:'maj',b:1},{s:10,t:'maj',b:1}],
+      funk:   [{s:0,t:'min7',b:2},{s:10,t:'maj',b:2}],
+      ballad: [{s:0,t:'min',b:2},{s:10,t:'maj',b:2},{s:8,t:'maj',b:2},{s:5,t:'min',b:2}],
+    }
+  },
+  harmonic_minor: {
+    displayName: 'Minore Armonica',     color: '#8b5cf6',
+    mood: 'Drammatica, orientale. Metal classico. Randy Rhoads, Yngwie. V7–Im.',
+    suggestedScale: 'Min. Armonica · Pentatonica Minore · Frigia Dom.',
+    progressions: {
+      rock:   [{s:0,t:'min',b:2},{s:7,t:'maj',b:1},{s:0,t:'min',b:1}],
+      blues:  [{s:0,t:'min',b:2},{s:5,t:'min',b:1},{s:7,t:'maj',b:1}],
+      metal:  [{s:0,t:'min',b:1},{s:8,t:'maj',b:1},{s:7,t:'maj',b:1},{s:8,t:'maj',b:1}],
+      funk:   [{s:0,t:'min7',b:2},{s:7,t:'dom7',b:2}],
+      ballad: [{s:0,t:'min',b:2},{s:8,t:'maj',b:2},{s:5,t:'min',b:2},{s:7,t:'maj',b:2}],
+    }
+  },
+  blues: {
+    displayName: 'Blues',               color: '#06b6d4',
+    mood: 'Tutto il rock è qui. La blue note (♭5) crea tensione e desiderio di risoluzione.',
+    suggestedScale: 'Blues · Pentatonica Minore · Misolidia',
+    progressions: {
+      rock:   [{s:0,t:'dom7',b:2},{s:5,t:'dom7',b:1},{s:7,t:'dom7',b:1}],
+      blues:  [{s:0,t:'dom7',b:4},{s:5,t:'dom7',b:2},{s:0,t:'dom7',b:2},{s:7,t:'dom7',b:1},{s:5,t:'dom7',b:1},{s:0,t:'dom7',b:2}],
+      metal:  [{s:0,t:'dom7',b:2},{s:5,t:'dom7',b:2}],
+      funk:   [{s:0,t:'dom7',b:2},{s:5,t:'dom7',b:2}],
+      ballad: [{s:0,t:'dom7',b:2},{s:5,t:'dom7',b:2},{s:7,t:'dom7',b:2},{s:5,t:'dom7',b:2}],
+    }
+  },
+};
+
+// 16-step drum patterns (16th notes per bar)
+const DRUM_PATTERNS = {
+  rock: {
+    kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+    snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+    hihat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+    ohat:  [0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,0],
+    crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+  },
+  blues: {
+    kick:  [1,0,0,0, 0,0,1,0, 1,0,0,0, 0,0,0,0],
+    snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1],
+    hihat: [1,0,0,1, 0,0,1,0, 1,0,0,1, 0,0,1,0], // shuffle triplet feel
+    ohat:  [0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,0],
+    crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+  },
+  metal: {
+    kick:  [1,0,1,0, 1,0,1,0, 1,0,1,0, 0,0,1,0],
+    snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+    hihat: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
+    ohat:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+  },
+  funk: {
+    kick:  [1,0,0,0, 1,0,0,1, 0,0,1,0, 0,0,0,0],
+    snare: [0,0,0,0, 1,0,0,0, 0,1,0,0, 1,0,0,0],
+    hihat: [1,1,0,1, 1,0,1,1, 0,1,1,0, 1,0,1,1],
+    ohat:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,1,0,0],
+    crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+  },
+  ballad: {
+    kick:  [1,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0],
+    snare: [0,0,0,0, 0,0,0,0, 0,0,0,0, 1,0,0,0],
+    hihat: [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+    ohat:  [0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,0,0],
+    crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+  },
+};
+
+// Chord intervals (semitones from root)
+const CHORD_IV = {
+  maj:  [0,4,7],
+  min:  [0,3,7],
+  dom7: [0,4,7,10],
+  min7: [0,3,7,10],
+  maj7: [0,4,7,11],
+  dim:  [0,3,6],
+  sus2: [0,2,7],
+};
+
+const CHORD_QUAL_LABEL = {
+  maj:'', min:'m', dom7:'7', min7:'m7', maj7:'maj7', dim:'°', sus2:'sus2',
+};
+
+// ─── MIDI / FREQ ──────────────────────────────────────────────────────────────
+function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+
+// ─── BT ENGINE ───────────────────────────────────────────────────────────────
+const BT = {
+  ctx: null, playing: false,
+  bpm: 95,
+  absoluteStep: 0,
+  nextNoteTime: 0,
+  timerID: null,
+  lookahead: 25,        // ms
+  scheduleAhead: 0.14,  // seconds
+  notesInQueue: [],     // {step, loopStep, time}
+  modeKey: 'dorian',
+  rootIdx: 9,
+  styleKey: 'rock',
+  masterGain: null, drumGain: null, bassGain: null, chordGain: null,
+  progression: [],
+  loopTotalSteps: 0,
+  tapTimes: [],
+};
+
+function btInit() {
+  if (BT.ctx) return;
+  // Reuse shared audio context so guitar notes + backing share master chain
+  BT.ctx = getAudioCtx();
+  const dest = _masterOut;
+
+  BT.masterGain = BT.ctx.createGain(); BT.masterGain.gain.value = 0.7;
+  BT.masterGain.connect(dest);
+
+  BT.drumGain  = BT.ctx.createGain(); BT.drumGain.gain.value  = 0.75; BT.drumGain.connect(BT.masterGain);
+  BT.bassGain  = BT.ctx.createGain(); BT.bassGain.gain.value  = 0.65; BT.bassGain.connect(BT.masterGain);
+  BT.chordGain = BT.ctx.createGain(); BT.chordGain.gain.value = 0.45; BT.chordGain.connect(BT.masterGain);
+}
+
+function btBuildProg() {
+  const track = BACKING_TRACKS[BT.modeKey];
+  const raw = (track?.progressions[BT.styleKey]) || (track?.progressions['rock']) || [];
+  let offset = 0;
+  BT.progression = raw.map(c => {
+    const steps = c.b * 16;
+    const item = { s: c.s, t: c.t, start: offset, end: offset + steps - 1 };
+    offset += steps;
+    return item;
+  });
+  BT.loopTotalSteps = offset;
+
+  // Update loop tag
+  const totalBars = offset / 16;
+  const tag = document.getElementById('loop-tag');
+  if (tag) tag.textContent = totalBars + (totalBars === 1 ? ' bar' : ' bars');
+}
+
+function btChordAt(absStep) {
+  const ls = absStep % BT.loopTotalSteps;
+  for (const c of BT.progression) if (ls >= c.start && ls <= c.end) return c;
+  return BT.progression[0];
+}
+
+function btScheduleNote(absStep, time) {
+  const ctx = BT.ctx;
+  const ls = absStep % BT.loopTotalSteps;
+  const pat = DRUM_PATTERNS[BT.styleKey] || DRUM_PATTERNS.rock;
+  const ps = ls % 16;   // pattern step
+
+  BT.notesInQueue.push({ step: ps, loopStep: ls, time });
+
+  // ── DRUMS ──
+  if (pat.kick[ps])  drumKick(ctx, BT.drumGain, time);
+  if (pat.snare[ps]) drumSnare(ctx, BT.drumGain, time);
+  if (pat.hihat[ps]) drumHihat(ctx, BT.drumGain, time, false, 0.38);
+  if (pat.ohat[ps])  drumHihat(ctx, BT.drumGain, time, true,  0.32);
+  if (pat.crash[ps]) drumHihat(ctx, BT.drumGain, time, true,  0.55);
+
+  const chord = btChordAt(absStep);
+  const rootMidi = 48 + BT.rootIdx + chord.s;
+
+  // ── CHORDS: on chord change ──
+  if (ls === chord.start) {
+    const s16 = (60 / BT.bpm) / 4;
+    const chordDur = (chord.end - chord.start + 1) * s16;
+    playChordSynth(ctx, BT.chordGain, rootMidi, chord.t, time, time + chordDur);
+  }
+
+  // ── BASS: every quarter note ──
+  if (ps % 4 === 0) {
+    const beatSec = 60 / BT.bpm;
+    playBassSynth(ctx, BT.bassGain, rootMidi, time, beatSec * 0.82);
+  }
+}
+
+function btSchedulerLoop() {
+  const ctx = BT.ctx;
+  while (BT.nextNoteTime < ctx.currentTime + BT.scheduleAhead) {
+    btScheduleNote(BT.absoluteStep, BT.nextNoteTime);
+    BT.nextNoteTime += (60 / BT.bpm) / 4;
+    BT.absoluteStep++;
+  }
+  BT.timerID = setTimeout(btSchedulerLoop, BT.lookahead);
+}
+
+// ─── VISUAL RAF ──────────────────────────────────────────────────────────────
+let _lastVisStep = -1;
+
+function btVisualLoop() {
+  if (!BT.playing) return;
+  const now = BT.ctx.currentTime;
+  while (BT.notesInQueue.length && BT.notesInQueue[0].time <= now) {
+    const { step, loopStep } = BT.notesInQueue.shift();
+    if (step !== _lastVisStep) {
+      jamUpdateLEDs(step);
+      jamUpdateChordBlocks(loopStep);
+      _lastVisStep = step;
+    }
+  }
+  requestAnimationFrame(btVisualLoop);
+}
+
+function jamUpdateLEDs(step) {
+  for (let i = 0; i < 16; i++) {
+    const el = document.getElementById(`bt-led-${i}`);
+    if (el) el.classList.toggle('active', i === step);
+  }
+}
+
+function jamUpdateChordBlocks(loopStep) {
+  BT.progression.forEach((chord, idx) => {
+    const el = document.getElementById(`bt-chord-${idx}`);
+    if (!el) return;
+    const active = loopStep >= chord.start && loopStep <= chord.end;
+    el.classList.toggle('chord-active', active);
+    const bar = el.querySelector('.chord-progress');
+    if (bar) {
+      bar.style.width = active
+        ? ((loopStep - chord.start) / (chord.end - chord.start + 1) * 100) + '%'
+        : '0%';
+    }
+  });
+}
+
+// ─── PUBLIC API ──────────────────────────────────────────────────────────────
+function jamTogglePlay() {
+  btInit();
+  if (BT.ctx.state === 'suspended') BT.ctx.resume();
+
+  const btn = document.getElementById('jam-play-btn');
+  if (BT.playing) {
+    BT.playing = false;
+    clearTimeout(BT.timerID);
+    BT.notesInQueue = [];
+    btn.textContent = '▶';
+    btn.classList.remove('playing');
+    jamUpdateLEDs(-1);
+  } else {
+    btBuildProg();
+    BT.playing = true;
+    BT.absoluteStep = 0;
+    BT.nextNoteTime = BT.ctx.currentTime + 0.05;
+    BT.notesInQueue = [];
+    btSchedulerLoop();
+    requestAnimationFrame(btVisualLoop);
+    btn.textContent = '■';
+    btn.classList.add('playing');
+  }
+}
+
+function jamUpdateSettings() {
+  BT.modeKey  = document.getElementById('jam-mode').value;
+  BT.rootIdx  = parseInt(document.getElementById('jam-key').value);
+  BT.styleKey = document.getElementById('jam-style').value;
+  if (BT.playing) { btBuildProg(); BT.absoluteStep = 0; }
+  jamRebuildChordUI();
+  jamRenderModeInfo();
+}
+
+function jamSetBPM(v) {
+  BT.bpm = Math.min(200, Math.max(40, parseInt(v)));
+  document.getElementById('bpm-display').textContent = BT.bpm;
+  document.getElementById('bpm-slider').value = BT.bpm;
+}
+function jamChangeBPM(d) { jamSetBPM(BT.bpm + d); }
+
+function jamTap() {
+  const now = performance.now();
+  BT.tapTimes.push(now);
+  if (BT.tapTimes.length > 5) BT.tapTimes.shift();
+  if (BT.tapTimes.length >= 2) {
+    let s = 0;
+    for (let i = 1; i < BT.tapTimes.length; i++) s += BT.tapTimes[i] - BT.tapTimes[i-1];
+    jamSetBPM(Math.round(60000 / (s / (BT.tapTimes.length - 1))));
+  }
+  const b = document.getElementById('tap-btn');
+  b.style.background = 'var(--amber-glow)';
+  b.style.borderColor = 'var(--amber)';
+  b.style.color = 'var(--amber)';
+  setTimeout(() => { b.style.background=''; b.style.borderColor=''; b.style.color=''; }, 120);
+}
+
+function jamSetVolume(v) { if (BT.masterGain) BT.masterGain.gain.value = parseFloat(v); }
+function jamSetDrumVol(v) { if (BT.drumGain)  BT.drumGain.gain.value  = parseFloat(v); }
+function jamSetBassVol(v) { if (BT.bassGain)  BT.bassGain.gain.value  = parseFloat(v); }
+function jamSetChordVol(v){ if (BT.chordGain) BT.chordGain.gain.value = parseFloat(v); }
+
+// ─── UI BUILDERS ─────────────────────────────────────────────────────────────
+function jamInitLEDs() {
+  const c = document.getElementById('beat-leds');
+  if (!c) return;
+  c.innerHTML = '';
+  for (let i = 0; i < 16; i++) {
+    const d = document.createElement('div');
+    d.className = 'beat-led' + (i % 4 === 0 ? ' beat-1' : '');
+    d.id = `bt-led-${i}`;
+    c.appendChild(d);
+  }
+}
+
+function jamRebuildChordUI() {
+  btBuildProg();
+  const c = document.getElementById('chord-display');
+  if (!c) return;
+  c.innerHTML = '';
+  BT.progression.forEach((chord, idx) => {
+    const rootName = NOTES[(BT.rootIdx + chord.s) % 12];
+    const qual = CHORD_QUAL_LABEL[chord.t] || '';
+    const bars = (chord.end - chord.start + 1) / 16;
+    const el = document.createElement('div');
+    el.className = 'chord-block';
+    el.id = `bt-chord-${idx}`;
+    el.innerHTML = `
+      <div class="chord-root">${rootName}${qual}</div>
+      <div class="chord-qual">${bars}${bars===1?' bar':' bars'}</div>
+      <div class="chord-progress"></div>`;
+    c.appendChild(el);
+  });
+}
+
+function jamRenderModeInfo() {
+  const panel = document.getElementById('jam-mode-info');
+  if (!panel) return;
+  const track = BACKING_TRACKS[BT.modeKey];
+  if (!track) return;
+  const rName = NOTES[BT.rootIdx];
+  const scaleForFretboard = {
+    major:'major', dorian:'dorian', phrygian:'phrygian', lydian:'lydian',
+    mixolydian:'mixolydian', natural_minor:'natural_minor',
+    harmonic_minor:'harmonic_minor', blues:'blues',
+  }[BT.modeKey] || 'natural_minor';
+
+  const notesPills = (SCALES[scaleForFretboard]?.intervals || []).map(iv => {
+    const ni = (BT.rootIdx + iv) % 12;
+    return `<span class="scale-note-pill${iv===0?' is-root':''}">${NOTES[ni]}</span>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <h3>${rName} ${track.displayName}</h3>
+    <span class="mode-badge"
+      style="color:${track.color};border-color:${track.color};background:${track.color}18">
+      ${rName} ${track.displayName}
+    </span>
+
+    <div class="msect-lbl">Carattere</div>
+    <div class="hint-box">${track.mood}</div>
+
+    <div class="msect-lbl">Scale consigliate</div>
+    <div class="hint-box"><strong>${track.suggestedScale}</strong></div>
+
+    <div class="msect-lbl">Note della scala (${rName})</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px">${notesPills}</div>
+
+    <button class="play-btn" onclick="loadScaleOnFretboard('${scaleForFretboard}');document.getElementById('jam-key').value=BT.rootIdx;document.getElementById('fb-key').value=BT.rootIdx;renderFretboard()">
+      ▶ Vedi sul manico
+    </button>
+
+    <div class="msect-lbl" style="margin-top:16px">Suggerimento pratica</div>
+    <div class="hint-box" style="font-size:12px">
+      Inizia con la <strong>pentatonica minore</strong> su qualsiasi progressione minore —
+      poi aggiungi gradualmente le note "extra" della scala modale per colorare la melodia.
+    </div>`;
+}
+
+function jamInit() {
+  jamInitLEDs();
+  jamRebuildChordUI();
+  jamRenderModeInfo();
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRIADI ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const TRIAD_TYPES = {
+  major: {
+    name: 'Maggiore',   intervals: [0,4,7],  formula: '1 – 3 – 5',
+    color: '#f59e0b',
+    mood: 'Brillante, stabile, risoluta. Il "suono" di base del rock e del pop. Fondamentale per capire la tonalità.',
+    usage: 'I, IV, V di ogni tonalità maggiore. Accordi di tonica, sottodominante, dominante.',
+  },
+  minor: {
+    name: 'Minore',     intervals: [0,3,7],  formula: '1 – ♭3 – 5',
+    color: '#3b82f6',
+    mood: 'Scura, malinconica, emotiva. Rock minore, ballad, metal. La triade più usata dopo la maggiore.',
+    usage: 'II, III, VI di ogni tonalità maggiore. Im, IVm, Vm nelle tonalità minori.',
+  },
+  diminished: {
+    name: 'Diminuita',  intervals: [0,3,6],  formula: '1 – ♭3 – ♭5',
+    color: '#8b5cf6',
+    mood: 'Tensione massima, instabilità. VII grado della scala maggiore. Ottima per passaggi cromatici.',
+    usage: 'VII° in tonalità maggiore. Passaggi di collegamento. Metal, jazz.',
+  },
+  augmented: {
+    name: 'Aumentata',  intervals: [0,4,8],  formula: '1 – 3 – ♯5',
+    color: '#ef4444',
+    mood: 'Misteriosamente sospesa. Nessuna nota stabile. Crea un senso di fluttuazione irrisolta.',
+    usage: 'III+ in minore armonica. Passaggi jazz e fusion. Steve Vai la adora.',
+  },
+};
+
+// String open notes (MIDI): E2=40 A2=45 D3=50 G3=55 B3=59 e4=64
+const OPEN_MIDI = [64, 59, 55, 50, 45, 40];
+const STRING_SETS = [
+  { name:'e B G',  strings:[0,1,2] },
+  { name:'B G D',  strings:[1,2,3] },
+  { name:'G D A',  strings:[2,3,4] },
+  { name:'D A E',  strings:[3,4,5] },
+];
+
+const TR_STATE = { type:'major', keyIdx:0, inversion:0, stringSet:0 };
+
+function triadNotes(rootMidi, typeKey, inversion) {
+  const ivs = TRIAD_TYPES[typeKey].intervals;
+  let notes = ivs.map(iv => rootMidi + iv);
+  for (let i = 0; i < inversion; i++) notes.push(notes.shift() + 12);
+  return notes;
+}
+
+function findTriadShapes(rootMidi, typeKey, inversion, stringIndices) {
+  // stringIndices: high→low (e.g. [0,1,2] = e,B,G)
+  // assign notes bass→mid→top to low→high strings
+  const invertedStrings = [...stringIndices].reverse(); // low→high
+  const targetNotes = triadNotes(rootMidi, typeKey, inversion).map(n => n % 12);
+  const shapes = [];
+
+  for (let startFret = 0; startFret <= 17; startFret++) {
+    const fretMap = {};
+    let valid = true;
+
+    for (let si = 0; si < invertedStrings.length; si++) {
+      const openMidi = OPEN_MIDI[invertedStrings[si]];
+      const target = targetNotes[si];
+      let found = -1;
+      for (let f = startFret; f <= startFret + 6; f++) {
+        if ((openMidi + f) % 12 === target) { found = f; break; }
+      }
+      if (found === -1) { valid = false; break; }
+      fretMap[invertedStrings[si]] = found;
+    }
+
+    if (!valid) continue;
+
+    const fretsInOrder = stringIndices.map(si => fretMap[si]);
+    const allFrets = Object.values(fretMap);
+    const span = Math.max(...allFrets) - Math.min(...allFrets);
+
+    if (span <= 4) {
+      const key = fretsInOrder.join('-');
+      if (!shapes.find(s => s.frets.join('-') === key)) {
+        shapes.push({ frets: fretsInOrder, startFret: Math.min(...allFrets) });
+      }
+    }
+  }
+  return shapes;
+}
+
+function drawTriadSVG(frets, stringIndices, rootMidi, typeKey, inversion) {
+  const tt = TRIAD_TYPES[typeKey];
+  const invertedStrings = [...stringIndices].reverse();
+  const targetNotes = triadNotes(rootMidi, typeKey, inversion).map(n => n % 12);
+  // map: which note role (0=root,1=3rd,2=5th) is on which string?
+  const noteRoleMap = {};
+  invertedStrings.forEach((si, i) => { noteRoleMap[si] = i; });
+
+  const degreeColors = [tt.color, '#3b82f6', '#22c55e'];
+
+  const nonZeroFrets = frets.filter(f => f > 0);
+  const minF = nonZeroFrets.length ? Math.min(...nonZeroFrets) : 0;
+  const maxF = Math.max(...frets);
+  const displayStart = frets.some(f=>f===0) ? 0 : Math.max(0, minF - 1);
+  const displayEnd = Math.max(maxF + 1, displayStart + 4);
+  const nFrets = displayEnd - displayStart + 1;
+
+  const W = 190, cellW = (W - 32) / nFrets;
+  const nStrings = stringIndices.length;
+  const cellH = 30;
+  const H = nStrings * cellH + 16;
+  const sNames = ['e','B','G','D','A','E'];
+
+  let svg = `<svg class="mini-fb" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<rect width="${W}" height="${H}" fill="#141414" rx="6"/>`;
+
+  // Fret numbers
+  for (let f = displayStart; f <= displayEnd; f++) {
+    const x = 28 + (f - displayStart) * cellW + cellW / 2;
+    svg += `<text x="${x}" y="9" text-anchor="middle" font-size="7" fill="#555" font-family="monospace">${f === 0 ? '' : f}</text>`;
+  }
+
+  // Nut
+  if (displayStart === 0) {
+    const nutX = 28 + cellW;
+    svg += `<rect x="${nutX-1.5}" y="11" width="3" height="${nStrings*cellH}" fill="#d4af6a" rx="1"/>`;
+  }
+
+  // Grid
+  for (let s = 0; s < nStrings; s++) {
+    const y = 11 + s * cellH + cellH / 2;
+    svg += `<line x1="26" y1="${y}" x2="${W-4}" y2="${y}" stroke="#c8a84b" stroke-width="0.8" opacity="0.45"/>`;
+  }
+  for (let f = displayStart; f <= displayEnd; f++) {
+    const x = 28 + (f - displayStart) * cellW;
+    svg += `<line x1="${x}" y1="11" x2="${x}" y2="${11+nStrings*cellH}" stroke="#3d3020" stroke-width="1"/>`;
+  }
+
+  // String names
+  for (let s = 0; s < nStrings; s++) {
+    const y = 11 + s * cellH + cellH / 2 + 4;
+    svg += `<text x="20" y="${y}" text-anchor="middle" font-size="8" fill="#c8a84b" font-family="monospace">${sNames[stringIndices[s]]}</text>`;
+  }
+
+  // Note dots
+  for (let s = 0; s < nStrings; s++) {
+    const fret = frets[s];
+    const x = 28 + (fret - displayStart) * cellW + cellW / 2;
+    const y = 11 + s * cellH + cellH / 2;
+    const si = stringIndices[s];
+    const role = noteRoleMap[si];
+    const col = degreeColors[role] ?? '#888';
+    const noteName = NOTES[(OPEN_MIDI[si] + fret) % 12];
+    svg += `<circle cx="${x}" cy="${y}" r="${cellH/2-4}" fill="${col}" opacity="0.9"/>`;
+    svg += `<text x="${x}" y="${y+3.5}" text-anchor="middle" font-size="7.5" fill="#000" font-weight="bold" font-family="monospace">${noteName}</text>`;
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+function renderTriads() {
+  TR_STATE.keyIdx = parseInt(document.getElementById('tr-key').value);
+  const keyName = NOTES[TR_STATE.keyIdx];
+  const tt = TRIAD_TYPES[TR_STATE.type];
+
+  // Info column
+  const infoCol = document.getElementById('triad-info-col');
+  const noteNames = tt.intervals.map(iv => NOTES[(TR_STATE.keyIdx + iv) % 12]);
+  const degCols = [tt.color, '#3b82f6', '#22c55e'];
+  const degLabels = ['Tonica', 'Terza', 'Quinta'];
+  const degreesHTML = noteNames.map((n, i) =>
+    `<span class="tdeg" style="color:${degCols[i]};border-color:${degCols[i]};background:${degCols[i]}18">${degLabels[i]}: <strong>${n}</strong></span>`
+  ).join('');
+  const invNotes = triadNotes(TR_STATE.keyIdx + 48, TR_STATE.type, TR_STATE.inversion).map(m => NOTES[m % 12]);
+  const invLabels = ['Fondamentale (1–3–5)', '1ª Inversione (3–5–1)', '2ª Inversione (5–1–3)'];
+
+  infoCol.innerHTML = `
+    <h3 style="color:${tt.color}">${keyName} ${tt.name}</h3>
+    <div class="triad-formula">${tt.formula}</div>
+    <div class="triad-mood">${tt.mood}</div>
+    <div class="triad-degrees">${degreesHTML}</div>
+    <div class="msect-lbl">Inversione attiva</div>
+    <div class="hint-box" style="font-family:'Space Mono',monospace;font-size:12px;margin-bottom:14px">
+      <div style="color:var(--text-dim);font-size:10px;margin-bottom:6px">${invLabels[TR_STATE.inversion]}</div>
+      ${invNotes.map((n,i)=>`<span style="color:${degCols[i]};font-weight:bold;font-size:15px">${n}</span>`).join('<span style="color:var(--text-dim);margin:0 4px">–</span>')}
+    </div>
+    <div class="msect-lbl">Usata come</div>
+    <div class="hint-box" style="font-size:12px">${tt.usage}</div>
+    <div class="msect-lbl" style="margin-top:14px">Legenda colori</div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-top:6px">
+      ${degCols.map((c,i)=>`<div style="display:flex;align-items:center;gap:6px">
+        <div style="width:14px;height:14px;border-radius:50%;background:${c}"></div>
+        <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-mid)">${degLabels[i]} (${noteNames[i]})</span>
+      </div>`).join('')}
+    </div>`;
+
+  // Shapes grid
+  const grid = document.getElementById('triad-shapes-grid');
+  grid.innerHTML = '';
+  const setsToShow = TR_STATE.stringSet === 4
+    ? STRING_SETS.map((ss, i) => ({ ...ss, idx: i }))
+    : [{ ...STRING_SETS[TR_STATE.stringSet], idx: TR_STATE.stringSet }];
+
+  setsToShow.forEach(ss => {
+    const shapes = findTriadShapes(TR_STATE.keyIdx + 48, TR_STATE.type, TR_STATE.inversion, ss.strings);
+
+    if (shapes.length === 0) {
+      const card = document.createElement('div');
+      card.className = 'triad-shape-card';
+      card.innerHTML = `<div class="shape-title">Corde ${ss.name}</div><div style="color:var(--text-dim);font-size:12px">Nessuna forma trovata</div>`;
+      grid.appendChild(card);
+      return;
+    }
+
+    shapes.forEach(shape => {
+      const card = document.createElement('div');
+      card.className = 'triad-shape-card';
+      const svg = drawTriadSVG(shape.frets, ss.strings, TR_STATE.keyIdx, TR_STATE.type, TR_STATE.inversion);
+      const invertedStrings = [...ss.strings].reverse();
+      const noteRoleMap = {};
+      invertedStrings.forEach((si, i) => { noteRoleMap[si] = i; });
+      const notePills = ss.strings.map((si, j) => {
+        const n = NOTES[(OPEN_MIDI[si] + shape.frets[j]) % 12];
+        const role = noteRoleMap[si];
+        const c = degCols[role];
+        return `<span class="shape-note" style="color:${c};border-color:${c};background:${c}18">${n}</span>`;
+      }).join('');
+
+      card.innerHTML = `
+        <div class="shape-title">Corde ${ss.name} · ${shape.startFret === 0 ? 'pos. aperta' : 'pos. ' + shape.startFret}</div>
+        ${svg}
+        <div class="shape-notes-row">${notePills}</div>`;
+
+      card.onclick = () => {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const now = audioCtx.currentTime;
+        // play low→high
+        [...ss.strings].reverse().forEach((si, j) => {
+          const midi = OPEN_MIDI[si] + shape.frets[ss.strings.indexOf(si)];
+          const freq = 440 * Math.pow(2, (midi - 69) / 12);
+          playNote(freq, now + j * 0.07, 1.4);
+        });
+      };
+
+      grid.appendChild(card);
+    });
+  });
+}
+
+function initTriadTypeTabs() {
+  const container = document.getElementById('triad-type-tabs');
+  Object.entries(TRIAD_TYPES).forEach(([key, tt]) => {
+    const btn = document.createElement('button');
+    btn.className = 'triad-tab' + (key === TR_STATE.type ? ' active' : '');
+    btn.innerHTML = `<span style="color:${key===TR_STATE.type?tt.color:''}">${tt.name}</span>&nbsp;<span style="font-size:9px;opacity:0.55">${tt.formula}</span>`;
+    btn.onclick = () => {
+      TR_STATE.type = key;
+      document.querySelectorAll('.triad-tab').forEach((b, i) => {
+        const k = Object.keys(TRIAD_TYPES)[i];
+        b.classList.toggle('active', k === key);
+        b.querySelector('span').style.color = k === key ? TRIAD_TYPES[k].color : '';
+      });
+      renderTriads();
+    };
+    container.appendChild(btn);
+  });
+}
+
+function setInversion(inv) {
+  TR_STATE.inversion = inv;
+  document.querySelectorAll('.inv-tab').forEach((b, i) => b.classList.toggle('active', i === inv));
+  renderTriads();
+}
+
+function setStringSet(idx) {
+  TR_STATE.stringSet = idx;
+  document.querySelectorAll('.strset-tab').forEach((b, i) => b.classList.toggle('active', i === idx));
+  renderTriads();
+}
+
+function initTriads() {
+  initTriadTypeTabs();
+  renderTriads();
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CAGED ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Shape templates
+// rootString: index in [0=e,1=B,2=G,3=D,4=A,5=E]
+// rootOffset: frets above capo where root falls (0 for E/A/D, 3 for G/C)
+// notes: {s:string, fo:fretOffset_from_capo, iv:interval 0/3/4/7}
+// muted: string indices not played
+const CAGED_DEFS = {
+  C: { color:'#f59e0b', order:0, rootString:4, rootOffset:3, muted:[5],
+    major:[ {s:4,fo:3,iv:0},{s:3,fo:2,iv:4},{s:2,fo:0,iv:7},{s:1,fo:1,iv:0},{s:0,fo:0,iv:4} ],
+    minor:[ {s:4,fo:3,iv:0},{s:3,fo:2,iv:4},{s:2,fo:0,iv:7},{s:1,fo:0,iv:3},{s:0,fo:0,iv:4} ],
+    // e string minor: fo:-1 (handled below per key)
+    minorEStr: true,   // flag: e string needs fo:-1 for min3
+    desc: 'Forma C — radice sulla corda A (al 3° offset). Comoda nelle posizioni aperte e alle prime posizioni.',
+    fingers: 'Indice sul barre (se > 0), medio-anulare-mignolo per gli altri frets.',
+  },
+  A: { color:'#3b82f6', order:1, rootString:4, rootOffset:0, muted:[5],
+    major:[ {s:4,fo:0,iv:0},{s:3,fo:2,iv:7},{s:2,fo:2,iv:0},{s:1,fo:2,iv:4},{s:0,fo:0,iv:7} ],
+    minor:[ {s:4,fo:0,iv:0},{s:3,fo:2,iv:7},{s:2,fo:2,iv:0},{s:1,fo:1,iv:3},{s:0,fo:0,iv:7} ],
+    desc: 'Forma A — radice sulla corda A. La barre dell\'accordo di quinta posizione classico.',
+    fingers: 'Indice come barre su 5 corde, anulare o barre su D-G-B.',
+  },
+  G: { color:'#22c55e', order:2, rootString:5, rootOffset:3, muted:[],
+    major:[ {s:5,fo:3,iv:0},{s:4,fo:2,iv:4},{s:3,fo:0,iv:7},{s:2,fo:0,iv:0},{s:1,fo:0,iv:4},{s:0,fo:3,iv:0} ],
+    minor:[ {s:5,fo:3,iv:0},{s:4,fo:1,iv:3},{s:3,fo:0,iv:7},{s:2,fo:0,iv:0},{s:1,fo:-1,iv:3},{s:0,fo:3,iv:0} ],
+    desc: 'Forma G — radice su E grave e e acuta (3 frets sopra il capo). La più "aperta" e difficile da suonare barre.',
+    fingers: 'Pinky su E grave e acuta al fret+3, mignolo e anulare sulle corde interne.',
+  },
+  E: { color:'#ef4444', order:3, rootString:5, rootOffset:0, muted:[],
+    major:[ {s:5,fo:0,iv:0},{s:4,fo:2,iv:7},{s:3,fo:2,iv:0},{s:2,fo:1,iv:4},{s:1,fo:0,iv:7},{s:0,fo:0,iv:0} ],
+    minor:[ {s:5,fo:0,iv:0},{s:4,fo:2,iv:7},{s:3,fo:2,iv:0},{s:2,fo:0,iv:3},{s:1,fo:0,iv:7},{s:0,fo:0,iv:0} ],
+    desc: 'Forma E — radice su E grave e acuta. Il barre più comune in assoluto. Usatissimo nel rock.',
+    fingers: 'Indice barre su tutte le corde, medio+anulare+mignolo per la forma Em/E.',
+  },
+  D: { color:'#8b5cf6', order:4, rootString:3, rootOffset:0, muted:[4,5],
+    major:[ {s:3,fo:0,iv:0},{s:2,fo:2,iv:7},{s:1,fo:3,iv:0},{s:0,fo:2,iv:4} ],
+    minor:[ {s:3,fo:0,iv:0},{s:2,fo:2,iv:7},{s:1,fo:3,iv:0},{s:0,fo:1,iv:3} ],
+    desc: 'Forma D — radice sulla corda D. Solo 4 corde. Utile per melodia acuta e improvvisazione nelle posizioni alte.',
+    fingers: 'Tre dita sulla forma a diamante su G-B-e, a volte barre parziale sull\'indice.',
+  },
+};
+
+const CAGED_ORDER = ['C','A','G','E','D'];
+const CAGED_STATE = { quality: 'major', keyIdx: 0, selected: 0 };
+
+// Compute capo fret for a shape+key
+function cagedCapo(shapeName, rootNote) {
+  const def = CAGED_DEFS[shapeName];
+  const anchorOpen = OPEN_STRINGS[def.rootString];
+  let capo = (rootNote - anchorOpen - def.rootOffset + 24) % 12;
+  return capo;
+}
+
+// Get actual frets for a shape in a given key/quality
+function cagedFrets(shapeName, rootNote, quality) {
+  const def = CAGED_DEFS[shapeName];
+  const capo = cagedCapo(shapeName, rootNote);
+  const template = def[quality] || def.major;
+
+  const result = []; // {s, fret, iv, muted:false}
+
+  // Muted strings
+  const mutedSet = new Set(def.muted || []);
+  for (let s = 0; s < 6; s++) {
+    if (mutedSet.has(s)) { result.push({s, fret:-1, iv:-1, muted:true}); continue; }
+    const note = template.find(n => n.s === s);
+    if (!note) { result.push({s, fret:-1, iv:-1, muted:true}); continue; }
+
+    let fret = capo + note.fo;
+    // Special C-shape minor: e string needs fo=-1 for min3
+    if (shapeName === 'C' && quality === 'minor' && s === 0) fret = capo - 1;
+
+    if (fret < 0) { result.push({s, fret:-1, iv:note.iv, muted:true}); continue; }
+    result.push({s, fret, iv: note.iv, muted: false});
+  }
+  return result;
+}
+
+// Interval display color
+const IV_COLORS = { 0:'#f59e0b', 3:'#3b82f6', 4:'#3b82f6', 7:'#22c55e' };
+const IV_LABELS = { 0:'R', 3:'♭3', 4:'3', 7:'5' };
+
+// Draw a vertical chord diagram SVG
+function drawChordDiagram(shapeName, rootNote, quality, highlight) {
+  const def = CAGED_DEFS[shapeName];
+  const frets = cagedFrets(shapeName, rootNote, quality);
+  const capo = cagedCapo(shapeName, rootNote);
+  const color = def.color;
+
+  const playedFrets = frets.filter(n => !n.muted).map(n => n.fret);
+  const minF = playedFrets.length ? Math.min(...playedFrets) : 0;
+  const maxF = playedFrets.length ? Math.max(...playedFrets) : 4;
+  const displayStart = capo === 0 ? 0 : Math.max(0, minF - 1);
+  const displayEnd = Math.max(displayStart + 4, maxF);
+  const nFrets = displayEnd - displayStart + 1;
+
+  const SX = 22; // left margin
+  const SY = 30; // top (for nut/capo number)
+  const SH = 32; // fret height
+  const SW = 24; // string spacing
+  const W = SX + 5 * SW + 20;
+  const H = SY + nFrets * SH + 14;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:160px">`;
+  svg += `<rect width="${W}" height="${H}" fill="#141414" rx="8"/>`;
+
+  // Nut or capo indicator
+  if (displayStart === 0) {
+    svg += `<rect x="${SX}" y="${SY}" width="${5*SW}" height="4" fill="#d4af6a" rx="1"/>`;
+  } else {
+    svg += `<text x="${SX-4}" y="${SY+SH/2+4}" text-anchor="end" font-size="9" fill="${color}" font-family="monospace" font-weight="bold">${displayStart}</text>`;
+  }
+
+  // Fret lines
+  for (let f = 0; f <= nFrets; f++) {
+    const y = SY + f * SH + (displayStart === 0 ? 4 : 0);
+    svg += `<line x1="${SX}" y1="${y}" x2="${SX+5*SW}" y2="${y}" stroke="#2a2a2a" stroke-width="1"/>`;
+  }
+
+  // String lines (0=low E left, 5=high e right) — in chord diagrams strings go E→e left→right
+  const strOrder = [5,4,3,2,1,0]; // low E to high e
+  for (let i = 0; i < 6; i++) {
+    const x = SX + i * SW;
+    const topY = SY + (displayStart === 0 ? 4 : 0);
+    svg += `<line x1="${x}" y1="${topY}" x2="${x}" y2="${SY + nFrets*SH + (displayStart===0?4:0)}" stroke="#3a3020" stroke-width="1"/>`;
+  }
+
+  // String name labels at bottom
+  const sNames = ['E','A','D','G','B','e'];
+  for (let i = 0; i < 6; i++) {
+    const x = SX + i * SW;
+    svg += `<text x="${x}" y="${H-2}" text-anchor="middle" font-size="7" fill="#555" font-family="monospace">${sNames[i]}</text>`;
+  }
+
+  // Mute / open indicators at top
+  for (let i = 0; i < 6; i++) {
+    const s = strOrder[i];
+    const x = SX + i * SW;
+    const note = frets[s];
+    if (note.muted) {
+      svg += `<text x="${x}" y="${SY-4}" text-anchor="middle" font-size="11" fill="#555">×</text>`;
+    } else if (note.fret === 0) {
+      svg += `<circle cx="${x}" cy="${SY-7}" r="4" fill="none" stroke="${IV_COLORS[note.iv]||'#888'}" stroke-width="1.5"/>`;
+    }
+  }
+
+  // Barre indicator
+  const barreStrings = frets.filter(n => !n.muted && n.fret === capo && capo > 0);
+  if (barreStrings.length >= 4) {
+    const indices = barreStrings.map(n => strOrder.indexOf(n.s));
+    const minIdx = Math.min(...indices);
+    const maxIdx = Math.max(...indices);
+    const y = SY + (capo - displayStart) * SH - SH/2 + (displayStart===0?4:0);
+    svg += `<rect x="${SX + minIdx*SW - 6}" y="${y-5}" width="${(maxIdx-minIdx)*SW+12}" height="12" rx="6" fill="${color}" opacity="0.35"/>`;
+  }
+
+  // Note dots
+  for (let i = 0; i < 6; i++) {
+    const s = strOrder[i];
+    const note = frets[s];
+    if (note.muted || note.fret <= 0) continue;
+
+    const x = SX + i * SW;
+    const fretRelative = note.fret - displayStart;
+    const y = SY + fretRelative * SH - SH/2 + (displayStart===0?4:0);
+    const dotColor = IV_COLORS[note.iv] || '#888';
+
+    svg += `<circle cx="${x}" cy="${y}" r="9" fill="${dotColor}" opacity="0.92"/>`;
+    const label = IV_LABELS[note.iv] || '';
+    svg += `<text x="${x}" y="${y+3.5}" text-anchor="middle" font-size="7.5" fill="#000" font-weight="bold" font-family="monospace">${label}</text>`;
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// Full-neck overview SVG: all 5 shapes on a single horizontal fretboard
+function drawCagedNeck(rootNote, quality) {
+  const fretCount = 15;
+  const STRING_COUNT = 6;
+  const cellW = 46, cellH = 28;
+  const leftPad = 28, topPad = 20;
+  const W = leftPad + fretCount * cellW + 20;
+  const H = topPad + STRING_COUNT * cellH + 20;
+  const sNames = ['e','B','G','D','A','E'];
+
+  // Build a map: {stringIdx: {fret: {iv, shapeName}}}
+  const noteMap = {};
+  CAGED_ORDER.forEach(name => {
+    const fretArr = cagedFrets(name, rootNote, quality);
+    fretArr.forEach(n => {
+      if (n.muted || n.fret < 0) return;
+      if (!noteMap[n.s]) noteMap[n.s] = {};
+      noteMap[n.s][n.fret] = { iv: n.iv, shape: name };
+    });
+  });
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:600px">`;
+  svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="8"/>`;
+
+  // Fret numbers
+  for (let f = 1; f <= fretCount; f++) {
+    const x = leftPad + (f - 0.5) * cellW;
+    svg += `<text x="${x}" y="12" text-anchor="middle" font-size="9" fill="#555" font-family="monospace">${f}</text>`;
+  }
+
+  // Nut
+  svg += `<rect x="${leftPad}" y="${topPad}" width="3" height="${STRING_COUNT*cellH}" fill="#d4af6a" rx="1"/>`;
+
+  // Grid
+  for (let s = 0; s < STRING_COUNT; s++) {
+    const y = topPad + s * cellH + cellH / 2;
+    svg += `<line x1="${leftPad}" y1="${y}" x2="${W-10}" y2="${y}" stroke="#c8a84b" stroke-width="0.7" opacity="0.4"/>`;
+    svg += `<text x="${leftPad-4}" y="${y+4}" text-anchor="end" font-size="8" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
+  }
+  for (let f = 0; f <= fretCount; f++) {
+    const x = leftPad + f * cellW;
+    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+STRING_COUNT*cellH}" stroke="#2a2a2a" stroke-width="1"/>`;
+  }
+
+  // Fret markers (3,5,7,9,12)
+  [3,5,7,9,12].forEach(f => {
+    if (f > fretCount) return;
+    const x = leftPad + (f - 0.5) * cellW;
+    const yc = topPad + STRING_COUNT * cellH + 10;
+    if (f === 12) {
+      svg += `<circle cx="${x-5}" cy="${yc}" r="3" fill="#92600a"/>`;
+      svg += `<circle cx="${x+5}" cy="${yc}" r="3" fill="#92600a"/>`;
+    } else {
+      svg += `<circle cx="${x}" cy="${yc}" r="3" fill="#3d2c10"/>`;
+    }
+  });
+
+  // Shape label bands (colored background behind each shape's capo region)
+  CAGED_ORDER.forEach(name => {
+    const def = CAGED_DEFS[name];
+    const capo = cagedCapo(name, rootNote);
+    if (capo > fretCount) return;
+    const fretArr = cagedFrets(name, rootNote, quality);
+    const playedFrets = fretArr.filter(n => !n.muted).map(n => n.fret);
+    if (!playedFrets.length) return;
+    const f1 = Math.max(0, Math.min(...playedFrets));
+    const f2 = Math.min(fretCount, Math.max(...playedFrets));
+    const x1 = leftPad + f1 * cellW - (f1===0?0:0);
+    const x2 = leftPad + (f2+1) * cellW;
+    svg += `<rect x="${x1}" y="${topPad}" width="${x2-x1}" height="${STRING_COUNT*cellH}" fill="${def.color}" opacity="0.04" rx="2"/>`;
+    // Shape name label
+    svg += `<text x="${(x1+x2)/2}" y="${topPad-4}" text-anchor="middle" font-size="9" fill="${def.color}" font-family="monospace" font-weight="bold" opacity="0.7">${name}</text>`;
+  });
+
+  // Note dots
+  for (let s = 0; s < STRING_COUNT; s++) {
+    if (!noteMap[s]) continue;
+    Object.entries(noteMap[s]).forEach(([fStr, info]) => {
+      const f = parseInt(fStr);
+      if (f < 0 || f > fretCount) return;
+      const x = leftPad + (f === 0 ? -cellW*0.4 : (f - 0.5) * cellW);
+      const y = topPad + s * cellH + cellH / 2;
+      const col = IV_COLORS[info.iv] || '#888';
+      const shapeColor = CAGED_DEFS[info.shape]?.color || col;
+      svg += `<circle cx="${x}" cy="${y}" r="9" fill="${col}" opacity="0.88" stroke="${shapeColor}" stroke-width="1.5"/>`;
+      svg += `<text x="${x}" y="${y+3.5}" text-anchor="middle" font-size="7" fill="#000" font-weight="bold" font-family="monospace">${IV_LABELS[info.iv]||''}</text>`;
+    });
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+function renderCaged() {
+  CAGED_STATE.keyIdx = parseInt(document.getElementById('caged-key').value);
+  const rootNote = CAGED_STATE.keyIdx;
+  const quality = CAGED_STATE.quality;
+  const keyName = NOTES[rootNote];
+
+  const cardsEl = document.getElementById('caged-cards');
+  cardsEl.innerHTML = '';
+
+  CAGED_ORDER.forEach((name, idx) => {
+    const def = CAGED_DEFS[name];
+    const capo = cagedCapo(name, rootNote);
+    const frets = cagedFrets(name, rootNote, quality);
+    const playedFrets = frets.filter(n=>!n.muted);
+
+    const card = document.createElement('div');
+    card.className = 'caged-card' + (idx === CAGED_STATE.selected ? ' caged-active' : '');
+    card.style.borderColor = idx === CAGED_STATE.selected ? def.color : '';
+    card.onclick = () => { CAGED_STATE.selected = idx; renderCaged(); };
+
+    const notePills = playedFrets.map(n => {
+      const noteName = NOTES[(OPEN_STRINGS[n.s] + n.fret) % 12];
+      const c = IV_COLORS[n.iv] || '#888';
+      return `<span class="cnpill" style="color:${c};border-color:${c};background:${c}18">${noteName}</span>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="caged-label" style="color:${def.color}">${name}</div>
+      <div class="caged-pos-tag">${capo === 0 ? 'pos. aperta' : 'pos. ' + capo}</div>
+      <div class="chord-svg-wrap">${drawChordDiagram(name, rootNote, quality, idx===CAGED_STATE.selected)}</div>
+      <div class="chord-note-pills">${notePills}</div>`;
+
+    card.addEventListener('click', () => {
+      // Play chord
+      if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      const now = audioCtx.currentTime;
+      playedFrets.slice().reverse().forEach((n, j) => {
+        const noteIndex = (OPEN_STRINGS[n.s] + n.fret) % 12;
+        const octave = n.s < 2 ? 5 : 4;
+        playNote(noteToFreq(noteIndex, octave), now + j*0.06, 1.2);
+      });
+    });
+
+    cardsEl.appendChild(card);
+  });
+
+  // Detail panel for selected shape
+  const sel = CAGED_ORDER[CAGED_STATE.selected];
+  const def = CAGED_DEFS[sel];
+  const capo = cagedCapo(sel, rootNote);
+  const frets = cagedFrets(sel, rootNote, quality);
+  const detail = document.getElementById('caged-detail');
+  const strDetails = [5,4,3,2,1,0].map(s => {
+    const n = frets[s];
+    const sName = ['e','B','G','D','A','E'][s === 0?0:s===1?1:s===2?2:s===3?3:s===4?4:5];
+    const sNameMap = {0:'e',1:'B',2:'G',3:'D',4:'A',5:'E'};
+    if (n.muted) return `<span style="color:var(--text-dim)">${sNameMap[s]}:×</span>`;
+    const noteName = NOTES[(OPEN_STRINGS[s] + n.fret) % 12];
+    const col = IV_COLORS[n.iv] || '#888';
+    const lbl = IV_LABELS[n.iv] || '';
+    return `<span style="color:${col}">${sNameMap[s]}<sub>${n.fret}</sub>=${noteName}(${lbl})</span>`;
+  }).join('  ');
+
+  detail.innerHTML = `
+    <h3 style="color:${def.color}">${keyName} ${quality==='minor'?'minore':'maggiore'} — Forma ${sel}</h3>
+    <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--text-dim);margin-bottom:12px">${def.desc}</div>
+    <div class="caged-detail-grid">
+      <div class="lbl">Capo / Barre</div>
+      <div class="val">${capo === 0 ? 'Aperto (no barre)' : 'Tasto ' + capo}</div>
+      <div class="lbl">Note</div>
+      <div class="val" style="font-family:'Space Mono',monospace;font-size:11px">${strDetails}</div>
+      <div class="lbl">Tecnica</div>
+      <div class="val">${def.fingers}</div>
+    </div>`;
+
+  // Full-neck SVG
+  document.getElementById('caged-neck-svg').innerHTML = drawCagedNeck(rootNote, quality);
+}
+
+function setCagedQuality(q) {
+  CAGED_STATE.quality = q;
+  document.getElementById('caged-maj-btn').classList.toggle('active', q === 'major');
+  document.getElementById('caged-min-btn').classList.toggle('active', q === 'minor');
+  renderCaged();
+}
+
+function playCagedArpeggio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  const now = audioCtx.currentTime;
+  let t = now + 0.05;
+  CAGED_ORDER.forEach(name => {
+    const frets = cagedFrets(name, CAGED_STATE.keyIdx, CAGED_STATE.quality);
+    const played = frets.filter(n => !n.muted);
+    played.slice().reverse().forEach((n, j) => {
+      const noteIndex = (OPEN_STRINGS[n.s] + n.fret) % 12;
+      const octave = n.s < 2 ? 5 : 4;
+      playNote(noteToFreq(noteIndex, octave), t + j * 0.055, 0.9);
+    });
+    t += played.length * 0.055 + 0.3;
+  });
+}
+
+function initCaged() { renderCaged(); }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 5 BOX PENTATONICA ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Pentatonica Minore intervals: 1 ♭3 4 5 ♭7  → 0,3,5,7,10
+// Pentatonica Maggiore:         1 2 3 5 6   → 0,2,4,7,9
+// The 5 boxes are defined as fret offsets from the root note on low E string.
+// Each box pattern is [6 strings × notes_per_string] where each entry is
+// a fret offset relative to the box's anchor fret.
+//
+// Standard CAGED-linked box definitions (relative to root on low E, tasto X):
+// Box 1 = E shape,  Box 2 = D shape, Box 3 = C shape,
+// Box 4 = A shape,  Box 5 = G shape
+
+const P5_MINOR_BOXES = [
+  // Box 1 — E shape — anchor su low E, radice su E bassa e alta
+  // Am: E:5,8 A:5,7 D:5,7 G:5,7 B:5,8 e:5,8
+  { name:'Box 1', cagedShape:'E', color:'#ef4444',
+    offsets: [[0,3],[0,3],[0,2],[0,2],[0,2],[0,3]],
+    anchorOffset: 0,
+    desc: 'Il più usato. Tonica sulla corda E bassa e alta. Punto di partenza universale.',
+    tips: ['Inizia sempre da qui','Bending sulla 2ª nota della corda B (♭3→4)','Il vibrato sul ♭3 è la firma del blues'],
+  },
+  // Box 2 — D shape — anchor su low E (root + 3st)
+  // Am: E:8,10 A:7,10 D:7,10 G:7,9 B:8,10 e:8,10
+  { name:'Box 2', cagedShape:'D', color:'#8b5cf6',
+    offsets: [[0,2],[0,2],[-1,1],[-1,2],[-1,2],[0,2]],
+    anchorOffset: 3,
+    desc: 'Connesso al Box 1 verso l\'acuto. Ottimo per melodie alte.',
+    tips: ['Scorri dal Box 1 spostando di 3 tasti','Bending sulla corda e (♭7→1)','Posizione ideale per lick acuti'],
+  },
+  // Box 3 — C shape — anchor su low E (root + 5st)
+  // Am: E:10,12 A:10,12 D:10,12 G:9,12 B:10,13 e:10,12
+  { name:'Box 3', cagedShape:'C', color:'#f59e0b',
+    offsets: [[0,2],[0,3],[-1,2],[0,2],[0,2],[0,2]],
+    anchorOffset: 5,
+    desc: 'Radice sulla corda G. Fondamentale per coprire il manico.',
+    tips: ['Difficile da memorizzare — concentrati sulla tonica sulla G','Utile per sequenze ascendenti','Collegamento tra Box 2 e Box 4'],
+  },
+  // Box 4 — A shape — anchor su low E (root + 7st)
+  // Am: E:12,15 A:12,15 D:12,14 G:12,14 B:13,15 e:12,15
+  { name:'Box 4', cagedShape:'A', color:'#3b82f6',
+    offsets: [[0,3],[1,3],[0,2],[0,2],[0,3],[0,3]],
+    anchorOffset: 7,
+    desc: 'Radice sulla corda D. Spesso usato per lick blues nella posizione media.',
+    tips: ['Ottimo per bending sulla corda G','Combina bene con Misolidia (aggiungi 2ª e 6ª)','Molto usato nella zona 12° tasto'],
+  },
+  // Box 5 — G shape — anchor su low E (root + 10st)
+  // Am: E:3,5 A:3,5 D:2,5 G:2,5 B:3,5 e:3,5
+  { name:'Box 5', cagedShape:'G', color:'#22c55e',
+    offsets: [[0,2],[0,2],[-1,2],[-1,2],[0,2],[0,2]],
+    anchorOffset: 10,
+    desc: 'Radice sulla corda A. Collega al Box 1 all\'ottava superiore.',
+    tips: ['Box 5 + 12 tasti = Box 1 all\'ottava','Ottimo ponte verso il secondo manico','Angus Young, Jimmy Page usano molto questa posizione'],
+  },
+];
+
+const P5_MAJOR_BOXES = [
+  // C major penta: C D E G A — Box 3 maggiore = Box 1 minore relativa
+  { name:'Box 1', cagedShape:'G', color:'#22c55e',
+    offsets: [[0,3],[1,3],[0,2],[0,2],[0,3],[0,3]],
+    anchorOffset: 4,
+    desc: 'Posizione aperta. Radice su E bassa e alta. Suono luminoso e solare.',
+    tips: ['Corrisponde al Box 3 della pentatonica minore relativa','Country, pop, rock classico','Eric Johnson, Chet Atkins'],
+  },
+  { name:'Box 2', cagedShape:'E', color:'#ef4444',
+    offsets: [[1,3],[1,3],[0,3],[0,3],[1,3],[1,3]],
+    anchorOffset: 6,
+    desc: 'Seconda posizione. Connessa alla forma E del CAGED.',
+    tips: ['Box 4 della pentatonica minore relativa','Ottima per riff country-rock e melodie positive'],
+  },
+  { name:'Box 3', cagedShape:'D', color:'#8b5cf6',
+    offsets: [[0,3],[0,3],[0,2],[0,2],[0,2],[0,3]],
+    anchorOffset: 9,
+    desc: 'Quinta posizione. Uguale nella forma al Box 1 minore.',
+    tips: ['Stesso pattern del Box 1 minore, tonica spostata','Brad Paisley la usa moltissimo'],
+  },
+  { name:'Box 4', cagedShape:'C', color:'#f59e0b',
+    offsets: [[1,3],[1,3],[0,2],[0,3],[0,3],[1,3]],
+    anchorOffset: 11,
+    desc: 'Settima posizione. Corrisponde al Box 2 minore relativa.',
+    tips: ['Ottima per melodie nella zona medio-alta del manico'],
+  },
+  { name:'Box 5', cagedShape:'A', color:'#3b82f6',
+    offsets: [[1,3],[1,4],[0,3],[1,3],[1,3],[1,3]],
+    anchorOffset: 1,
+    desc: 'Nona posizione. Chiude il ciclo, collega al Box 1 all\'ottava.',
+    tips: ['Box 3 minore relativa','Ottimo per frasi discendenti verso il Box 1'],
+  },
+];
+
+const P5_STATE = { quality: 'minor', keyIdx: 4, box: 0 };
+
+// Compute anchor fret on low E for a box given root key
+// anchorOffset = semitones above root where low-E anchor falls
+function p5AnchorFret(box, keyIdx) {
+  const lowEOpen = OPEN_STRINGS[5]; // E = 4
+  // Root fret on low E
+  let rootFret = (keyIdx - lowEOpen + 24) % 12;
+  // Box anchor = root fret + anchorOffset (mod 12 to stay in range)
+  let anchor = rootFret + box.anchorOffset;
+  // Keep in playable range (allow up to fret 17)
+  while (anchor > 17) anchor -= 12;
+  return anchor;
+}
+
+// Absolute frets for all strings in a box
+function p5BoxFrets(box, keyIdx) {
+  const anchor = p5AnchorFret(box, keyIdx);
+  // offsets[s] = array of fret offsets from anchor for string s
+  return box.offsets.map(strOffsets => strOffsets.map(fo => anchor + fo));
+}
+
+// Draw interactive horizontal fretboard for a single box
+function drawP5Fretboard(box, keyIdx, quality) {
+  const minorIntervals = [0,3,5,7,10];
+  const majorIntervals = [0,2,4,7,9];
+  const scaleIntervals = quality === 'minor' ? minorIntervals : majorIntervals;
+  const scaleSet = new Set(scaleIntervals.map(i => (keyIdx + i) % 12));
+
+  const fretsByString = p5BoxFrets(box, keyIdx);
+  const allFrets = fretsByString.flat();
+  const minF = Math.max(0, Math.min(...allFrets) - 1);
+  const maxF = Math.min(22, Math.max(...allFrets) + 1);
+  const fretCount = maxF - (minF > 0 ? minF : 0);
+
+  const NOTES_ARR = NOTES;
+  const OPEN_S = OPEN_STRINGS;
+
+  const cellH = 44, cellW = 52;
+  const leftPad = 30, topPad = 18, rightPad = 10;
+  const nFrets = maxF - minF + 1;
+  const W = leftPad + nFrets * cellW + rightPad;
+  const H = topPad + 6 * cellH + 18;
+
+  const activeSet = new Set(fretsByString.flatMap((frets, s) => frets.map(f => s + ',' + f)));
+  const sNames = ['e','B','G','D','A','E'];
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:500px">`;
+  svg += `<rect width="${W}" height="${H}" fill="#1a1a1a" rx="8"/>`;
+
+  // Fret numbers
+  for (let f = minF; f <= maxF; f++) {
+    const x = leftPad + (f - minF) * cellW + cellW / 2;
+    svg += `<text x="${x}" y="12" text-anchor="middle" font-size="9" fill="#555" font-family="monospace">${f === 0 ? '0' : f}</text>`;
+  }
+
+  // Nut
+  if (minF === 0) {
+    svg += `<rect x="${leftPad + cellW}" y="${topPad}" width="3" height="${6*cellH}" fill="#d4af6a" rx="1"/>`;
+  }
+
+  // Grid
+  for (let s = 0; s < 6; s++) {
+    const y = topPad + s * cellH + cellH / 2;
+    svg += `<line x1="${leftPad}" y1="${y}" x2="${W-rightPad}" y2="${y}" stroke="#c8a84b" stroke-width="${s===0||s===5?1.2:0.7}" opacity="0.4"/>`;
+    svg += `<text x="${leftPad-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
+  }
+  for (let f = minF; f <= maxF; f++) {
+    const x = leftPad + (f - minF) * cellW;
+    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+6*cellH}" stroke="#2a2a2a" stroke-width="1"/>`;
+  }
+
+  // Fret markers
+  [3,5,7,9,12,15,17].forEach(mf => {
+    if (mf < minF || mf > maxF) return;
+    const x = leftPad + (mf - minF) * cellW + cellW / 2;
+    const y = topPad + 6 * cellH + 10;
+    if (mf === 12) {
+      svg += `<circle cx="${x-6}" cy="${y}" r="3" fill="#3d2c10"/>`;
+      svg += `<circle cx="${x+6}" cy="${y}" r="3" fill="#3d2c10"/>`;
+    } else {
+      svg += `<circle cx="${x}" cy="${y}" r="3" fill="#2a2010"/>`;
+    }
+  });
+
+  // Ghost notes (in scale but not in box) — very dim
+  for (let s = 0; s < 6; s++) {
+    for (let f = minF; f <= maxF; f++) {
+      const noteIdx = (OPEN_S[s] + f) % 12;
+      if (!scaleSet.has(noteIdx)) continue;
+      if (activeSet.has(s + ',' + f)) continue;
+      const x = leftPad + (f - minF) * cellW + cellW / 2;
+      const y = topPad + s * cellH + cellH / 2;
+      svg += `<circle cx="${x}" cy="${y}" r="11" fill="#1e1e1e" stroke="#2a2a2a" stroke-width="1" opacity="0.6"/>`;
+    }
+  }
+
+  // Active notes
+  for (let s = 0; s < 6; s++) {
+    fretsByString[s].forEach(f => {
+      if (f < minF || f > maxF) return;
+      const noteIdx = (OPEN_S[s] + f) % 12;
+      const interval = (noteIdx - keyIdx + 12) % 12;
+      const isRoot = interval === 0;
+      const x = leftPad + (f - minF) * cellW + cellW / 2;
+      const y = topPad + s * cellH + cellH / 2;
+      const noteName = NOTES_ARR[noteIdx];
+      const col = isRoot ? '#f59e0b' : box.color;
+      const textCol = isRoot ? '#000' : '#fff';
+
+      svg += `<circle cx="${x}" cy="${y}" r="13" fill="${col}" opacity="0.92"/>`;
+      if (isRoot) svg += `<circle cx="${x}" cy="${y}" r="13" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.4"/>`;
+      svg += `<text x="${x}" y="${y+3.5}" text-anchor="middle" font-size="8.5" fill="${textCol}" font-weight="bold" font-family="monospace">${noteName}</text>`;
+    });
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// Overview SVG — all 5 boxes on one long fretboard
+function drawP5Overview(keyIdx, quality) {
+  const minorIntervals = [0,3,5,7,10];
+  const majorIntervals = [0,2,4,7,9];
+  const scaleIntervals = quality === 'minor' ? minorIntervals : majorIntervals;
+  const scaleSet = new Set(scaleIntervals.map(i => (keyIdx + i) % 12));
+  const boxes = quality === 'minor' ? P5_MINOR_BOXES : P5_MAJOR_BOXES;
+
+  // Build note map with box color
+  const noteMap = {}; // "s,f" → {color, isRoot, boxIdx}
+  boxes.forEach((box, bi) => {
+    const frets = p5BoxFrets(box, keyIdx);
+    frets.forEach((strFrets, s) => {
+      strFrets.forEach(f => {
+        const key2 = s + ',' + f;
+        const noteIdx = (OPEN_STRINGS[s] + f) % 12;
+        const isRoot = (noteIdx - keyIdx + 12) % 12 === 0;
+        noteMap[key2] = { color: isRoot ? '#f59e0b' : box.color, isRoot, boxIdx: bi };
+      });
+    });
+  });
+
+  const fretCount = 17;
+  const cellH = 22, cellW = 38;
+  const leftPad = 28, topPad = 14;
+  const W = leftPad + (fretCount + 1) * cellW + 10;
+  const H = topPad + 6 * cellH + 16;
+  const sNames = ['e','B','G','D','A','E'];
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:600px">`;
+  svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="8"/>`;
+
+  // Fret numbers
+  for (let f = 0; f <= fretCount; f++) {
+    const x = leftPad + f * cellW + cellW / 2;
+    svg += `<text x="${x}" y="10" text-anchor="middle" font-size="7.5" fill="#444" font-family="monospace">${f}</text>`;
+  }
+
+  // Nut
+  svg += `<rect x="${leftPad + cellW}" y="${topPad}" width="2.5" height="${6*cellH}" fill="#d4af6a" rx="1"/>`;
+
+  // Fret markers
+  [3,5,7,9,12,15,17].forEach(mf => {
+    if (mf > fretCount) return;
+    const x = leftPad + mf * cellW + cellW / 2;
+    const y = topPad + 6 * cellH + 9;
+    if (mf === 12) {
+      svg += `<circle cx="${x-5}" cy="${y}" r="2.5" fill="#3d2c10"/>`;
+      svg += `<circle cx="${x+5}" cy="${y}" r="2.5" fill="#3d2c10"/>`;
+    } else {
+      svg += `<circle cx="${x}" cy="${y}" r="2.5" fill="#222"/>`;
+    }
+  });
+
+  // Grid
+  for (let s = 0; s < 6; s++) {
+    const y = topPad + s * cellH + cellH / 2;
+    svg += `<line x1="${leftPad}" y1="${y}" x2="${W-8}" y2="${y}" stroke="#c8a84b" stroke-width="0.6" opacity="0.35"/>`;
+    svg += `<text x="${leftPad-3}" y="${y+3}" text-anchor="end" font-size="7" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
+  }
+  for (let f = 0; f <= fretCount; f++) {
+    const x = leftPad + f * cellW;
+    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+6*cellH}" stroke="#222" stroke-width="1"/>`;
+  }
+
+  // Box label bands
+  boxes.forEach((box, bi) => {
+    const anchor = p5AnchorFret(box, keyIdx);
+    const frets2 = p5BoxFrets(box, keyIdx);
+    const allF = frets2.flat();
+    const f1 = Math.max(0, Math.min(...allF));
+    const f2 = Math.min(fretCount, Math.max(...allF));
+    if (f1 > fretCount) return;
+    const x1 = leftPad + f1 * cellW;
+    const x2 = leftPad + (f2 + 1) * cellW;
+    svg += `<rect x="${x1}" y="${topPad}" width="${x2-x1}" height="${6*cellH}" fill="${box.color}" opacity="0.04" rx="0"/>`;
+    const xLabel = (x1 + x2) / 2;
+    svg += `<text x="${xLabel}" y="${topPad - 3}" text-anchor="middle" font-size="8" fill="${box.color}" font-family="monospace" font-weight="bold" opacity="0.65">${bi+1}</text>`;
+  });
+
+  // Note dots
+  for (const [key2, info] of Object.entries(noteMap)) {
+    const [sStr, fStr] = key2.split(',');
+    const s = parseInt(sStr), f = parseInt(fStr);
+    if (f < 0 || f > fretCount) continue;
+    const x = leftPad + f * cellW + cellW / 2;
+    const y = topPad + s * cellH + cellH / 2;
+    svg += `<circle cx="${x}" cy="${y}" r="7" fill="${info.color}" opacity="0.9"/>`;
+    if (info.isRoot) svg += `<circle cx="${x}" cy="${y}" r="7" fill="none" stroke="#fff" stroke-width="1" opacity="0.5"/>`;
+    const noteName = NOTES[(OPEN_STRINGS[s] + f) % 12];
+    svg += `<text x="${x}" y="${y+2.5}" text-anchor="middle" font-size="5.5" fill="${info.isRoot?'#000':'#fff'}" font-weight="bold" font-family="monospace">${noteName}</text>`;
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+function renderPenta5() {
+  P5_STATE.keyIdx = parseInt(document.getElementById('p5-key').value);
+  const { quality, box: boxIdx, keyIdx } = P5_STATE;
+  const boxes = quality === 'minor' ? P5_MINOR_BOXES : P5_MAJOR_BOXES;
+  const box = boxes[boxIdx];
+  const keyName = NOTES[keyIdx];
+
+  // Build box tabs
+  const tabsEl = document.getElementById('p5-box-tabs');
+  tabsEl.innerHTML = '';
+  boxes.forEach((b, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'p5-tab' + (i === boxIdx ? ' active' : '');
+    btn.style.borderColor = i === boxIdx ? b.color : '';
+    btn.style.color = i === boxIdx ? b.color : '';
+    btn.innerHTML = `Box ${i+1}<br><small>CAGED: ${b.cagedShape}</small>`;
+    btn.onclick = () => { P5_STATE.box = i; renderPenta5(); };
+    tabsEl.appendChild(btn);
+  });
+
+  // Fretboard
+  document.getElementById('p5-fretboard').innerHTML = drawP5Fretboard(box, keyIdx, quality);
+
+  // Overview
+  document.getElementById('p5-overview-svg').innerHTML = drawP5Overview(keyIdx, quality);
+
+  // Info panel
+  const fretsByString = p5BoxFrets(box, keyIdx);
+  const scaleIntervals = quality === 'minor' ? [0,3,5,7,10] : [0,2,4,7,9];
+
+  // Finger pattern rows (mini diagram text)
+  const sNames = ['e','B','G','D','A','E'];
+  const fpRows = [0,1,2,3,4,5].map(s => {
+    const frets = fretsByString[s];
+    const noteNames = frets.map(f => {
+      const ni = (OPEN_STRINGS[s] + f) % 12;
+      const isRoot = (ni - keyIdx + 12) % 12 === 0;
+      return `<span class="p5-fp-dot ${isRoot?'root':'note'}">${NOTES[ni]}</span>`;
+    }).join('');
+    return `<div class="p5-fp-row"><span class="p5-fp-sname">${sNames[s]}</span>${noteNames}<span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);margin-left:6px">${frets.join('-')}</span></div>`;
+  }).join('');
+
+  const anchor = p5AnchorFret(box, keyIdx);
+  const prevBox = boxes[(boxIdx - 1 + 5) % 5];
+  const nextBox = boxes[(boxIdx + 1) % 5];
+  const tipsList = box.tips.map(t => `<li>${t}</li>`).join('');
+  const cagedColor = CAGED_DEFS[box.cagedShape]?.color || '#888';
+
+  document.getElementById('p5-info').innerHTML = `
+    <h3 style="color:${box.color}">${keyName} ${box.name}</h3>
+    <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);margin-bottom:12px">
+      TASTO DI PARTENZA: <span style="color:${box.color};font-size:14px">${anchor}</span>
+    </div>
+    <div style="font-size:13px;color:var(--text-mid);line-height:1.5;margin-bottom:14px">${box.desc}</div>
+
+    <div class="msect-lbl">Pattern per corda</div>
+    <div class="p5-fingerpattern">${fpRows}</div>
+
+    <div class="p5-caged-link" style="border-color:${cagedColor}20">
+      Forma CAGED correlata: <strong style="color:${cagedColor}">${box.cagedShape}</strong> —
+      le note dell'accordo di ${keyName} nella forma ${box.cagedShape} sono contenute in questo box.
+    </div>
+
+    <div class="msect-lbl" style="margin-top:14px">Consigli</div>
+    <ul class="tip-list">${tipsList}</ul>
+
+    <div class="p5-nav-btns">
+      <button class="p5-nav-btn" onclick="P5_STATE.box=(P5_STATE.box-1+5)%5;renderPenta5()">← ${prevBox.name}</button>
+      <button class="p5-nav-btn" onclick="P5_STATE.box=(P5_STATE.box+1)%5;renderPenta5()">→ ${nextBox.name}</button>
+    </div>`;
+}
+
+function setP5Quality(q) {
+  P5_STATE.quality = q;
+  P5_STATE.box = 0;
+  document.getElementById('p5-min-btn').classList.toggle('active', q === 'minor');
+  document.getElementById('p5-maj-btn').classList.toggle('active', q === 'major');
+  renderPenta5();
+}
+
+function playP5Box() {
+  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  const boxes = P5_STATE.quality === 'minor' ? P5_MINOR_BOXES : P5_MAJOR_BOXES;
+  const box = boxes[P5_STATE.box];
+  const fretsByString = p5BoxFrets(box, P5_STATE.keyIdx);
+  const now = audioCtx.currentTime;
+  let t = now + 0.05;
+  // Play E→e low→high, each string low→high fret
+  for (let s = 5; s >= 0; s--) {
+    fretsByString[s].forEach(f => {
+      const ni = (OPEN_STRINGS[s] + f) % 12;
+      const oct = s < 3 ? 5 : 4;
+      playNote(noteToFreq(ni, oct), t, 0.35);
+      t += 0.14;
+    });
+  }
+}
+
+function initPenta5() { renderPenta5(); }
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    if (b.getAttribute('onclick').includes("'" + name + "'")) b.classList.add('active');
+  });
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+
+window.addEventListener('DOMContentLoaded', function() {
+  renderFretboard();
+  renderScalesPage();
+  renderModesPage();
+  renderProgressions();
+  renderPracticePage();
+  initTriads();
+  initCaged();
+  initPenta5();
+  jamInit();
+});
+</script>
+<!-- ═══════════════════════════════ JAM / BASI PAGE ══════════════════════════════ -->
+<div id="page-jam" class="page">
+  <h2>Basi di Accompagnamento</h2>
+  <div class="subtitle">// suona improvvisazioni live su basi generate in tempo reale — drums, basso e accordi</div>
+
+  <div class="jam-controls-row">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Tonalità</div>
+      <select id="jam-key" onchange="jamUpdateSettings()">
+        <option value="0">C</option>
+        <option value="1">C# / Db</option>
+        <option value="2">D</option>
+        <option value="3">D# / Eb</option>
+        <option value="4">E</option>
+        <option value="5">F</option>
+        <option value="6">F# / Gb</option>
+        <option value="7">G</option>
+        <option value="8">G# / Ab</option>
+        <option value="9" selected>A</option>
+        <option value="10">A# / Bb</option>
+        <option value="11">B</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Modo / Scala</div>
+      <select id="jam-mode" onchange="jamUpdateSettings()">
+        <optgroup label="Maggiore">
+          <option value="major">Ionico (Maggiore)</option>
+          <option value="lydian">Lidio</option>
+          <option value="mixolydian">Misolidio</option>
+        </optgroup>
+        <optgroup label="Minore">
+          <option value="dorian" selected>Dorico</option>
+          <option value="phrygian">Frigio</option>
+          <option value="natural_minor">Eolio (Min. Nat.)</option>
+          <option value="harmonic_minor">Min. Armonica</option>
+        </optgroup>
+        <optgroup label="Blues">
+          <option value="blues">Blues</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Stile</div>
+      <select id="jam-style" onchange="jamUpdateSettings()">
+        <option value="rock" selected>Rock</option>
+        <option value="blues">Blues / Shuffle</option>
+        <option value="metal">Metal</option>
+        <option value="funk">Funk</option>
+        <option value="ballad">Ballad</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="jam-main">
+    <!-- ── LEFT: Player ── -->
+    <div class="jam-player">
+
+      <!-- Transport -->
+      <div class="jam-transport">
+        <button class="btn-play-big" id="jam-play-btn" onclick="jamTogglePlay()">▶</button>
+
+        <div class="bpm-block">
+          <div class="bpm-display" id="bpm-display">95</div>
+          <div class="bpm-lbl">BPM</div>
+        </div>
+        <div class="bpm-adj">
+          <button class="bpm-btn" onclick="jamChangeBPM(5)">▲</button>
+          <button class="bpm-btn" onclick="jamChangeBPM(-5)">▼</button>
+        </div>
+
+        <div style="flex:1;min-width:80px">
+          <div class="vol-lbl" style="margin-bottom:4px">BPM</div>
+          <input type="range" min="50" max="200" value="95" id="bpm-slider"
+                 oninput="jamSetBPM(this.value)">
+        </div>
+
+        <button class="tap-btn" id="tap-btn" onclick="jamTap()">TAP</button>
+      </div>
+
+      <!-- Beat LEDs -->
+      <div class="loop-info">
+        <span>BEAT INDICATOR</span>
+        <span class="loop-tag" id="loop-tag">— bar</span>
+      </div>
+      <div class="beat-row" id="beat-leds"></div>
+
+      <!-- Chord display -->
+      <div class="loop-info">
+        <span>PROGRESSIONE</span>
+      </div>
+      <div class="chord-display" id="chord-display"></div>
+
+      <!-- Mix -->
+      <div class="vol-lbl" style="margin-bottom:8px">MIX</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <span class="vol-lbl" style="white-space:nowrap">🔊 Master</span>
+        <input type="range" min="0" max="1" step="0.01" value="0.7" id="vol-master"
+               oninput="jamSetVolume(this.value)">
+      </div>
+      <div class="mix-row">
+        <div class="mix-slot">
+          <div class="vol-lbl">🥁 Drums</div>
+          <input type="range" min="0" max="1" step="0.01" value="0.75" id="vol-drums"
+                 oninput="jamSetDrumVol(this.value)">
+        </div>
+        <div class="mix-slot">
+          <div class="vol-lbl">🎸 Bass</div>
+          <input type="range" min="0" max="1" step="0.01" value="0.65" id="vol-bass"
+                 oninput="jamSetBassVol(this.value)">
+        </div>
+        <div class="mix-slot">
+          <div class="vol-lbl">🎹 Chords</div>
+          <input type="range" min="0" max="1" step="0.01" value="0.45" id="vol-chords"
+                 oninput="jamSetChordVol(this.value)">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RIGHT: Mode info ── -->
+    <div class="mode-info-panel" id="jam-mode-info">
+      <!-- populated by JS -->
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
