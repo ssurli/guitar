@@ -495,9 +495,12 @@
     padding: 10px 4px;
     text-align: center;
     cursor: pointer;
-    transition: border-color .2s;
+    transition: border-color .2s, background .1s;
+    user-select: none;
   }
-  .tuner-str.active { border-color: var(--amber); }
+  .tuner-str:active { background: var(--amber-glow); }
+  .tuner-str.active { border-color: var(--amber); background: rgba(245,158,11,0.08); }
+  .tuner-str .str-hint { font-family:'Space Mono',monospace; font-size:7px; color:var(--text-dim); margin-top:2px; }
   .tuner-str .str-name { font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--amber); }
   .tuner-str .str-freq { font-family:'Space Mono',monospace; font-size:9px; color:var(--text-dim); }
   .tuner-btn {
@@ -2674,44 +2677,42 @@ function drumHihat(ctx, dest, time, open = false, gainVal = 0.4) {
 // ─── CHORD SYNTH (rhythm guitar) ─────────────────────────────────────────────
 function playChordSynth(ctx, dest, rootMidi, chordType, startTime, endTime) {
   const intervals = CHORD_IV[chordType] || CHORD_IV.maj;
-  const dur = endTime - startTime;
 
   const masterG = ctx.createGain();
   masterG.gain.setValueAtTime(0, startTime);
-  masterG.gain.linearRampToValueAtTime(0.38, startTime + 0.04);
-  masterG.gain.setValueAtTime(0.24, startTime + 0.25);
-  masterG.gain.setValueAtTime(0.22, endTime - 0.1);
+  masterG.gain.linearRampToValueAtTime(0.28, startTime + 0.06); // softer attack
+  masterG.gain.setValueAtTime(0.18, startTime + 0.3);
+  masterG.gain.setValueAtTime(0.16, endTime - 0.12);
   masterG.gain.linearRampToValueAtTime(0, endTime);
 
-  // Cabinet EQ (guitar speaker simulation)
+  // Cabinet EQ
   const hp = ctx.createBiquadFilter();
-  hp.type = 'highpass'; hp.frequency.value = 80;
+  hp.type = 'highpass'; hp.frequency.value = 100;
   const lp = ctx.createBiquadFilter();
-  lp.type = 'lowpass'; lp.frequency.value = 5000;
+  lp.type = 'lowpass'; lp.frequency.value = 3500; // roll off harshness
   const mid = ctx.createBiquadFilter();
-  mid.type = 'peaking'; mid.frequency.value = 800; mid.gain.value = 4; mid.Q.value = 1.2;
+  mid.type = 'peaking'; mid.frequency.value = 700; mid.gain.value = 2; mid.Q.value = 1;
 
-  // Light overdrive
-  const shaper = _makeWaveshaper(ctx, 45);
+  // Softer saturation (was 45 → now 18)
+  const shaper = _makeWaveshaper(ctx, 18);
 
   hp.connect(lp); lp.connect(mid); mid.connect(shaper);
   shaper.connect(masterG); masterG.connect(dest);
 
-  // Strum: slightly offset each string start
+  // Strum: one oscillator per note (+ light detune), less clutter
   intervals.forEach((iv, i) => {
     const freq = midiToFreq(rootMidi + iv);
-    const strumDelay = i * 0.008;
+    const strumDelay = i * 0.010;
 
-    // Two detuned oscillators per note (chorus-like)
-    [0, 7, -7].forEach((detune, di) => {
+    [0, 5].forEach((detune, di) => { // two oscs per note (was 3)
       const osc = ctx.createOscillator();
       osc.type = 'sawtooth';
       osc.frequency.value = freq;
       osc.detune.value = detune;
       const g = ctx.createGain();
-      g.gain.value = 0.11 / intervals.length;
+      g.gain.value = 0.09 / intervals.length;
       osc.connect(g); g.connect(hp);
-      osc.start(startTime + strumDelay + di * 0.001);
+      osc.start(startTime + strumDelay + di * 0.002);
       osc.stop(endTime + 0.1);
       _autoDisconnect(osc, endTime + 0.1);
     });
@@ -2724,9 +2725,9 @@ function playBassSynth(ctx, dest, rootMidi, time, duration) {
 
   const masterG = ctx.createGain();
   masterG.gain.setValueAtTime(0, time);
-  masterG.gain.linearRampToValueAtTime(0.85, time + 0.018);  // punchy attack
-  masterG.gain.exponentialRampToValueAtTime(0.5, time + 0.08);
-  masterG.gain.setValueAtTime(0.42, time + duration - 0.06);
+  masterG.gain.linearRampToValueAtTime(0.65, time + 0.028);  // slightly softer attack
+  masterG.gain.exponentialRampToValueAtTime(0.38, time + 0.1);
+  masterG.gain.setValueAtTime(0.32, time + duration - 0.06);
   masterG.gain.linearRampToValueAtTime(0, time + duration);
   masterG.connect(dest);
 
@@ -3790,9 +3791,26 @@ function jamUpdateSettings() {
   BT.modeKey  = document.getElementById('jam-mode').value;
   BT.rootIdx  = parseInt(document.getElementById('jam-key').value);
   BT.styleKey = document.getElementById('jam-style').value;
-  if (BT.playing) { btBuildProg(); BT.absoluteStep = 0; }
   jamRebuildChordUI();
   jamRenderModeInfo();
+  if (BT.playing && BT.ctx && BT.masterGain) {
+    // Fade out quickly, stop scheduler, then restart with new settings
+    clearTimeout(BT.timerID);
+    BT.notesInQueue = [];
+    const g = BT.masterGain.gain;
+    const now = BT.ctx.currentTime;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value, now);
+    g.linearRampToValueAtTime(0, now + 0.08);
+    setTimeout(() => {
+      if (!BT.playing) return;
+      btBuildProg();
+      BT.absoluteStep = 0;
+      BT.nextNoteTime = BT.ctx.currentTime + 0.02;
+      g.setValueAtTime(0.7, BT.ctx.currentTime);
+      btSchedulerLoop();
+    }, 100);
+  }
 }
 
 function jamSetBPM(v) {
@@ -5246,12 +5264,12 @@ window.addEventListener('DOMContentLoaded', function() {
   </div>
 
   <div class="tuner-strings" id="tuner-strings-list">
-    <div class="tuner-str"><div class="str-name">E</div><div class="str-freq">82.4 Hz</div><div class="ctrl-label">6ª</div></div>
-    <div class="tuner-str"><div class="str-name">A</div><div class="str-freq">110 Hz</div><div class="ctrl-label">5ª</div></div>
-    <div class="tuner-str"><div class="str-name">D</div><div class="str-freq">146.8 Hz</div><div class="ctrl-label">4ª</div></div>
-    <div class="tuner-str"><div class="str-name">G</div><div class="str-freq">196 Hz</div><div class="ctrl-label">3ª</div></div>
-    <div class="tuner-str"><div class="str-name">B</div><div class="str-freq">246.9 Hz</div><div class="ctrl-label">2ª</div></div>
-    <div class="tuner-str"><div class="str-name">E</div><div class="str-freq">329.6 Hz</div><div class="ctrl-label">1ª</div></div>
+    <div class="tuner-str" onclick="tunerPlayRef(0)" title="Tocca per sentire il tono di riferimento"><div class="str-name">E</div><div class="str-freq">82.4 Hz</div><div class="ctrl-label">6ª</div><div class="str-hint">▶ tono</div></div>
+    <div class="tuner-str" onclick="tunerPlayRef(1)" title="Tocca per sentire il tono di riferimento"><div class="str-name">A</div><div class="str-freq">110 Hz</div><div class="ctrl-label">5ª</div><div class="str-hint">▶ tono</div></div>
+    <div class="tuner-str" onclick="tunerPlayRef(2)" title="Tocca per sentire il tono di riferimento"><div class="str-name">D</div><div class="str-freq">146.8 Hz</div><div class="ctrl-label">4ª</div><div class="str-hint">▶ tono</div></div>
+    <div class="tuner-str" onclick="tunerPlayRef(3)" title="Tocca per sentire il tono di riferimento"><div class="str-name">G</div><div class="str-freq">196 Hz</div><div class="ctrl-label">3ª</div><div class="str-hint">▶ tono</div></div>
+    <div class="tuner-str" onclick="tunerPlayRef(4)" title="Tocca per sentire il tono di riferimento"><div class="str-name">B</div><div class="str-freq">246.9 Hz</div><div class="ctrl-label">2ª</div><div class="str-hint">▶ tono</div></div>
+    <div class="tuner-str" onclick="tunerPlayRef(5)" title="Tocca per sentire il tono di riferimento"><div class="str-name">E</div><div class="str-freq">329.6 Hz</div><div class="ctrl-label">1ª</div><div class="str-hint">▶ tono</div></div>
   </div>
 </div>
 
@@ -5377,8 +5395,34 @@ function _updateTunerStringsDisplay() {
   const labels = ['6ª','5ª','4ª','3ª','2ª','1ª'];
   const stringsEl = document.getElementById('tuner-strings-list');
   if (stringsEl) stringsEl.innerHTML = t.notesFull.map((n,i) =>
-    `<div class="tuner-str"><div class="str-name">${t.notes[i]}</div><div class="str-freq">${t.freqs[i].toFixed(1)} Hz</div><div class="ctrl-label">${labels[i]}</div></div>`
+    `<div class="tuner-str" onclick="tunerPlayRef(${i})" title="Tocca per sentire il tono di riferimento">
+      <div class="str-name">${t.notes[i]}</div>
+      <div class="str-freq">${t.freqs[i].toFixed(1)} Hz</div>
+      <div class="ctrl-label">${labels[i]}</div>
+      <div class="str-hint">▶ tono</div>
+    </div>`
   ).join('');
+}
+
+function tunerPlayRef(stringIdx) {
+  const t = TUNER.activeTuning;
+  if (!t) return;
+  const freq = t.freqs[stringIdx] * (TUNER.aRef / 440);
+  const ctx = getAudioCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.02);
+  gain.gain.setValueAtTime(0.35, ctx.currentTime + 1.2);
+  gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5);
+  osc.connect(gain);
+  gain.connect(_masterOut || ctx.destination);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 1.6);
+  osc.addEventListener('ended', () => { try { osc.disconnect(); gain.disconnect(); } catch(e){} });
 }
 
 function freqToNote(freq) {
@@ -5392,39 +5436,37 @@ function freqToNote(freq) {
 }
 
 function autocorrelate(buf, sampleRate) {
-  const SIZE = buf.length;
+  const n = buf.length;
   let rms = 0;
-  for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
-  rms = Math.sqrt(rms / SIZE);
-  if (rms < 0.015) return -1; // silenzio
+  for (let i = 0; i < n; i++) rms += buf[i] * buf[i];
+  if (Math.sqrt(rms / n) < 0.015) return -1;
 
-  let r1 = 0, r2 = SIZE - 1;
-  const thres = 0.2;
-  for (let i = 0; i < SIZE / 2; i++) { if (Math.abs(buf[i]) < thres) { r1 = i; break; } }
-  for (let i = 1; i < SIZE / 2; i++) { if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; } }
-  const slice = buf.slice(r1, r2);
-  const len = slice.length;
+  // Limit lag range to guitar frequencies (75–1300 Hz) — avoids O(n²) over full buffer
+  const minLag = Math.floor(sampleRate / 1300);
+  const maxLag = Math.min(n - 2, Math.ceil(sampleRate / 75));
 
-  const c = new Float32Array(len).fill(0);
-  for (let i = 0; i < len; i++)
-    for (let j = 0; j < len - i; j++)
-      c[i] += slice[j] * slice[j + i];
+  let maxCorr = -1, bestLag = -1;
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    let c = 0;
+    const lim = n - lag;
+    for (let j = 0; j < lim; j++) c += buf[j] * buf[j + lag];
+    if (c > maxCorr) { maxCorr = c; bestLag = lag; }
+  }
+  if (bestLag < 1 || maxCorr < 0) return -1;
 
-  let d = 0;
-  while (d < len && c[d] > c[d + 1]) d++;
-  let maxv = -Infinity, maxi = -1;
-  for (let i = d; i < len; i++) { if (c[i] > maxv) { maxv = c[i]; maxi = i; } }
-  if (maxi === -1) return -1;
-
-  // Interpolazione parabolica per precisione
-  let T0 = maxi;
-  const [y1, y2, y3] = [c[T0 - 1] || 0, c[T0], c[T0 + 1] || 0];
-  if (y2) T0 += (y3 - y1) / (2 * (2 * y2 - y1 - y3));
+  // Parabolic interpolation for sub-sample precision
+  const cl = bestLag > minLag ? (() => { let c=0,l=n-bestLag+1; for(let j=0;j<l;j++) c+=buf[j]*buf[j+bestLag-1]; return c; })() : maxCorr;
+  const cr = bestLag < maxLag ? (() => { let c=0,l=n-bestLag-1; for(let j=0;j<l;j++) c+=buf[j]*buf[j+bestLag+1]; return c; })() : maxCorr;
+  let T0 = bestLag;
+  if (maxCorr > 0) T0 += (cr - cl) / (2 * (2 * maxCorr - cl - cr) || 1);
   return sampleRate / T0;
 }
 
+let _tunerFrame = 0;
 function tunerTick() {
   if (!TUNER.running) return;
+  TUNER.rafId = requestAnimationFrame(tunerTick);
+  if (++_tunerFrame % 4 !== 0) return; // run analysis at ~15fps to save CPU on mobile
   TUNER.analyser.getFloatTimeDomainData(TUNER.buf);
   const freq = autocorrelate(TUNER.buf, TUNER.ctx.sampleRate);
   const noteEl  = document.getElementById('tuner-note');
@@ -5461,7 +5503,6 @@ function tunerTick() {
     barEl.style.width = '0%'; barEl.style.left = '50%';
     centsEl.textContent = '± 0 cents';
   }
-  TUNER.rafId = requestAnimationFrame(tunerTick);
 }
 
 async function tunerToggle() {
