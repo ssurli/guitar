@@ -1332,15 +1332,15 @@
   /* Mini fretboard grid */
   .triad-shapes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
   }
 
   .triad-shape-card {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 16px;
+    padding: 10px;
     transition: border-color .2s;
     cursor: pointer;
   }
@@ -3187,7 +3187,8 @@ function renderModesPage() {
     let diagHtml = '';
     if (npsPos) {
       const frets = offsetsToFrets(npsPos.offs, anchor);
-      const svg = drawMiniDiagram(frets, m.color, '#3b82f6', keyIdx, keyIdx, scaleData.intervals);
+      const modeKeyIdx = (keyIdx + npsPos.ao) % 12;
+      const svg = drawMiniDiagram(frets, m.color, '#3b82f6', modeKeyIdx, modeKeyIdx, scaleData.intervals);
       diagHtml = `<div style="margin:10px 0 8px">
         <div style="font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px">Pattern 3NPS (in C, tasto ${anchor === 0 ? 'aperto' : anchor})</div>
         <div style="display:inline-block">${svg}</div>
@@ -4577,7 +4578,7 @@ function drawP5Fretboard(box, keyIdx, quality) {
   const NOTES_ARR = NOTES;
   const OPEN_S = OPEN_STRINGS;
 
-  const cellH = 44, cellW = 52;
+  const cellH = 34, cellW = 40;
   const leftPad = 30, topPad = 18, rightPad = 10;
   const nFrets = maxF - minF + 1;
   const W = leftPad + nFrets * cellW + rightPad;
@@ -4586,7 +4587,7 @@ function drawP5Fretboard(box, keyIdx, quality) {
   const activeSet = new Set(fretsByString.flatMap((frets, s) => frets.map(f => s + ',' + f)));
   const sNames = ['e','B','G','D','A','E'];
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:500px">`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%">`;
   svg += `<rect width="${W}" height="${H}" fill="#1a1a1a" rx="8"/>`;
 
   // Fret numbers
@@ -4682,42 +4683,42 @@ function drawP5Overview(keyIdx, quality) {
   });
 
   const fretCount = 17;
-  const cellH = 22, cellW = 38;
-  const leftPad = 28, topPad = 14;
-  const W = leftPad + (fretCount + 1) * cellW + 10;
+  const cellH = 16, cellW = 18;
+  const leftPad = 22, topPad = 14;
+  const W = leftPad + (fretCount + 1) * cellW + 8;
   const H = topPad + 6 * cellH + 16;
   const sNames = ['e','B','G','D','A','E'];
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:600px">`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%">`;
   svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="8"/>`;
 
   // Fret numbers
   for (let f = 0; f <= fretCount; f++) {
     const x = leftPad + f * cellW + cellW / 2;
-    svg += `<text x="${x}" y="10" text-anchor="middle" font-size="7.5" fill="#444" font-family="monospace">${f}</text>`;
+    svg += `<text x="${x}" y="10" text-anchor="middle" font-size="6" fill="#444" font-family="monospace">${f}</text>`;
   }
 
   // Nut
-  svg += `<rect x="${leftPad + cellW}" y="${topPad}" width="2.5" height="${6*cellH}" fill="#d4af6a" rx="1"/>`;
+  svg += `<rect x="${leftPad + cellW}" y="${topPad}" width="2" height="${6*cellH}" fill="#d4af6a" rx="1"/>`;
 
   // Fret markers
   [3,5,7,9,12,15,17].forEach(mf => {
     if (mf > fretCount) return;
     const x = leftPad + mf * cellW + cellW / 2;
-    const y = topPad + 6 * cellH + 9;
+    const y = topPad + 6 * cellH + 8;
     if (mf === 12) {
-      svg += `<circle cx="${x-5}" cy="${y}" r="2.5" fill="#3d2c10"/>`;
-      svg += `<circle cx="${x+5}" cy="${y}" r="2.5" fill="#3d2c10"/>`;
+      svg += `<circle cx="${x-3}" cy="${y}" r="2" fill="#3d2c10"/>`;
+      svg += `<circle cx="${x+3}" cy="${y}" r="2" fill="#3d2c10"/>`;
     } else {
-      svg += `<circle cx="${x}" cy="${y}" r="2.5" fill="#222"/>`;
+      svg += `<circle cx="${x}" cy="${y}" r="2" fill="#222"/>`;
     }
   });
 
   // Grid
   for (let s = 0; s < 6; s++) {
     const y = topPad + s * cellH + cellH / 2;
-    svg += `<line x1="${leftPad}" y1="${y}" x2="${W-8}" y2="${y}" stroke="#c8a84b" stroke-width="0.6" opacity="0.35"/>`;
-    svg += `<text x="${leftPad-3}" y="${y+3}" text-anchor="end" font-size="7" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
+    svg += `<line x1="${leftPad}" y1="${y}" x2="${W-8}" y2="${y}" stroke="#c8a84b" stroke-width="0.5" opacity="0.35"/>`;
+    svg += `<text x="${leftPad-2}" y="${y+3}" text-anchor="end" font-size="6" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
   }
   for (let f = 0; f <= fretCount; f++) {
     const x = leftPad + f * cellW;
@@ -4746,10 +4747,10 @@ function drawP5Overview(keyIdx, quality) {
     if (f < 0 || f > fretCount) continue;
     const x = leftPad + f * cellW + cellW / 2;
     const y = topPad + s * cellH + cellH / 2;
-    svg += `<circle cx="${x}" cy="${y}" r="7" fill="${info.color}" opacity="0.9"/>`;
-    if (info.isRoot) svg += `<circle cx="${x}" cy="${y}" r="7" fill="none" stroke="#fff" stroke-width="1" opacity="0.5"/>`;
+    svg += `<circle cx="${x}" cy="${y}" r="5" fill="${info.color}" opacity="0.9"/>`;
+    if (info.isRoot) svg += `<circle cx="${x}" cy="${y}" r="5" fill="none" stroke="#fff" stroke-width="1" opacity="0.5"/>`;
     const noteName = NOTES[(OPEN_STRINGS[s] + f) % 12];
-    svg += `<text x="${x}" y="${y+2.5}" text-anchor="middle" font-size="5.5" fill="${info.isRoot?'#000':'#fff'}" font-weight="bold" font-family="monospace">${noteName}</text>`;
+    svg += `<text x="${x}" y="${y+1.5}" text-anchor="middle" font-size="4" fill="${info.isRoot?'#000':'#fff'}" font-weight="bold" font-family="monospace">${noteName}</text>`;
   }
 
   svg += '</svg>';
@@ -5095,7 +5096,29 @@ window.addEventListener('DOMContentLoaded', function() {
 <!-- ═══════════════════════════════ ACCORDATORE ════════════════════════════════ -->
 <div id="page-tuner" class="page">
   <h2>Accordatore</h2>
-  <div class="subtitle">// usa il microfono per accordare la chitarra</div>
+  <div class="subtitle">// usa il microfono per accordare la chitarra · A = 440 Hz</div>
+
+  <div class="controls" style="margin-bottom:16px">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Accordatura</div>
+      <select id="tuner-preset" onchange="tunerSetPreset(this.value)">
+        <option value="standard">Standard (E A D G B E)</option>
+        <option value="drop_d">Drop D (D A D G B E)</option>
+        <option value="dadgad">DADGAD</option>
+        <option value="open_g">Open G (D G D G B D)</option>
+        <option value="open_d">Open D (D A D F# A D)</option>
+        <option value="open_e">Open E (E B E G# B E)</option>
+        <option value="open_a">Open A (E A E A C# E)</option>
+        <option value="drop_c">Drop C (C G C F A D)</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">La di riferimento: <span id="tuner-aref-val">440</span> Hz</div>
+      <input type="range" id="tuner-aref" min="432" max="446" value="440" step="1"
+             oninput="tunerSetRef(this.value)"
+             style="width:100%;margin-top:6px;accent-color:var(--amber)">
+    </div>
+  </div>
 
   <div class="tuner-btn">
     <button class="play-btn" id="tuner-toggle" onclick="tunerToggle()">🎤 Avvia accordatore</button>
@@ -5111,7 +5134,7 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="tuner-cents" id="tuner-cents">± 0 cents</div>
   </div>
 
-  <div class="tuner-strings">
+  <div class="tuner-strings" id="tuner-strings-list">
     <div class="tuner-str"><div class="str-name">E</div><div class="str-freq">82.4 Hz</div><div class="ctrl-label">6ª</div></div>
     <div class="tuner-str"><div class="str-name">A</div><div class="str-freq">110 Hz</div><div class="ctrl-label">5ª</div></div>
     <div class="tuner-str"><div class="str-name">D</div><div class="str-freq">146.8 Hz</div><div class="ctrl-label">4ª</div></div>
@@ -5119,37 +5142,53 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="tuner-str"><div class="str-name">B</div><div class="str-freq">246.9 Hz</div><div class="ctrl-label">2ª</div></div>
     <div class="tuner-str"><div class="str-name">E</div><div class="str-freq">329.6 Hz</div><div class="ctrl-label">1ª</div></div>
   </div>
-
-  <div class="info-card" style="max-width:480px;margin:0 auto">
-    <div style="font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:12px">Accordatura Standard</div>
-    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;text-align:center">
-      <div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--amber)">E2</div><div style="font-size:11px;color:var(--text-dim)">82.4</div></div>
-      <div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--amber)">A2</div><div style="font-size:11px;color:var(--text-dim)">110.0</div></div>
-      <div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--amber)">D3</div><div style="font-size:11px;color:var(--text-dim)">146.8</div></div>
-      <div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--amber)">G3</div><div style="font-size:11px;color:var(--text-dim)">196.0</div></div>
-      <div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--amber)">B3</div><div style="font-size:11px;color:var(--text-dim)">246.9</div></div>
-      <div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--amber)">E4</div><div style="font-size:11px;color:var(--text-dim)">329.6</div></div>
-    </div>
-  </div>
 </div>
 
 <script>
 // ─── ACCORDATORE (Pitch Detection via Autocorrelazione) ──────────────────────
-const TUNER = {
-  running: false, stream: null, ctx: null,
-  analyser: null, buf: null, rafId: null
+const TUNER_PRESETS = {
+  standard: { name:'Standard (E A D G B E)', notes:['E','A','D','G','B','E'], notesFull:['E2','A2','D3','G3','B3','E4'], freqs:[82.41,110.00,146.83,196.00,246.94,329.63] },
+  drop_d:   { name:'Drop D (D A D G B E)',   notes:['D','A','D','G','B','E'], notesFull:['D2','A2','D3','G3','B3','E4'], freqs:[73.42,110.00,146.83,196.00,246.94,329.63] },
+  dadgad:   { name:'DADGAD',                 notes:['D','A','D','G','A','D'], notesFull:['D2','A2','D3','G3','A3','D4'], freqs:[73.42,110.00,146.83,196.00,220.00,293.66] },
+  open_g:   { name:'Open G (D G D G B D)',   notes:['D','G','D','G','B','D'], notesFull:['D2','G2','D3','G3','B3','D4'], freqs:[73.42,98.00,146.83,196.00,246.94,293.66] },
+  open_d:   { name:'Open D (D A D F# A D)',  notes:['D','A','D','F#','A','D'],notesFull:['D2','A2','D3','F#3','A3','D4'],freqs:[73.42,110.00,146.83,184.99,220.00,293.66] },
+  open_e:   { name:'Open E (E B E G# B E)',  notes:['E','B','E','G#','B','E'],notesFull:['E2','B2','E3','G#3','B3','E4'],freqs:[82.41,123.47,164.81,207.65,246.94,329.63] },
+  open_a:   { name:'Open A (E A E A C# E)',  notes:['E','A','E','A','C#','E'],notesFull:['E2','A2','E3','A3','C#4','E4'],freqs:[82.41,110.00,164.81,220.00,277.18,329.63] },
+  drop_c:   { name:'Drop C (C G C F A D)',   notes:['C','G','C','F','A','D'], notesFull:['C2','G2','C3','F3','A3','D4'], freqs:[65.41,98.00,130.81,174.61,220.00,293.66] },
 };
 
+const TUNER = {
+  running: false, stream: null, ctx: null,
+  analyser: null, buf: null, rafId: null,
+  aRef: 440,
+  activeTuning: null  // set after TUNER_PRESETS declared
+};
+TUNER.activeTuning = TUNER_PRESETS.standard;
+
 const NOTE_STRINGS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-const STD_TUNING = [
-  {note:'E2', freq:82.41},  {note:'A2', freq:110.00},
-  {note:'D3', freq:146.83}, {note:'G3', freq:196.00},
-  {note:'B3', freq:246.94}, {note:'E4', freq:329.63}
-];
+
+function tunerSetPreset(key) {
+  TUNER.activeTuning = TUNER_PRESETS[key] || TUNER_PRESETS.standard;
+  _updateTunerStringsDisplay();
+}
+
+function tunerSetRef(val) {
+  TUNER.aRef = parseFloat(val);
+  document.getElementById('tuner-aref-val').textContent = val;
+}
+
+function _updateTunerStringsDisplay() {
+  const t = TUNER.activeTuning;
+  const labels = ['6ª','5ª','4ª','3ª','2ª','1ª'];
+  const stringsEl = document.getElementById('tuner-strings-list');
+  if (stringsEl) stringsEl.innerHTML = t.notesFull.map((n,i) =>
+    `<div class="tuner-str"><div class="str-name">${t.notes[i]}</div><div class="str-freq">${t.freqs[i].toFixed(1)} Hz</div><div class="ctrl-label">${labels[i]}</div></div>`
+  ).join('');
+}
 
 function freqToNote(freq) {
   if (!freq || freq < 20) return null;
-  const midi = 12 * Math.log2(freq / 440) + 69;
+  const midi = 12 * Math.log2(freq / TUNER.aRef) + 69;
   const midiRound = Math.round(midi);
   const cents = Math.round((midi - midiRound) * 100);
   const octave = Math.floor(midiRound / 12) - 1;
@@ -5216,8 +5255,8 @@ function tunerTick() {
     barEl.className = 'tuner-meter-bar' + (inTune ? ' in-tune' : '');
 
     // Evidenzia la corda più vicina
-    document.querySelectorAll('.tuner-str').forEach((el, i) => {
-      const diff = Math.abs(STD_TUNING[i].freq - freq);
+    document.querySelectorAll('#tuner-strings-list .tuner-str').forEach((el, i) => {
+      const diff = Math.abs(TUNER.activeTuning.freqs[i] - freq);
       el.className = 'tuner-str' + (diff < 10 ? ' active' : '');
     });
   } else {
