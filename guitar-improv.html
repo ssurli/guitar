@@ -170,8 +170,15 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+  }
+  /* flex-grow solo dentro la controls bar, non su tutto il sito */
+  .controls > .ctrl-group {
     flex: 1 1 140px;
     min-width: 0;
+  }
+  /* quando c'è un solo ctrl-group non si allarga a piena larghezza */
+  .controls > .ctrl-group:only-child {
+    flex: 0 0 auto;
   }
 
   .ctrl-label {
@@ -3082,9 +3089,9 @@ function drawPatternLines() {
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
 
   svg.innerHTML = segments.map(([a, b, cross]) => {
-    const color = cross ? 'rgba(255,255,255,0.12)' : 'rgba(255,200,50,0.35)';
-    const dash = cross ? '3,6' : '5,4';
-    const width = cross ? '1' : '1.5';
+    const color = cross ? 'rgba(255,255,255,0.50)' : 'rgba(255,200,50,0.75)';
+    const dash = cross ? '4,5' : '6,4';
+    const width = cross ? '1.5' : '2';
     return `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"
       stroke="${color}" stroke-width="${width}" stroke-dasharray="${dash}" stroke-linecap="round"/>`;
   }).join('');
@@ -4353,7 +4360,18 @@ function renderCaged() {
     const card = document.createElement('div');
     card.className = 'caged-card' + (idx === CAGED_STATE.selected ? ' caged-active' : '');
     card.style.borderColor = idx === CAGED_STATE.selected ? def.color : '';
-    card.onclick = () => { CAGED_STATE.selected = idx; renderCaged(); };
+    card.onclick = () => {
+      // Prima suona l'accordo (prima che renderCaged() ricrei il DOM)
+      const actx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+      if (!audioCtx) audioCtx = actx;
+      const now = actx.currentTime;
+      playedFrets.slice().reverse().forEach((n, j) => {
+        const noteIndex = (OPEN_STRINGS[n.s] + n.fret) % 12;
+        playNote(noteToFreq(noteIndex, n.s < 2 ? 5 : 4), now + j * 0.06, 1.2);
+      });
+      CAGED_STATE.selected = idx;
+      renderCaged();
+    };
 
     const notePills = playedFrets.map(n => {
       const noteName = NOTES[(OPEN_STRINGS[n.s] + n.fret) % 12];
@@ -4367,16 +4385,6 @@ function renderCaged() {
       <div class="chord-svg-wrap">${drawChordDiagram(name, rootNote, quality, idx===CAGED_STATE.selected)}</div>
       <div class="chord-note-pills">${notePills}</div>`;
 
-    card.addEventListener('click', () => {
-      // Play chord
-      if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-      const now = audioCtx.currentTime;
-      playedFrets.slice().reverse().forEach((n, j) => {
-        const noteIndex = (OPEN_STRINGS[n.s] + n.fret) % 12;
-        const octave = n.s < 2 ? 5 : 4;
-        playNote(noteToFreq(noteIndex, octave), now + j*0.06, 1.2);
-      });
-    });
 
     cardsEl.appendChild(card);
   });
