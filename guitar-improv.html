@@ -504,6 +504,115 @@
     display: flex; gap: 12px; justify-content: center; margin-bottom: 24px;
   }
 
+  /* ══════════════════════════════ TECNICA AVANZATA ══════════════════════════════ */
+  .tech-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:24px; }
+  .tech-tab {
+    background:var(--bg3); border:2px solid var(--border);
+    color:var(--text-mid); font-family:'Space Mono',monospace;
+    font-size:10px; text-transform:uppercase; letter-spacing:.5px;
+    padding:7px 14px; border-radius:20px; cursor:pointer; transition:all .2s;
+  }
+  .tech-tab:hover { border-color:var(--amber-dim); color:var(--text); }
+  .tech-tab.active { border-color:var(--amber); color:var(--amber); background:var(--amber-glow); }
+  .tech-panel { display:none; }
+  .tech-panel.active { display:block; }
+
+  .sweep-shapes-row { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:16px; }
+  .sweep-shape-btn {
+    background:var(--bg3); border:1px solid var(--border); color:var(--text-mid);
+    font-family:'Space Mono',monospace; font-size:10px;
+    padding:5px 12px; border-radius:6px; cursor:pointer; transition:all .2s;
+  }
+  .sweep-shape-btn:hover { border-color:var(--amber-dim); }
+  .sweep-shape-btn.active { color:var(--amber); border-color:var(--amber); background:var(--amber-glow); }
+
+  .sweep-layout {
+    display:grid; grid-template-columns:auto 1fr; gap:20px; align-items:start;
+  }
+  @media(max-width:650px){ .sweep-layout { grid-template-columns:1fr; } }
+  .sweep-diagram-box {
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:14px; width:140px;
+  }
+  @media(max-width:650px){ .sweep-diagram-box { width:100%; max-width:180px; } }
+  .sweep-info-box {
+    background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px;
+  }
+  .sweep-info-box h3 {
+    font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px;
+    margin-bottom:4px;
+  }
+  .sweep-tab-display {
+    font-family:'Space Mono',monospace; font-size:11px; color:var(--green);
+    background:#0a120a; border:1px solid #1a2a1a; border-radius:8px;
+    padding:10px 14px; line-height:1.85; overflow-x:auto;
+    white-space:pre; margin:10px 0; -webkit-overflow-scrolling:touch;
+  }
+  .sweep-interval-row { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 12px; }
+  .sweep-pill {
+    font-family:'Space Mono',monospace; font-size:9px; padding:2px 8px;
+    border-radius:10px; border:1px solid;
+  }
+
+  .ex-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+    gap:16px; margin-top:8px;
+  }
+  .ex-card {
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:15px; transition:border-color .2s;
+  }
+  .ex-card:hover { border-color:var(--amber-dim); }
+  .ex-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .ex-bpm-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .ex-bpm-row span { font-family:'Space Mono',monospace; font-size:10px; padding:2px 8px; border-radius:4px; border:1px solid; }
+  .ex-diff { font-size:10px; color:var(--amber); }
+  .ex-card-title {
+    font-family:'Bebas Neue',sans-serif; font-size:17px; letter-spacing:1px;
+    color:var(--amber); margin-bottom:4px;
+  }
+  .ex-diff { display:inline-flex; gap:3px; margin-bottom:8px; }
+  .ex-dot { width:7px; height:7px; border-radius:50%; background:var(--border); }
+  .ex-dot.on { background:var(--amber); }
+  .ex-tab {
+    font-family:'Space Mono',monospace; font-size:10px; color:var(--green);
+    background:#0a120a; border:1px solid #1a2a1a; border-radius:6px;
+    padding:8px 10px; line-height:1.7; overflow-x:auto; white-space:pre;
+    margin:8px 0; -webkit-overflow-scrolling:touch;
+  }
+  .ex-desc { font-size:12px; color:var(--text-mid); line-height:1.5; margin-bottom:6px; }
+  .ex-chips { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; }
+  .ex-chip {
+    font-family:'Space Mono',monospace; font-size:9px; padding:2px 8px;
+    border-radius:10px; background:var(--bg3); border:1px solid var(--border);
+    color:var(--text-dim);
+  }
+  .ex-bpm-slow { color:#22c55e; border-color:#1a3a1a!important; background:#0d1a0d!important; }
+  .ex-bpm-mid  { color:#f59e0b; border-color:#3a2a0a!important; background:#1a120a!important; }
+  .ex-bpm-fast { color:#ef4444; border-color:#3a0a0a!important; background:#1a0a0a!important; }
+  .ex-tips { font-size:12px; color:var(--text-mid); line-height:1.5; margin-top:8px; }
+  .ex-tips li { margin-bottom:3px; }
+
+  .masters-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+    gap:18px; margin-top:8px;
+  }
+  .master-card {
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    overflow:hidden; transition:border-color .25s, transform .2s;
+  }
+  .master-card:hover { border-color:var(--amber-dim); transform:translateY(-2px); }
+  .master-header { padding:14px 16px 12px; border-bottom:1px solid var(--border); }
+  .master-name { font-family:'Bebas Neue',sans-serif; font-size:25px; letter-spacing:1.5px; margin-bottom:1px; }
+  .master-meta { font-family:'Space Mono',monospace; font-size:9px; color:var(--text-dim); text-transform:uppercase; }
+  .master-body { padding:12px 16px 16px; }
+  .master-techs { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; }
+  .master-tech-tag { font-family:'Space Mono',monospace; font-size:9px; padding:2px 8px; border-radius:10px; border:1px solid; text-transform:uppercase; }
+  .master-sound { font-size:12px; color:var(--text-mid); line-height:1.5; margin-bottom:10px; }
+  .master-songs { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; }
+  .master-song { font-family:'Space Mono',monospace; font-size:9px; background:var(--bg3); border:1px solid var(--border); padding:2px 8px; border-radius:4px; color:var(--text-mid); }
+  .master-challenge { background:var(--bg3); border-radius:8px; padding:8px 10px; font-size:11px; color:var(--text-mid); line-height:1.5; border-left:3px solid; }
+
   /* Fret markers */
   .fret-markers {
     display: flex;
@@ -1249,7 +1358,10 @@
     gap: 24px;
     align-items: start;
   }
-  @media(max-width:800px){ .triad-layout { grid-template-columns:1fr; } }
+  @media(max-width:800px){
+    .triad-layout { grid-template-columns:1fr; }
+    .triad-info-col { order:2; position:static; padding:14px; }
+  }
 
   .triad-info-col {
     background: var(--panel);
@@ -1469,7 +1581,7 @@
     gap: 20px;
     align-items: start;
   }
-  @media(max-width:860px){ .p5-layout { grid-template-columns:1fr; } }
+  @media(max-width:860px){ .p5-layout { grid-template-columns:1fr; } .p5-info { position:static; } }
 
   .p5-box-tabs {
     display: flex; gap: 6px; flex-wrap: wrap;
@@ -1690,6 +1802,7 @@
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
     <button class="nav-btn" onclick="showPage('jam')">🎸 Basi</button>
     <button class="nav-btn" onclick="showPage('tuner')">🎵 Accordatore</button>
+    <button class="nav-btn" onclick="showPage('technique');initTechPage()">⚡ Tecnica</button>
   </nav>
 </header>
 
@@ -4587,7 +4700,7 @@ function drawP5Fretboard(box, keyIdx, quality) {
   const activeSet = new Set(fretsByString.flatMap((frets, s) => frets.map(f => s + ',' + f)));
   const sNames = ['e','B','G','D','A','E'];
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%">`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">`;
   svg += `<rect width="${W}" height="${H}" fill="#1a1a1a" rx="8"/>`;
 
   // Fret numbers
@@ -4689,7 +4802,7 @@ function drawP5Overview(keyIdx, quality) {
   const H = topPad + 6 * cellH + 16;
   const sNames = ['e','B','G','D','A','E'];
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%">`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">`;
   svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="8"/>`;
 
   // Fret numbers
@@ -5144,6 +5257,90 @@ window.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+<!-- ═══════════════════════════ TECNICA AVANZATA ═══════════════════════════ -->
+<div id="page-technique" class="page">
+  <h2>⚡ Tecnica Avanzata</h2>
+  <div class="subtitle">// sweep picking, alternate, legato, tapping — studia i virtuosi del rock</div>
+
+  <div class="tech-tabs" id="tech-tabs"></div>
+
+  <!-- SWEEP PICKING -->
+  <div id="tp-sweep" class="tech-panel active">
+    <div class="notice">
+      <strong>Sweep Picking:</strong> Si usa un singolo movimento continuo del plettro su più corde, come si spazzola, creando arpeggi veloci e fluidi. La mano sinistra deve silenziare ogni nota appena suonata per evitare che si sovrappongano.
+    </div>
+    <div class="controls" style="margin-bottom:16px">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Tonalità</div>
+        <select id="sweep-key" onchange="renderSweepPanel()">
+          <option value="9">A</option><option value="10">A# / Bb</option>
+          <option value="11">B</option><option value="0">C</option>
+          <option value="1">C# / Db</option><option value="2">D</option>
+          <option value="3">D# / Eb</option><option value="4">E</option>
+          <option value="5">F</option><option value="6">F# / Gb</option>
+          <option value="7">G</option><option value="8">G# / Ab</option>
+        </select>
+      </div>
+    </div>
+    <div class="sweep-shapes-row" id="sweep-shape-btns"></div>
+    <div class="sweep-layout">
+      <div class="sweep-diagram-box">
+        <div class="msect-lbl" style="margin-top:0">Forma</div>
+        <div id="sweep-diagram"></div>
+      </div>
+      <div class="sweep-info-box">
+        <h3 id="sweep-shape-name" style="color:var(--amber)"></h3>
+        <div id="sweep-interval-row" class="sweep-interval-row"></div>
+        <div class="msect-lbl">Tablatura (▲ sweep up · ▼ sweep down)</div>
+        <div class="sweep-tab-display" id="sweep-tab-display"></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="play-btn" onclick="playSweepArp(false)" style="padding:8px 16px;font-size:13px">▲ Play Up</button>
+          <button class="play-btn" onclick="playSweepArp(true)" style="padding:8px 16px;font-size:13px">▼ Play Down</button>
+          <button class="play-btn" onclick="playSweepArp(null)" style="padding:8px 16px;font-size:13px;background:rgba(245,158,11,0.15)">↑↓ Up+Down</button>
+        </div>
+        <div id="sweep-players" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALTERNATE PICKING -->
+  <div id="tp-alternate" class="tech-panel">
+    <div class="notice">
+      <strong>Alternate Picking:</strong> Ogni nota alternates giù-su (↓↑). È la tecnica più efficiente per velocità, precisione e controllo del timing. Il metronomo è obbligatorio — comincia lento e aumenta di 5 BPM alla volta.
+    </div>
+    <div class="ex-grid" id="ex-alternate-grid"></div>
+  </div>
+
+  <!-- LEGATO -->
+  <div id="tp-legato" class="tech-panel">
+    <div class="notice">
+      <strong>Legato:</strong> Hammer-on (↑) e pull-off (↓) permettono di suonare più note con un solo pizzico. Crea un suono fluido, legato appunto, come la voce o un sassofono. La chiave è la forza e precisione della mano sinistra.
+    </div>
+    <div class="ex-grid" id="ex-legato-grid"></div>
+  </div>
+
+  <!-- TAPPING -->
+  <div id="tp-tapping" class="tech-panel">
+    <div class="notice">
+      <strong>Tapping a due mani:</strong> La mano destra tocca (tappa) direttamente le corde, estendendo enormemente il range di note raggiungibili. Inventato nel rock da Eddie Van Halen, sviluppato da Steve Vai, Joe Satriani e molti altri.
+    </div>
+    <div class="ex-grid" id="ex-tapping-grid"></div>
+  </div>
+
+  <!-- STRING SKIPPING -->
+  <div id="tp-skipping" class="tech-panel">
+    <div class="notice">
+      <strong>String Skipping:</strong> Saltare corde non adiacenti crea intervalli ampi (6e, 7e, 10e) impossibili con le dita consecutive. Suono moderno, tecnico. Marchio di fabbrica di Paul Gilbert e molti shredder moderni.
+    </div>
+    <div class="ex-grid" id="ex-skipping-grid"></div>
+  </div>
+
+  <!-- I MAESTRI -->
+  <div id="tp-masters" class="tech-panel">
+    <div class="masters-grid" id="masters-grid"></div>
+  </div>
+</div>
+
 <script>
 // ─── ACCORDATORE (Pitch Detection via Autocorrelazione) ──────────────────────
 const TUNER_PRESETS = {
@@ -5295,6 +5492,427 @@ async function tunerToggle() {
   } catch (e) {
     alert('Microfono non disponibile: ' + (e.message || e));
   }
+}
+
+// ─── TECNICA AVANZATA ─────────────────────────────────────────────────────────
+
+const NOTES_TECH = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+// String open MIDI notes (index 0=e, 1=B, 2=G, 3=D, 4=A, 5=E)
+const TECH_OPEN_MIDI = [64, 59, 55, 50, 45, 40];
+
+// Sweep arpeggio shapes — each entry has:
+//   name, quality, intervals (display), color
+//   shapes: array of {string (0=e..5=E), interval (semitones from root)}
+const SWEEP_SHAPES = [
+  {
+    id:'am5', name:'Am Minore 5 corde', quality:'minor', color:'#ef4444',
+    intervals:['1','b3','5','b3','1'],
+    strings:[5,4,3,2,1],  // E A D G B
+    semitones:[0,3,7,3,0],
+    tab: 'e ---|-----|---\nB ---|-----|---\nG ---|--5--|---\nD ---|--5--|---\nA --7|-----|---\nE --5|-----|---\n     ▲  sweep up',
+    players:['Al Di Meola','Frank Gambale','Jason Becker']
+  },
+  {
+    id:'am6', name:'Am Minore 6 corde', quality:'minor', color:'#f97316',
+    intervals:['1','b3','5','1','b3','1'],
+    strings:[5,4,3,2,1,0],
+    semitones:[0,3,7,0,3,0],
+    tab: 'e --5|-----|---\nB ---|--8--|---\nG ---|--5--|---\nD ---|--7--|---\nA --7|-----|---\nE --5|-----|---\n     ▲  sweep up',
+    players:['Yngwie Malmsteen','Jason Becker','Marty Friedman']
+  },
+  {
+    id:'maj5', name:'Maggiore 5 corde', quality:'major', color:'#22c55e',
+    intervals:['1','3','5','3','1'],
+    strings:[5,4,3,2,1],
+    semitones:[0,4,7,4,0],
+    tab: 'e ---|-----|---\nB ---|--5--|---\nG ---|--6--|---\nD ---|--6--|---\nA --7|-----|---\nE --5|-----|---\n     ▲  sweep up',
+    players:['Frank Gambale','Tony MacAlpine','Vinnie Moore']
+  },
+  {
+    id:'maj6', name:'Maggiore 6 corde', quality:'major', color:'#3b82f6',
+    intervals:['1','3','5','1','3','1'],
+    strings:[5,4,3,2,1,0],
+    semitones:[0,4,7,0,4,0],
+    tab: 'e --5|-----|---\nB ---|--9--|---\nG ---|--6--|---\nD ---|--7--|---\nA --7|-----|---\nE --5|-----|---\n     ▲  sweep up',
+    players:['Yngwie Malmsteen','Richie Kotzen']
+  },
+  {
+    id:'dim5', name:'Diminuito 5 corde', quality:'dim', color:'#a855f7',
+    intervals:['1','b3','b5','b3','1'],
+    strings:[5,4,3,2,1],
+    semitones:[0,3,6,3,0],
+    tab: 'e ---|-----|---\nB ---|--4--|---\nG ---|--4--|---\nD ---|--4--|---\nA --6|-----|---\nE --5|-----|---\n     ▲  sweep up',
+    players:['Jason Becker','Shawn Lane']
+  },
+  {
+    id:'dom7', name:'Dom7 4 corde', quality:'dom7', color:'#eab308',
+    intervals:['1','3','b7','5'],
+    strings:[4,3,2,1],
+    semitones:[0,4,10,7],
+    tab: 'e ---|-----|---\nB ---|--8--|---\nG ---|--7--|---\nD ---|--7--|---\nA --7|-----|---\nE ---|-----|---\n     ▲  sweep up',
+    players:['Frank Gambale','Guthrie Govan']
+  },
+  {
+    id:'min7', name:'Min7 4 corde', quality:'min7', color:'#06b6d4',
+    intervals:['1','b3','b7','5'],
+    strings:[4,3,2,1],
+    semitones:[0,3,10,7],
+    tab: 'e ---|-----|---\nB ---|--8--|---\nG ---|--6--|---\nD ---|--5--|---\nA --7|-----|---\nE ---|-----|---\n     ▲  sweep up',
+    players:['John Petrucci','Michael Romeo']
+  }
+];
+
+const TECH_EXERCISES = {
+  alternate: [
+    { title:'Scala cromatica', diff:1, bpmSlow:60, bpmMid:100, bpmFast:140,
+      tab:'e |--1-2-3-4--|--5-6-7-8--|\nB |-----------|----------|\nG |-----------|----------|\nD |-----------|----------|\nA |-----------|----------|\nE |-----------|----------|',
+      tips:['Pennata rigorosamente ↓↑↓↑','Usa il metronomo','Registrati e ascolta'],
+      tags:['cromatico','riscaldamento'] },
+    { title:'Scale pentatonica Am (pattern 1)', diff:2, bpmSlow:70, bpmMid:110, bpmFast:150,
+      tab:'e |--5-8------|--8-5------|\nB |--5-8------|--8-5------|\nG |--5-7------|--7-5------|\nD |--5-7------|--7-5------|\nA |--5-7------|--7-5------|\nE |--5-8------|--8-5------|',
+      tips:['Tieni il polso rilassato','Partenza con pennata verso il basso','Segna i punti di corda cambiamento'],
+      tags:['pentatonica','scale'] },
+    { title:'Sequenza di 3 note (triplet run)', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
+      tab:'e |--5-7-8-7-5-3-|\nB |-------------5-|\nG |--------------|\nD |--------------|\nA |--------------|\nE |--------------|',
+      tips:['Ogni gruppo di 3 comincia ↓','Accelera solo quando il ritmo è preciso'],
+      tags:['sequenza','triplet'] },
+    { title:'Inside/Outside picking', diff:4, bpmSlow:50, bpmMid:80, bpmFast:110,
+      tab:'e |--8-10------|--10-8------|\nB |--8-10------|--10-8------|\nG |------------|------------|\nD |--7-9-------|--9-7-------|\nA |--7-9-------|--9-7-------|\nE |------------|------------|',
+      tips:['Inside = pennata nel mezzo delle corde','Outside = pennata verso fuori','Difficile: parte slow'],
+      tags:['inside','outside','avanzato'] },
+  ],
+  legato: [
+    { title:'Hammer-on semplice', diff:1, bpmSlow:60, bpmMid:100, bpmFast:130,
+      tab:'e |--5h7h8------|--8p7p5------|\nB |-------------|------------|\nG |-------------|------------|\nD |-------------|------------|\nA |-------------|------------|\nE |-------------|------------|',
+      tips:['Colpisci forte con le dita di arrivo','Non sollevare le dita sulla corda'],
+      tags:['hammer-on','pull-off'] },
+    { title:'Scala legato 3 note per corda', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
+      tab:'e |--5h7h8-----|--8p7p5-----|\nB |--5h7h8-----|--8p7p5-----|\nG |--5h7h9-----|--9p7p5-----|\nD |--5h7h9-----|--9p7p5-----|\nA |--5h7h8-----|--8p7p5-----|\nE |--5h7h8-----|--8p7p5-----|',
+      tips:['Primo pizzico per ogni corda','Massima efficienza mano sinistra'],
+      tags:['scale','legato'] },
+    { title:'Legato con hammer-on da vuoto', diff:2, bpmSlow:60, bpmMid:95, bpmFast:125,
+      tab:'e |--0h5h7------|--7p5p0------|\nB |-------------|------------|\nG |-------------|------------|\nD |-------------|------------|\nA |-------------|------------|\nE |-------------|------------|',
+      tips:['Apri con corda vuota per avere più slancio','Tieni le dita già posizionate'],
+      tags:['corda vuota','hammer-on'] },
+    { title:'Trill su 2 note', diff:2, bpmSlow:80, bpmMid:110, bpmFast:140,
+      tab:'e |--7h8p7h8p7h8------|\nB |-------------------|\nG |-------------------|\nD |-------------------|\nA |-------------------|\nE |-------------------|',
+      tips:['Aumenta gradualmente la velocità','Usa come riscaldamento dita'],
+      tags:['trill','riscaldamento'] },
+  ],
+  tapping: [
+    { title:'Tapping base (Eddie Van Halen style)', diff:2, bpmSlow:60, bpmMid:90, bpmFast:120,
+      tab:'e |--T12p7h5--T12p7h5---|\nB |--------------------|\nG |--------------------|\nD |--------------------|\nA |--------------------|\nE |--------------------|',
+      tips:['T = dito indice o medio della mano destra','Forza moderata sul tap','Fai rimbalzare il pull-off'],
+      tags:['tapping','base'] },
+    { title:'Tapping su due corde', diff:3, bpmSlow:55, bpmMid:80, bpmFast:110,
+      tab:'e |--T12p8h5-----------|\nB |--------T15p10h7----|\nG |--------------------|\nD |--------------------|\nA |--------------------|\nE |--------------------|',
+      tips:['Passa veloce da una corda all'altra','Usa sempre la stessa posizione del braccio'],
+      tags:['tapping','due corde'] },
+    { title:'Tapping 8 dita (Greg Howe style)', diff:5, bpmSlow:50, bpmMid:70, bpmFast:95,
+      tab:'e |--T15-T12--7--T15-T12--5---|\nB |---------------------------|\nG |---------------------------|\nD |---------------------------|\nA |---------------------------|\nE |---------------------------|',
+      tips:['Richiede muto delle corde basse con palmo','Pratica ogni mano separatamente'],
+      tags:['tapping','8 dita','avanzato'] },
+    { title:'Tapping arpeggio (Steve Vai style)', diff:4, bpmSlow:55, bpmMid:80, bpmFast:105,
+      tab:'e |--T17p12h9-----------|\nB |-----------T15p10h7--|\nG |---------------------|\nD |---------------------|\nA |---------------------|\nE |---------------------|',
+      tips:['Nota le corde diverse per ogni gruppo','Ogni tap è una nota dell\'accordo'],
+      tags:['tapping','arpeggio'] },
+  ],
+  skipping: [
+    { title:'Skip di 2 corde (Gilbert pattern)', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
+      tab:'e |--5-7-8-----------|\nB |------------------|\nG |------5-7-9-------|\nD |------------------|\nA |----------5-7-8---|\nE |------------------|',
+      tips:['Salta sempre 1 corda','Ancora la mano sul corpo della chitarra'],
+      tags:['string skipping','Paul Gilbert'] },
+    { title:'Ottave skipping', diff:2, bpmSlow:70, bpmMid:100, bpmFast:130,
+      tab:'e |--5---7---8---10--|\nB |------------------|\nG |--2---4---5---7---|\nD |------------------|\nA |------------------|\nE |------------------|',
+      tips:['Muta con le dita della mano sinistra','Suona le due corde quasi insieme'],
+      tags:['ottave','string skipping'] },
+    { title:'10e intervalli (Guthrie Govan)', diff:4, bpmSlow:50, bpmMid:75, bpmFast:100,
+      tab:'e |--5-----------8---|\nB |------------------|\nG |------------------|\nD |------7-----------|\nA |------------------|\nE |------------------|\n(e+D skip 2 corde)',
+      tips:['Intervalli di 10a = ottava + terza','Stira le dita gradualmente'],
+      tags:['10e','avanzato'] },
+  ]
+};
+
+const MAESTRI = [
+  {
+    name:'Yngwie Malmsteen', origin:'Svezia', active:'1980–presente', color:'#f97316',
+    techs:['Sweep Picking','Alternate Picking','Vibrato classico','Scale neoclassiche'],
+    sound:'Marshall con drive moderato, chorus leggero, chitarre Fender Strat',
+    songs:['Far Beyond the Sun','Black Star','Rising Force','Trilogy Suite Op. 5'],
+    challenge:'Suona la scala di La minore armonica a 3 note per corda con alternate picking a 120 BPM, poi sale il BPM di 5 ogni settimana.'
+  },
+  {
+    name:'Steve Vai', origin:'USA', active:'1979–presente', color:'#a855f7',
+    techs:['Tapping a due mani','Whammy bar estremo','Legato','Scale esotiche','Ritmo polifonico'],
+    sound:'Ibanez JEM con DiMarzio, Marshall e rack di effetti. Delay sync a tempo.',
+    songs:['For the Love of God','Tender Surrender','Eruption (cover)','Bad Horsie'],
+    challenge:'Impara "For the Love of God" intro (Fm - posizione 1) con legato puro, nessun alternate picking.'
+  },
+  {
+    name:'Joe Satriani', origin:'USA', active:'1978–presente', color:'#22c55e',
+    techs:['Legato fluido','Tapping melodico','Vibrato largo','Bend precisi','Alternate picking'],
+    sound:'Ibanez JS con pickup Satch custom, Marshall JVM, delay e flanger.',
+    songs:['Surfing With the Alien','Always With Me Always With You','Flying in a Blue Dream'],
+    challenge:'Suona il riff di "Surfing With the Alien" pulito a 90 BPM con tutte le note ben definite.'
+  },
+  {
+    name:'Paul Gilbert', origin:'USA', active:'1984–presente', color:'#3b82f6',
+    techs:['Alternate picking estremo','String skipping','Arpeggi con pick','Muting'],
+    sound:'Ibanez RG, Mesa Boogie drive crunch. Tone brillante e attaccato.',
+    songs:['Scarified (Mr. Big)','Technical Difficulties','Racer X solos'],
+    challenge:'Esercizio "3-string skip" di Gilbert: e-G-e con note chromatiche a 80 BPM alternate picking stretto.'
+  },
+  {
+    name:'Eddie Van Halen', origin:'USA', active:'1972–2020', color:'#eab308',
+    techs:['Tapping inventore','Two-hand tapping','Legato veloce','Whammy bar creativo'],
+    sound:'Marshall Plexi modificato "Frankenstrat". Brown sound caldo e compresso.',
+    songs:['Eruption','Hot for Teacher','Panama','Jump'],
+    challenge:'Impara il tapping di "Eruption" misura per misura. Inizia le prime 4 note T12p7h5 a 80 BPM.'
+  },
+  {
+    name:'John Petrucci', origin:'USA', active:'1985–presente', color:'#06b6d4',
+    techs:['Alternate picking pulitissimo','Legato','Sweep su accordi complessi','Poliritmia'],
+    sound:'Mesa Boogie Dual Rectifier, Ernie Ball Music Man JP, DiMarzio custom.',
+    songs:['Metropolis Pt.1','The Dance of Eternity','Stream of Consciousness','Pull Me Under'],
+    challenge:'Suona la scala diminuita (toni-semitoni) con 3 note per corda alternate picking a 70 BPM.'
+  },
+  {
+    name:'Guthrie Govan', origin:'UK', active:'1990–presente', color:'#ec4899',
+    techs:['String skipping estremo','Hybrid picking','Legato','Bending microtonale','Tecnica poliedrica'],
+    sound:'Suhr Custom, Cornford amp. Molti effetti contemporanei. Blend jazz-rock-fusion.',
+    songs:['Wonderful Slippery Thing','Sevens','Ner Ner','This Is Science'],
+    challenge:'Improvvisa su Am pentatonica usando solo corde alternate (e-G-B-E, non A-D). Usa string skipping per melodie più aperte.'
+  },
+  {
+    name:'Frank Gambale', origin:'Australia', active:'1980–presente', color:'#14b8a6',
+    techs:['Economy picking (sweep picking sistematico)','Scale modalità','Sweep arpeggi'],
+    sound:'Ibanez signature, Yamaha amp. Tone jazz-fusion pulito con lieve compression.',
+    songs:['Passages','Turbulence','Brutal Imagination','Live Wires'],
+    challenge:'Suona l\'arpeggio Am 5 corde con "economy picking": su ogni cambio di corda, la pennata segue la direzione dello spostamento.'
+  }
+];
+
+let _techInitialized = false;
+
+function initTechPage() {
+  if (_techInitialized) return;
+  _techInitialized = true;
+
+  // Build tabs
+  const tabs = [
+    { id:'sweep',     label:'Sweep Picking' },
+    { id:'alternate', label:'Alternate Picking' },
+    { id:'legato',    label:'Legato' },
+    { id:'tapping',   label:'Tapping' },
+    { id:'skipping',  label:'String Skipping' },
+    { id:'masters',   label:'I Maestri' },
+  ];
+  const tabsEl = document.getElementById('tech-tabs');
+  tabsEl.innerHTML = tabs.map(t =>
+    `<button class="tech-tab${t.id==='sweep'?' active':''}" onclick="showTechTab('${t.id}')">${t.label}</button>`
+  ).join('');
+
+  // Sweep shape buttons
+  const shapeBtns = document.getElementById('sweep-shape-btns');
+  shapeBtns.innerHTML = SWEEP_SHAPES.map((s,i) =>
+    `<button class="sweep-shape-btn${i===0?' active':''}" style="border-color:${s.color}" onclick="selectSweepShape(${i})">${s.name}</button>`
+  ).join('');
+
+  // Render exercise grids
+  ['alternate','legato','tapping','skipping'].forEach(key => {
+    const grid = document.getElementById('ex-' + key + '-grid');
+    if (!grid) return;
+    grid.innerHTML = (TECH_EXERCISES[key] || []).map(ex => `
+      <div class="ex-card">
+        <div class="ex-card-header">
+          <span class="ex-card-title">${ex.title}</span>
+          <span class="ex-diff">${'⬤'.repeat(ex.diff)}<span style="color:var(--text-dim)">${'⬤'.repeat(5-ex.diff)}</span></span>
+        </div>
+        <pre class="ex-tab">${ex.tab}</pre>
+        <div class="ex-bpm-row">
+          <span class="ex-bpm-slow">Slow ${ex.bpmSlow}</span>
+          <span class="ex-bpm-mid">Mid ${ex.bpmMid}</span>
+          <span class="ex-bpm-fast">Fast ${ex.bpmFast}</span>
+        </div>
+        <div class="ex-chips">${ex.tags.map(t=>`<span class="ex-chip">${t}</span>`).join('')}</div>
+        <div class="ex-tips">${ex.tips.map(t=>`<div>• ${t}</div>`).join('')}</div>
+      </div>
+    `).join('');
+  });
+
+  // Render maestri
+  const mastersGrid = document.getElementById('masters-grid');
+  mastersGrid.innerHTML = MAESTRI.map(m => `
+    <div class="master-card">
+      <div class="master-header" style="border-color:${m.color}">
+        <span class="master-name" style="color:${m.color}">${m.name}</span>
+        <span class="master-meta">${m.origin} · ${m.active}</span>
+      </div>
+      <div class="master-body">
+        <div class="master-techs">${m.techs.map(t=>`<span class="master-tech-tag" style="border-color:${m.color};color:${m.color}">${t}</span>`).join('')}</div>
+        <div class="master-sound">🎛 ${m.sound}</div>
+        <div class="master-songs">
+          ${m.songs.map(s=>`<span class="master-song">♪ ${s}</span>`).join('')}
+        </div>
+        <div class="master-challenge">🎯 <em>${m.challenge}</em></div>
+      </div>
+    </div>
+  `).join('');
+
+  // Initial sweep render
+  renderSweepPanel();
+}
+
+function showTechTab(id) {
+  document.querySelectorAll('.tech-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tech-panel').forEach(p => p.classList.remove('active'));
+  const btn = Array.from(document.querySelectorAll('.tech-tab')).find(b => b.getAttribute('onclick').includes("'"+id+"'"));
+  if (btn) btn.classList.add('active');
+  const panel = document.getElementById('tp-' + id);
+  if (panel) panel.classList.add('active');
+}
+
+let _sweepShapeIdx = 0;
+
+function selectSweepShape(idx) {
+  _sweepShapeIdx = idx;
+  document.querySelectorAll('.sweep-shape-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
+  renderSweepPanel();
+}
+
+function computeArpFrets(rootNoteIdx, strings, semitones) {
+  // strings: array of string indices (0=e..5=E), ascending order (lowest string first)
+  // semitones: interval in semitones from root for each string
+  // Returns fret numbers ensuring strictly ascending MIDI pitch
+  const result = [];
+  let prevMidi = -1;
+  for (let i = 0; i < strings.length; i++) {
+    const si = strings[i];
+    const openMidi = TECH_OPEN_MIDI[si];
+    const noteClass = (rootNoteIdx + semitones[i]) % 12;
+    let fret = ((noteClass - openMidi % 12) + 12) % 12;
+    // Ensure ascending pitch
+    while (openMidi + fret <= prevMidi) fret += 12;
+    result.push(fret);
+    prevMidi = openMidi + fret;
+  }
+  return result;
+}
+
+function renderSweepPanel() {
+  const shape = SWEEP_SHAPES[_sweepShapeIdx];
+  if (!shape) return;
+  const keyIdx = parseInt(document.getElementById('sweep-key')?.value || '9');
+  const keyName = NOTES_TECH[keyIdx];
+
+  // Compute actual frets for this key
+  const frets = computeArpFrets(keyIdx, shape.strings, shape.semitones);
+
+  // Build mini fretboard diagram
+  const minFret = Math.max(0, Math.min(...frets) - 1);
+  const maxFret = Math.max(...frets) + 1;
+  const cellW = 36, cellH = 28, leftPad = 22, topPad = 18;
+  const fretSpan = Math.max(maxFret - minFret, 4);
+  const W = leftPad + fretSpan * cellW + 20;
+  const H = topPad + 6 * cellH + 14;
+  const sNames = ['e','B','G','D','A','E'];
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:360px;height:auto;display:block">`;
+  svg += `<rect width="${W}" height="${H}" fill="#151515" rx="8"/>`;
+
+  // Nut
+  if (minFret === 0) {
+    svg += `<line x1="${leftPad}" y1="${topPad}" x2="${leftPad}" y2="${topPad+5*cellH}" stroke="#aaa" stroke-width="3"/>`;
+  }
+
+  // Fret lines & numbers
+  for (let f = 0; f <= fretSpan; f++) {
+    const x = leftPad + f * cellW;
+    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+5*cellH}" stroke="#333" stroke-width="1"/>`;
+    const fn = minFret + f;
+    if (fn > 0) svg += `<text x="${x + cellW/2}" y="${topPad-5}" text-anchor="middle" font-size="8" fill="#555" font-family="monospace">${fn}</text>`;
+  }
+
+  // Strings
+  for (let s = 0; s < 6; s++) {
+    const y = topPad + s * cellH;
+    svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + fretSpan * cellW}" y2="${y}" stroke="#555" stroke-width="${s===0?0.7:s===5?1.5:1}"/>`;
+    svg += `<text x="${leftPad-4}" y="${y+4}" text-anchor="end" font-size="8" fill="#888" font-family="monospace">${sNames[s]}</text>`;
+  }
+
+  // Dots for this shape
+  const shapeStringsForward = [...shape.strings]; // e.g. [5,4,3,2,1] or [5,4,3,2,1,0]
+  shapeStringsForward.forEach((si, ii) => {
+    const f = frets[ii];
+    const dotX = leftPad + (f - minFret - 0.5) * cellW;
+    const dotY = topPad + si * cellH;
+    const isRoot = shape.semitones[ii] === 0;
+    svg += `<circle cx="${dotX}" cy="${dotY}" r="10" fill="${isRoot ? shape.color : '#2563eb'}" stroke="${isRoot ? '#fff' : 'none'}" stroke-width="1.5"/>`;
+    svg += `<text x="${dotX}" y="${dotY+4}" text-anchor="middle" font-size="9" fill="#fff" font-family="monospace" font-weight="bold">${f}</text>`;
+  });
+
+  svg += '</svg>';
+
+  document.getElementById('sweep-diagram').innerHTML = svg;
+  document.getElementById('sweep-shape-name').textContent = keyName + ' ' + shape.name;
+
+  // Intervals
+  const intervals = shape.intervals || [];
+  document.getElementById('sweep-interval-row').innerHTML =
+    intervals.map((iv, i) => `<span class="sweep-pill" style="background:${shape.semitones[i]===0?shape.color:'rgba(59,130,246,0.25)'}">${iv}</span>`).join('');
+
+  // Tab — transpose numbers by computing fret differences
+  // Build a simple tab from computed frets
+  const tabLines = ['e','B','G','D','A','E'].map((sn, si) => {
+    const idx = shape.strings.indexOf(si);
+    const fval = idx >= 0 ? String(frets[idx]) : '---';
+    return `${sn} |--${fval.padEnd(3,'-')}--|`;
+  });
+  document.getElementById('sweep-tab-display').textContent = tabLines.join('\n') + '\n    ▲ sweep up';
+
+  // Players
+  if (shape.players && shape.players.length) {
+    document.getElementById('sweep-players').innerHTML =
+      '<div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">USATO DA:</div>' +
+      shape.players.map(p => `<span class="master-tech-tag" style="border-color:${shape.color};color:${shape.color}">${p}</span>`).join(' ');
+  }
+}
+
+function playSweepArp(direction) {
+  // direction: false=up, true=down, null=up+down
+  const shape = SWEEP_SHAPES[_sweepShapeIdx];
+  if (!shape) return;
+  const keyIdx = parseInt(document.getElementById('sweep-key')?.value || '9');
+  const frets = computeArpFrets(keyIdx, shape.strings, shape.semitones);
+
+  // Build sequence of MIDI notes
+  let midiNotes = shape.strings.map((si, ii) => TECH_OPEN_MIDI[si] + frets[ii]);
+
+  let seq = [];
+  if (direction === false) seq = [...midiNotes];            // up
+  else if (direction === true) seq = [...midiNotes].reverse(); // down
+  else seq = [...midiNotes, ...[...midiNotes].reverse()];    // up+down
+
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+  const step = 0.10; // seconds between notes
+
+  seq.forEach((midi, i) => {
+    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+    const t = now + i * step;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.3, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + step * 0.9);
+    osc.connect(gain);
+    gain.connect(_masterOut || ctx.destination);
+    osc.start(t);
+    osc.stop(t + step);
+    osc.addEventListener('ended', () => { try { osc.disconnect(); gain.disconnect(); } catch(e){} });
+  });
 }
 </script>
 
