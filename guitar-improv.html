@@ -1360,6 +1360,7 @@
   }
   @media(max-width:800px){
     .triad-layout { grid-template-columns:1fr; }
+    .triad-shapes-col { order:1; }
     .triad-info-col { order:2; position:static; padding:14px; }
   }
 
@@ -1584,17 +1585,20 @@
   @media(max-width:860px){ .p5-layout { grid-template-columns:1fr; } .p5-info { position:static; } }
 
   .p5-box-tabs {
-    display: flex; gap: 6px; flex-wrap: wrap;
-    margin-bottom: 20px;
+    display: flex; gap: 6px; flex-wrap: nowrap;
+    overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px; padding-bottom: 2px;
   }
+  .p5-box-tabs::-webkit-scrollbar { display: none; }
   .p5-tab {
     background: var(--bg3);
     border: 2px solid var(--border);
     color: var(--text-mid);
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px;
+    font-size: 14px;
     letter-spacing: 1px;
-    padding: 6px 18px;
+    padding: 4px 12px;
     border-radius: 8px;
     cursor: pointer;
     transition: all .2s;
@@ -1602,7 +1606,7 @@
   }
   .p5-tab small {
     font-family: 'Space Mono', monospace;
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 400;
     color: var(--text-dim);
     letter-spacing: 0.5px;
@@ -1691,6 +1695,8 @@
     padding: 10px 12px;
     background: var(--bg3);
     border: 1px solid var(--border);
+    word-break: break-word;
+    overflow-wrap: break-word;
     border-radius: 8px;
     font-size: 12px;
     color: var(--text-mid);
@@ -2000,7 +2006,7 @@
 
   <div class="triad-layout">
     <div class="triad-info-col" id="triad-info-col"></div>
-    <div>
+    <div class="triad-shapes-col">
       <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
         <div>
           <div class="ctrl-label" style="margin-bottom:6px">Inversione</div>
@@ -3266,7 +3272,7 @@ function buildScaleMiniDiagrams(keyIdx, intervals, scaleKey) {
       const frets = offsetsToFrets(b.offs, anchor);
       const svg = drawMiniDiagram(frets, '#f59e0b', '#ef4444', keyIdx, keyIdx, intervals);
       const fretLabel = anchor === 0 ? 'open' : `${anchor}fr`;
-      html.push(`<div class="mini-diag-card" title="Box ${i+1} (tasto ${anchor})">
+      html.push(`<div class="mini-diag-card" title="Box ${i+1} — clicca per vedere sul manico" onclick="loadScaleOnFretboard('${scaleKey}',${i},'penta')">
         <div class="mini-diag-label">Box ${i+1}</div>
         <div class="mini-diag-fret">${fretLabel}</div>${svg}</div>`);
     });
@@ -3277,7 +3283,7 @@ function buildScaleMiniDiagrams(keyIdx, intervals, scaleKey) {
       const frets = offsetsToFrets(p.offs, anchor);
       const svg = drawMiniDiagram(frets, '#f59e0b', '#3b82f6', keyIdx, keyIdx, intervals);
       const fretLabel = anchor === 0 ? 'open' : `${anchor}fr`;
-      html.push(`<div class="mini-diag-card" title="Pos ${i+1} – ${p.mode} (tasto ${anchor})">
+      html.push(`<div class="mini-diag-card" title="Pos ${i+1} – ${p.mode} — clicca per vedere sul manico" onclick="loadScaleOnFretboard('${scaleKey}',${i},'nps')">
         <div class="mini-diag-label">${p.mode}</div>
         <div class="mini-diag-fret">${fretLabel}</div>${svg}</div>`);
     });
@@ -3332,10 +3338,14 @@ function renderModesPage() {
   });
 }
 
-function loadScaleOnFretboard(scaleKey) {
+function loadScaleOnFretboard(scaleKey, posIdx, posType) {
   document.getElementById('fb-scale').value = scaleKey;
   showPage('fretboard');
   renderFretboard();
+  if (posIdx !== undefined && posType === 'nps') {
+    const modeBtn = document.getElementById('mode-nps-btn');
+    if (modeBtn) { FB_STATE.mode = 'nps'; FB_STATE.npsPosition = posIdx; renderFretboard(); }
+  }
 }
 
 // ─── PROGRESSIONS PAGE ────────────────────────────────────────────────────────
@@ -4691,7 +4701,7 @@ function drawP5Fretboard(box, keyIdx, quality) {
   const NOTES_ARR = NOTES;
   const OPEN_S = OPEN_STRINGS;
 
-  const cellH = 34, cellW = 40;
+  const cellH = 22, cellW = 28;
   const leftPad = 30, topPad = 18, rightPad = 10;
   const nFrets = maxF - minF + 1;
   const W = leftPad + nFrets * cellW + rightPad;
@@ -4706,7 +4716,7 @@ function drawP5Fretboard(box, keyIdx, quality) {
   // Fret numbers
   for (let f = minF; f <= maxF; f++) {
     const x = leftPad + (f - minF) * cellW + cellW / 2;
-    svg += `<text x="${x}" y="12" text-anchor="middle" font-size="9" fill="#555" font-family="monospace">${f === 0 ? '0' : f}</text>`;
+    svg += `<text x="${x}" y="12" text-anchor="middle" font-size="7" fill="#555" font-family="monospace">${f === 0 ? '0' : f}</text>`;
   }
 
   // Nut
@@ -4718,7 +4728,7 @@ function drawP5Fretboard(box, keyIdx, quality) {
   for (let s = 0; s < 6; s++) {
     const y = topPad + s * cellH + cellH / 2;
     svg += `<line x1="${leftPad}" y1="${y}" x2="${W-rightPad}" y2="${y}" stroke="#c8a84b" stroke-width="${s===0||s===5?1.2:0.7}" opacity="0.4"/>`;
-    svg += `<text x="${leftPad-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
+    svg += `<text x="${leftPad-4}" y="${y+2.5}" text-anchor="end" font-size="7" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
   }
   for (let f = minF; f <= maxF; f++) {
     const x = leftPad + (f - minF) * cellW;
@@ -4738,18 +4748,6 @@ function drawP5Fretboard(box, keyIdx, quality) {
     }
   });
 
-  // Ghost notes (in scale but not in box) — very dim
-  for (let s = 0; s < 6; s++) {
-    for (let f = minF; f <= maxF; f++) {
-      const noteIdx = (OPEN_S[s] + f) % 12;
-      if (!scaleSet.has(noteIdx)) continue;
-      if (activeSet.has(s + ',' + f)) continue;
-      const x = leftPad + (f - minF) * cellW + cellW / 2;
-      const y = topPad + s * cellH + cellH / 2;
-      svg += `<circle cx="${x}" cy="${y}" r="11" fill="#1e1e1e" stroke="#2a2a2a" stroke-width="1" opacity="0.6"/>`;
-    }
-  }
-
   // Active notes
   for (let s = 0; s < 6; s++) {
     fretsByString[s].forEach(f => {
@@ -4763,9 +4761,9 @@ function drawP5Fretboard(box, keyIdx, quality) {
       const col = isRoot ? '#f59e0b' : box.color;
       const textCol = isRoot ? '#000' : '#fff';
 
-      svg += `<circle cx="${x}" cy="${y}" r="13" fill="${col}" opacity="0.92"/>`;
-      if (isRoot) svg += `<circle cx="${x}" cy="${y}" r="13" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.4"/>`;
-      svg += `<text x="${x}" y="${y+3.5}" text-anchor="middle" font-size="8.5" fill="${textCol}" font-weight="bold" font-family="monospace">${noteName}</text>`;
+      svg += `<circle cx="${x}" cy="${y}" r="8" fill="${col}" opacity="0.95"/>`;
+      if (isRoot) svg += `<circle cx="${x}" cy="${y}" r="8" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.5"/>`;
+      svg += `<text x="${x}" y="${y+2.5}" text-anchor="middle" font-size="6.5" fill="${textCol}" font-weight="bold" font-family="monospace">${noteName}</text>`;
     });
   }
 
