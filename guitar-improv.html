@@ -2,7 +2,19 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+<script>
+// Fix viewport per WebView di WhatsApp e altri in-app browser
+// che ignorano width=device-width e usano viewport fisso (es. 980px)
+(function(){
+  var sw = window.screen.width;
+  var vw = window.innerWidth;
+  if (sw > 0 && vw > sw + 100) {
+    var m = document.querySelector('meta[name=viewport]');
+    if (m) m.content = 'width=' + sw + ',initial-scale=1.0,minimum-scale=1.0';
+  }
+})();
+</script>
 <title>Guitar Improv Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,21 +49,27 @@
     color: var(--text);
     font-family: 'DM Sans', sans-serif;
     min-height: 100vh;
-    overflow-x: hidden;
+    overflow-x: clip; /* clip invece di hidden: non crea scroll container, i figli overflow-x:auto funzionano su iOS */
   }
 
   /* ── HEADER ── */
   header {
     background: var(--bg2);
     border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    height: 60px;
     position: sticky;
     top: 0;
     z-index: 100;
+    display: flex;
+    flex-direction: column;   /* struttura a 2 righe sempre, niente flex-wrap tricks */
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 clamp(12px, 3vw, 24px);
+    height: 52px;
+    flex-shrink: 0;
   }
 
   .logo {
@@ -68,9 +86,11 @@
   nav {
     display: flex;
     gap: 4px;
-    flex: 1;
     overflow-x: auto;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 5px clamp(12px, 3vw, 24px) 8px;
+    border-top: 1px solid var(--border);
   }
   nav::-webkit-scrollbar { display: none; }
 
@@ -79,9 +99,10 @@
     border: none;
     color: var(--text-mid);
     font-family: 'Space Mono', monospace;
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 1px;
-    padding: 6px 14px;
+    padding: 8px 13px;
+    min-height: 38px;
     cursor: pointer;
     border-radius: 4px;
     transition: all .2s;
@@ -95,8 +116,30 @@
     border-bottom: 2px solid var(--amber);
   }
 
+  /* ── GLOBAL KEY SELECTOR ── */
+  .global-key-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;          /* non cresce mai */
+    padding: 0 4px;
+    border-left: 1px solid var(--border);
+    margin-left: 4px;
+  }
+  .global-key-wrap .ctrl-label { white-space: nowrap; }
+  .global-key-wrap select {
+    border-color: var(--amber-dim);
+    padding: 5px 10px;
+    font-size: 11px;
+    width: 72px;             /* larghezza fissa: evita che si allarghi in qualsiasi browser */
+    min-width: 72px;
+    max-width: 72px;
+  }
+  .global-key-wrap select:focus,
+  .global-key-wrap select:hover { border-color: var(--amber); }
+
   /* ── LAYOUT ── */
-  .page { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .page { display: none; padding: clamp(12px, 4vw, 24px); max-width: 1200px; margin: 0 auto; }
   .page.active { display: block; }
 
   h2 {
@@ -128,6 +171,15 @@
     flex-direction: column;
     gap: 4px;
   }
+  /* flex-grow solo dentro la controls bar, non su tutto il sito */
+  .controls > .ctrl-group {
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+  /* quando c'è un solo ctrl-group non si allarga a piena larghezza */
+  .controls > .ctrl-group:only-child {
+    flex: 0 0 auto;
+  }
 
   .ctrl-label {
     font-family: 'Space Mono', monospace;
@@ -158,6 +210,7 @@
     border-radius: 12px;
     padding: 20px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     margin-bottom: 20px;
   }
 
@@ -293,6 +346,28 @@
 
   .note-dot:hover { transform: scale(1.18); }
 
+  /* ── ANIMAZIONE NOTA SUONATA ── */
+  @keyframes note-pulse {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.35) translateX(-1.5px); filter: brightness(1.5); }
+    55%  { transform: scale(1.22) translateX(1.5px); }
+    75%  { transform: scale(1.28); filter: brightness(1.2); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+  @keyframes note-ring {
+    0%   { outline: 2px solid rgba(255,255,255,0.9); outline-offset: 0px; }
+    80%  { outline: 2px solid rgba(255,255,255,0); outline-offset: 10px; }
+    100% { outline: 2px solid rgba(255,255,255,0); outline-offset: 12px; }
+  }
+  .note-dot.playing {
+    animation: note-pulse 0.5s ease-out, note-ring 0.5s ease-out;
+    z-index: 10;
+  }
+
+  /* ── LINEE PATTERN SCALA ── */
+  #pattern-lines-svg { position:absolute; top:0; left:0; pointer-events:none; overflow:visible; }
+  .fretboard-rel { position: relative; }
+
   .note-dot.root {
     background: radial-gradient(circle at 35% 30%, #fde68a 0%, var(--amber) 45%, #b45309 100%);
     color: #000;
@@ -320,6 +395,226 @@
     box-shadow: inset 0 1px 2px rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.4);
   }
   .note-dot.hidden { display: none; }
+
+  /* ── OVERLAY TECNICA (bend / vibrato) ── */
+  .note-dot { position: relative; }
+  body.show-tech .note-dot[data-tech]::before {
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    font-family: monospace;
+    pointer-events: none;
+    line-height: 1;
+    z-index: 10;
+  }
+  body.show-tech .note-dot[data-tech='bend']::before {
+    content: '↑';
+    color: #f87171;
+    text-shadow: 0 0 6px rgba(248,113,113,0.7);
+  }
+  body.show-tech .note-dot[data-tech='vibrato']::before {
+    content: '~';
+    color: #4ade80;
+    font-size: 14px;
+    text-shadow: 0 0 6px rgba(74,222,128,0.7);
+  }
+  body.show-tech .note-dot[data-tech='slide']::before {
+    content: '/';
+    color: #a78bfa;
+    text-shadow: 0 0 6px rgba(167,139,250,0.7);
+  }
+  body.show-tech .note-dot[data-tech='tap']::before {
+    content: 'T';
+    color: #f97316;
+    font-weight: 700;
+    text-shadow: 0 0 6px rgba(249,115,22,0.8);
+  }
+  body.show-tech .note-dot[data-tech='whammy']::before {
+    content: 'W';
+    color: #e879f9;
+    font-weight: 700;
+    text-shadow: 0 0 6px rgba(232,121,249,0.8);
+  }
+  body.show-tech .note-dot[data-tech='legato']::before {
+    content: '⌒';
+    color: #67e8f9;
+    font-size: 13px;
+    text-shadow: 0 0 6px rgba(103,232,249,0.8);
+  }
+
+  /* ── ACCORDATORE ── */
+  .tuner-display {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    max-width: 480px;
+    margin: 0 auto 24px;
+  }
+  .tuner-note {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 96px;
+    color: var(--amber);
+    line-height: 1;
+    text-shadow: 0 0 30px rgba(245,158,11,0.5);
+    transition: color .15s;
+  }
+  .tuner-note.in-tune { color: #4ade80; text-shadow: 0 0 30px rgba(74,222,128,0.5); }
+  .tuner-freq { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+  .tuner-meter {
+    position: relative;
+    height: 10px;
+    background: var(--bg2);
+    border-radius: 5px;
+    margin: 20px 8px 8px;
+    overflow: visible;
+  }
+  .tuner-meter-bar {
+    position: absolute;
+    top: 0; height: 100%; border-radius: 5px;
+    background: var(--amber);
+    transition: width .08s, left .08s, background .15s;
+  }
+  .tuner-meter-bar.in-tune { background: #4ade80; }
+  .tuner-center { position:absolute; left:50%; top:-3px; width:2px; height:16px; background:var(--border); transform:translateX(-50%); }
+  .tuner-cents { font-family:'Space Mono',monospace; font-size:12px; color:var(--text-dim); margin-top:6px; }
+  .tuner-strings {
+    display: grid;
+    grid-template-columns: repeat(6,1fr);
+    gap: 8px;
+    max-width: 480px;
+    margin: 0 auto 24px;
+  }
+  .tuner-str {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .1s;
+    user-select: none;
+  }
+  .tuner-str:active { background: var(--amber-glow); }
+  .tuner-str.active { border-color: var(--amber); background: rgba(245,158,11,0.08); }
+  .tuner-str .str-hint { font-family:'Space Mono',monospace; font-size:7px; color:var(--text-dim); margin-top:2px; }
+  .tuner-str .str-name { font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--amber); }
+  .tuner-str .str-freq { font-family:'Space Mono',monospace; font-size:9px; color:var(--text-dim); }
+  .tuner-btn {
+    display: flex; gap: 12px; justify-content: center; margin-bottom: 24px;
+  }
+
+  /* ══════════════════════════════ TECNICA AVANZATA ══════════════════════════════ */
+  .tech-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:24px; }
+  .tech-tab {
+    background:var(--bg3); border:2px solid var(--border);
+    color:var(--text-mid); font-family:'Space Mono',monospace;
+    font-size:10px; text-transform:uppercase; letter-spacing:.5px;
+    padding:7px 14px; border-radius:20px; cursor:pointer; transition:all .2s;
+  }
+  .tech-tab:hover { border-color:var(--amber-dim); color:var(--text); }
+  .tech-tab.active { border-color:var(--amber); color:var(--amber); background:var(--amber-glow); }
+  .tech-panel { display:none; }
+  .tech-panel.active { display:block; }
+
+  .sweep-shapes-row { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:16px; }
+  .sweep-shape-btn {
+    background:var(--bg3); border:1px solid var(--border); color:var(--text-mid);
+    font-family:'Space Mono',monospace; font-size:10px;
+    padding:5px 12px; border-radius:6px; cursor:pointer; transition:all .2s;
+  }
+  .sweep-shape-btn:hover { border-color:var(--amber-dim); }
+  .sweep-shape-btn.active { color:var(--amber); border-color:var(--amber); background:var(--amber-glow); }
+
+  .sweep-layout {
+    display:grid; grid-template-columns:auto 1fr; gap:20px; align-items:start;
+  }
+  @media(max-width:650px){ .sweep-layout { grid-template-columns:1fr; } }
+  .sweep-diagram-box {
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:14px; width:140px;
+  }
+  @media(max-width:650px){ .sweep-diagram-box { width:100%; max-width:180px; } }
+  .sweep-info-box {
+    background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px;
+  }
+  .sweep-info-box h3 {
+    font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px;
+    margin-bottom:4px;
+  }
+  .sweep-tab-display {
+    font-family:'Space Mono',monospace; font-size:11px; color:var(--green);
+    background:#0a120a; border:1px solid #1a2a1a; border-radius:8px;
+    padding:10px 14px; line-height:1.85; overflow-x:auto;
+    white-space:pre; margin:10px 0; -webkit-overflow-scrolling:touch;
+  }
+  .sweep-interval-row { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 12px; }
+  .sweep-pill {
+    font-family:'Space Mono',monospace; font-size:9px; padding:2px 8px;
+    border-radius:10px; border:1px solid;
+  }
+
+  .ex-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+    gap:16px; margin-top:8px;
+  }
+  .ex-card {
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:15px; transition:border-color .2s;
+  }
+  .ex-card:hover { border-color:var(--amber-dim); }
+  .ex-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .ex-bpm-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .ex-bpm-row span { font-family:'Space Mono',monospace; font-size:10px; padding:2px 8px; border-radius:4px; border:1px solid; }
+  .ex-diff { font-size:10px; color:var(--amber); }
+  .ex-card-title {
+    font-family:'Bebas Neue',sans-serif; font-size:17px; letter-spacing:1px;
+    color:var(--amber); margin-bottom:4px;
+  }
+  .ex-diff { display:inline-flex; gap:3px; margin-bottom:8px; }
+  .ex-dot { width:7px; height:7px; border-radius:50%; background:var(--border); }
+  .ex-dot.on { background:var(--amber); }
+  .ex-tab {
+    font-family:'Space Mono',monospace; font-size:10px; color:var(--green);
+    background:#0a120a; border:1px solid #1a2a1a; border-radius:6px;
+    padding:8px 10px; line-height:1.7; overflow-x:auto; white-space:pre;
+    margin:8px 0; -webkit-overflow-scrolling:touch;
+  }
+  .ex-desc { font-size:12px; color:var(--text-mid); line-height:1.5; margin-bottom:6px; }
+  .ex-chips { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; }
+  .ex-chip {
+    font-family:'Space Mono',monospace; font-size:9px; padding:2px 8px;
+    border-radius:10px; background:var(--bg3); border:1px solid var(--border);
+    color:var(--text-dim);
+  }
+  .ex-bpm-slow { color:#22c55e; border-color:#1a3a1a!important; background:#0d1a0d!important; }
+  .ex-bpm-mid  { color:#f59e0b; border-color:#3a2a0a!important; background:#1a120a!important; }
+  .ex-bpm-fast { color:#ef4444; border-color:#3a0a0a!important; background:#1a0a0a!important; }
+  .ex-tips { font-size:12px; color:var(--text-mid); line-height:1.5; margin-top:8px; }
+  .ex-tips li { margin-bottom:3px; }
+
+  .masters-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+    gap:18px; margin-top:8px;
+  }
+  .master-card {
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    overflow:hidden; transition:border-color .25s, transform .2s;
+  }
+  .master-card:hover { border-color:var(--amber-dim); transform:translateY(-2px); }
+  .master-header { padding:14px 16px 12px; border-bottom:1px solid var(--border); }
+  .master-name { font-family:'Bebas Neue',sans-serif; font-size:25px; letter-spacing:1.5px; margin-bottom:1px; }
+  .master-meta { font-family:'Space Mono',monospace; font-size:9px; color:var(--text-dim); text-transform:uppercase; }
+  .master-body { padding:12px 16px 16px; }
+  .master-techs { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; }
+  .master-tech-tag { font-family:'Space Mono',monospace; font-size:9px; padding:2px 8px; border-radius:10px; border:1px solid; text-transform:uppercase; }
+  .master-sound { font-size:12px; color:var(--text-mid); line-height:1.5; margin-bottom:10px; }
+  .master-songs { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; }
+  .master-song { font-family:'Space Mono',monospace; font-size:9px; background:var(--bg3); border:1px solid var(--border); padding:2px 8px; border-radius:4px; color:var(--text-mid); }
+  .master-challenge { background:var(--bg3); border-radius:8px; padding:8px 10px; font-size:11px; color:var(--text-mid); line-height:1.5; border-left:3px solid; }
 
   /* Fret markers */
   .fret-markers {
@@ -675,10 +970,52 @@
   .scale-note-pill.is-root { background: rgba(245,158,11,0.2); border-color: var(--amber); color: var(--amber); }
 
   /* responsive */
-  @media (max-width: 600px) {
+  @media (max-width: 900px) {
     .page { padding: 16px 12px; }
     h2 { font-size: 26px; }
-    .logo { font-size: 20px; }
+
+    /* Header: compatta le due righe su mobile */
+    .header-top {
+      padding: 0 12px;
+      height: 44px;
+      gap: 8px;
+    }
+    .logo {
+      font-size: 18px;
+      flex: 1;
+    }
+    .global-key-wrap {
+      border-left: none;
+      margin-left: 0;
+      padding: 0;
+    }
+    .global-key-wrap .ctrl-label { display: none; }
+    .global-key-wrap select { padding: 4px 8px; font-size: 12px; width: 72px; min-width: 72px; max-width: 72px; }
+    nav {
+      padding: 5px 12px 8px;
+      gap: 4px;
+    }
+    .nav-btn {
+      font-size: 12px;
+      padding: 8px 13px;
+      min-height: 38px;
+      border-radius: 6px;
+    }
+    .nav-btn.active {
+      border-bottom-width: 3px;
+    }
+
+    /* Controlli pagina */
+    .controls { gap: 8px; }
+    select { padding: 9px 10px; font-size: 13px; min-height: 40px; }
+    .play-btn, .pos-btn, .tap-btn { min-height: 40px; font-size: 11px; padding: 9px 14px; }
+
+    /* Metronomo compatto */
+    .metro-panel { gap: 8px; padding: 8px 12px; }
+
+    /* Jam page */
+    .jam-controls-row { grid-template-columns: 1fr 1fr; }
+    .mix-row { grid-template-columns: 1fr; }
   }
 
   /* ── GLOW FX ── */
@@ -807,6 +1144,27 @@
   }
   .tap-btn:hover { border-color: var(--amber-dim); color: var(--text); }
   .tap-btn:active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
+
+  /* ── METRONOMO ── */
+  .metro-panel {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 14px;
+  }
+  .metro-panel .ctrl-label { font-size: 11px; white-space: nowrap; }
+  #metro-btn { min-width: 90px; }
+  #metro-btn.metro-playing {
+    color: #f87171;
+    border-color: #f87171;
+    background: rgba(248,113,113,0.08);
+  }
+  #metro-btn.metro-playing:hover { background: rgba(248,113,113,0.18); }
 
   /* Beat LEDs */
   .beat-row {
@@ -979,9 +1337,12 @@
      TRIADI
   ══════════════════════════════════════════════════════════ */
   .triad-type-tabs {
-    display: flex; gap: 6px; flex-wrap: wrap;
-    margin-bottom: 20px;
+    display: flex; gap: 6px; flex-wrap: nowrap;
+    overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px; padding-bottom: 2px;
   }
+  .triad-type-tabs::-webkit-scrollbar { display: none; }
   .triad-tab {
     background: var(--bg3);
     border: 1px solid var(--border);
@@ -993,6 +1354,8 @@
     border-radius: 6px;
     cursor: pointer;
     transition: all .2s;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
   .triad-tab:hover { border-color: var(--amber-dim); color: var(--text); }
   .triad-tab.active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
@@ -1003,7 +1366,11 @@
     gap: 24px;
     align-items: start;
   }
-  @media(max-width:800px){ .triad-layout { grid-template-columns:1fr; } }
+  @media(max-width:800px){
+    .triad-layout { grid-template-columns:1fr; }
+    .triad-shapes-col { order:1; }
+    .triad-info-col { order:2; position:static; padding:14px; }
+  }
 
   .triad-info-col {
     background: var(--panel);
@@ -1060,15 +1427,20 @@
     transition: all .15s;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
   .inv-tab:hover { border-color: var(--amber-dim); color: var(--text); }
   .inv-tab.active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
 
   /* String set selector */
   .strset-tabs {
-    display: flex; gap: 4px; flex-wrap: wrap;
+    display: flex; gap: 4px; flex-wrap: nowrap;
+    overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
     margin-bottom: 20px;
   }
+  .strset-tabs::-webkit-scrollbar { display: none; }
   .strset-tab {
     background: var(--bg3);
     border: 1px solid var(--border);
@@ -1079,6 +1451,8 @@
     border-radius: 4px;
     cursor: pointer;
     transition: all .15s;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
   .strset-tab:hover { border-color: var(--amber-dim); color: var(--text); }
   .strset-tab.active { background: rgba(59,130,246,0.15); border-color: var(--blue); color: var(--blue); }
@@ -1086,15 +1460,15 @@
   /* Mini fretboard grid */
   .triad-shapes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
   }
 
   .triad-shape-card {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 16px;
+    padding: 10px;
     transition: border-color .2s;
     cursor: pointer;
   }
@@ -1204,6 +1578,7 @@
     border-radius: 8px;
     padding: 12px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     margin-top: 20px;
   }
   .caged-neck-title {
@@ -1222,28 +1597,33 @@
     gap: 20px;
     align-items: start;
   }
-  @media(max-width:860px){ .p5-layout { grid-template-columns:1fr; } }
+  @media(max-width:860px){ .p5-layout { grid-template-columns:1fr; } .p5-info { position:static; } }
 
   .p5-box-tabs {
-    display: flex; gap: 6px; flex-wrap: wrap;
-    margin-bottom: 20px;
+    display: flex; gap: 6px; flex-wrap: nowrap;
+    overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px; padding-bottom: 2px;
   }
+  .p5-box-tabs::-webkit-scrollbar { display: none; }
   .p5-tab {
     background: var(--bg3);
     border: 2px solid var(--border);
     color: var(--text-mid);
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px;
+    font-size: 14px;
     letter-spacing: 1px;
-    padding: 6px 18px;
+    padding: 4px 12px;
     border-radius: 8px;
     cursor: pointer;
     transition: all .2s;
     display: flex; flex-direction: column; align-items: center; gap: 1px;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
   .p5-tab small {
     font-family: 'Space Mono', monospace;
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 400;
     color: var(--text-dim);
     letter-spacing: 0.5px;
@@ -1259,6 +1639,7 @@
     border-radius: 12px;
     padding: 18px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .p5-info {
@@ -1331,6 +1712,8 @@
     padding: 10px 12px;
     background: var(--bg3);
     border: 1px solid var(--border);
+    word-break: break-word;
+    overflow-wrap: break-word;
     border-radius: 8px;
     font-size: 12px;
     color: var(--text-mid);
@@ -1346,6 +1729,7 @@
     padding: 18px;
     margin-top: 20px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .p5-overview-title {
     font-family: 'Space Mono', monospace;
@@ -1408,7 +1792,28 @@
 <body>
 
 <header>
-  <div class="logo">GUITAR <span>IMPROV</span> LAB</div>
+  <!-- Riga 1: logo + key selector — struttura fissa, niente flex-wrap -->
+  <div class="header-top">
+    <div class="logo">GUITAR <span>IMPROV</span> LAB</div>
+    <div class="global-key-wrap">
+      <span class="ctrl-label">KEY</span>
+      <select id="global-key" onchange="setGlobalKey(this.value)">
+        <option value="0">C</option>
+        <option value="1">C# / Db</option>
+        <option value="2">D</option>
+        <option value="3">D# / Eb</option>
+        <option value="4">E</option>
+        <option value="5">F</option>
+        <option value="6">F# / Gb</option>
+        <option value="7">G</option>
+        <option value="8">G# / Ab</option>
+        <option value="9" selected>A</option>
+        <option value="10">A# / Bb</option>
+        <option value="11">B</option>
+      </select>
+    </div>
+  </div>
+  <!-- Riga 2: nav sempre sotto, scrollabile -->
   <nav>
     <button class="nav-btn active" onclick="showPage('fretboard')">Fretboard</button>
     <button class="nav-btn" onclick="showPage('scales')">Scale Library</button>
@@ -1419,6 +1824,8 @@
     <button class="nav-btn" onclick="showPage('caged')">CAGED</button>
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
     <button class="nav-btn" onclick="showPage('jam')">🎸 Basi</button>
+    <button class="nav-btn" onclick="showPage('tuner')">🎵 Accordatore</button>
+    <button class="nav-btn" onclick="showPage('technique');initTechPage()">⚡ Tecnica</button>
   </nav>
 </header>
 
@@ -1466,6 +1873,14 @@
         <optgroup label="Altro">
           <option value="locrian">Locria</option>
         </optgroup>
+        <optgroup label="⚡ Scale Ibride">
+          <option value="penta_hybrid">Pentatonica Ibrida (Maj+Min)</option>
+          <option value="miso_penta">Misolidia + Penta Minore</option>
+          <option value="blues_maj">Blues + Penta Maggiore</option>
+          <option value="lydian_dom">Lidia Dominante (♭7)</option>
+          <option value="phrygian_dom">Frigia Dominante</option>
+          <option value="bebop_dom">Bebop Dominante</option>
+        </optgroup>
       </select>
     </div>
     <div class="ctrl-group">
@@ -1484,14 +1899,15 @@
         <option value="degree">Grado</option>
       </select>
     </div>
-    <div class="ctrl-group" style="justify-content: flex-end; margin-top: 18px;">
+    <div class="ctrl-group" style="flex:0 0 auto;margin-top:18px;">
       <button class="play-btn" onclick="playScale()">▶ Play scala</button>
     </div>
-    <div class="ctrl-group" style="margin-top:14px;width:100%">
+    <div class="ctrl-group" style="flex:0 0 100%;margin-top:14px;">
       <div class="ctrl-label" style="margin-bottom:6px">Modalità visualizzazione</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
         <button class="pos-btn active" id="mode-all-btn" onclick="setFbMode('all')">Tutte le note</button>
         <button class="pos-btn" id="mode-nps-btn" onclick="setFbMode('nps')">3 note per corda</button>
+        <button class="pos-btn" id="tech-btn" onclick="toggleTech()" style="margin-left:8px">Tecnica off</button>
         <span id="nps-position-wrap" style="display:none;margin-left:8px;display:none;gap:4px;align-items:center">
           <span class="ctrl-label">Posizione:</span>
           <span id="nps-pos-tabs" style="display:flex;gap:4px;flex-wrap:wrap"></span>
@@ -1511,8 +1927,17 @@
     </div>
   </div>
 
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">
+      <input type="checkbox" id="toggle-pattern-lines" onchange="drawPatternLines()" style="accent-color:var(--amber);width:16px;height:16px">
+      Mostra linee pattern
+    </label>
+  </div>
   <div class="fretboard-wrap">
-    <div id="fretboard" class="fretboard"></div>
+    <div class="fretboard-rel">
+      <div id="fretboard" class="fretboard"></div>
+      <svg id="pattern-lines-svg"></svg>
+    </div>
   </div>
 
   <!-- NPS mini diagrams row (shown only in 3NPS mode) -->
@@ -1524,6 +1949,11 @@
     <div class="legend-item"><div class="legend-dot" style="background:var(--green);box-shadow:0 0 8px rgba(34,197,94,0.4)"></div> Quinta (5)</div>
     <div class="legend-item"><div class="legend-dot" style="background:var(--purple);box-shadow:0 0 8px rgba(168,85,247,0.4)"></div> Settima (7)</div>
     <div class="legend-item"><div class="legend-dot" style="background:var(--bg3);border:1px solid #333"></div> Altre note</div>
+    <div class="legend-item" id="legend-tech" style="display:none;margin-left:8px;border-left:1px solid var(--border);padding-left:12px;gap:10px">
+      <span style="color:#f87171;font-size:13px;font-family:monospace">↑</span> Bend &nbsp;
+      <span style="color:#4ade80;font-size:15px;font-family:monospace">~</span> Vibrato &nbsp;
+      <span style="color:#a78bfa;font-size:13px;font-family:monospace">/</span> Slide
+    </div>
   </div>
 </div>
 
@@ -1593,7 +2023,7 @@
 
   <div class="triad-layout">
     <div class="triad-info-col" id="triad-info-col"></div>
-    <div>
+    <div class="triad-shapes-col">
       <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
         <div>
           <div class="ctrl-label" style="margin-bottom:6px">Inversione</div>
@@ -1747,6 +2177,13 @@ const SCALES = {
   lydian:         { name:'Lidia (Lydian)',         intervals:[0,2,4,6,7,9,11], formula:'1 2 3 ♯4 5 6 7',     mood:'Sognante, epica. Joe Satriani, Steve Vai.',               color:'#f59e0b' },
   mixolydian:     { name:'Misolidia (Mixolydian)', intervals:[0,2,4,5,7,9,10], formula:'1 2 3 4 5 6 ♭7',     mood:'Blues-rock, boogie. Slash, AC/DC. Maggiore con 7ª piatta.',color:'#fb923c' },
   locrian:        { name:'Locria (Locrian)',       intervals:[0,1,3,5,6,8,10], formula:'1 ♭2 ♭3 4 ♭5 ♭6 ♭7', mood:'Instabile, dissonante. Sul VII accordo. Raramente usata.', color:'#6b7280' },
+  // ── SCALE IBRIDE ──────────────────────────────────────────────────────────
+  penta_hybrid:   { name:'Pentatonica Ibrida (Maj+Min)', intervals:[0,2,3,4,7,9,10],   formula:'1 2 ♭3 3 5 6 ♭7',       mood:'Rock blues-country. SRV, John Mayer. Unisce luce e ombra.', color:'#f59e0b', hybrid:true },
+  miso_penta:     { name:'Misolidia + Penta Minore',    intervals:[0,2,3,4,5,7,9,10],  formula:'1 2 ♭3 3 4 5 6 ♭7',     mood:'Il linguaggio di Slash e SRV. Rock blues per eccellenza.', color:'#fb923c', hybrid:true },
+  blues_maj:      { name:'Blues + Penta Maggiore',      intervals:[0,2,3,4,5,6,7,9,10],formula:'1 2 ♭3 3 4 ♭5 5 6 ♭7', mood:'Country blues. Albert King, BB King. 9 note.',             color:'#06b6d4', hybrid:true },
+  lydian_dom:     { name:'Lidia Dominante (Lidia ♭7)',  intervals:[0,2,4,6,7,9,10],    formula:'1 2 3 ♯4 5 6 ♭7',       mood:'Jazz fusion. Sognante ma con tensione. Joe Satriani.',     color:'#a78bfa', hybrid:true },
+  phrygian_dom:   { name:'Frigia Dominante',            intervals:[0,1,4,5,7,8,10],    formula:'1 ♭2 3 4 5 ♭6 ♭7',      mood:'Spagnola, flamenco, metal orientale. Ozzy, Megadeth.',    color:'#ef4444', hybrid:true },
+  bebop_dom:      { name:'Bebop Dominante',             intervals:[0,2,4,5,7,9,10,11], formula:'1 2 3 4 5 6 ♭7 7',      mood:'Jazz bebop. 8 note — una per ogni ottavo sul beat.',       color:'#22c55e', hybrid:true },
 };
 
 const MODES_DATA = [
@@ -2032,6 +2469,12 @@ function _makeWaveshaper(ctx, amount = 60) {
   return ws;
 }
 
+// ── CLEANUP HELPER — disconnette i nodi audio dopo lo stop per evitare memory leak ──
+function _autoDisconnect(node, stopTime) {
+  const delay = Math.max(0, (stopTime - getAudioCtx().currentTime) + 0.08) * 1000;
+  setTimeout(() => { try { node.disconnect(); } catch(e) {} }, delay);
+}
+
 // ── GUITAR SINGLE NOTE (click on fretboard) ─────────────────────────────────
 // Karplus-Strong inspired: noise burst → resonant filter → harmonics → amp sim
 function playNote(freq, time, duration = 0.8) {
@@ -2058,6 +2501,7 @@ function playNote(freq, time, duration = 0.8) {
   transGain.connect(dest);
   transNoise.start(now);
   transNoise.stop(now + 0.025);
+  _autoDisconnect(transNoise, now + 0.025);
 
   // ── String body: fundamental + harmonics ──
   const bodyGain = ctx.createGain();
@@ -2113,6 +2557,9 @@ function playNote(freq, time, duration = 0.8) {
     hEnv.connect(bodyLPF);
     osc.start(now);
     osc.stop(now + duration + 0.05);
+    _autoDisconnect(osc, now + duration + 0.05);
+    _autoDisconnect(hg, now + duration + 0.05);
+    _autoDisconnect(hEnv, now + duration + 0.05);
   });
 }
 
@@ -2128,11 +2575,25 @@ function playScale() {
   const scale = SCALES[scaleKey];
   if (!scale) return;
   const now = ctx.currentTime;
+  const step = 0.22;
   scale.intervals.forEach((interval, i) => {
     const noteIdx = (keyIndex + interval) % 12;
-    playNote(noteToFreq(noteIdx, 4), now + i * 0.22, 0.55);
+    playNote(noteToFreq(noteIdx, 4), now + i * step, 0.55);
+    setTimeout(() => {
+      document.querySelectorAll(`#fretboard .note-dot[data-note="${noteIdx}"]`).forEach(d => {
+        d.classList.add('playing');
+        setTimeout(() => d.classList.remove('playing'), 480);
+      });
+    }, Math.round(i * step * 1000));
   });
-  playNote(noteToFreq(keyIndex, 5), now + scale.intervals.length * 0.22, 0.7);
+  const last = scale.intervals.length;
+  playNote(noteToFreq(keyIndex, 5), now + last * step, 0.7);
+  setTimeout(() => {
+    document.querySelectorAll(`#fretboard .note-dot[data-note="${keyIndex}"]`).forEach(d => {
+      d.classList.add('playing');
+      setTimeout(() => d.classList.remove('playing'), 580);
+    });
+  }, Math.round(last * step * 1000));
 }
 
 // ─── DRUMS ────────────────────────────────────────────────────────────────────
@@ -2150,6 +2611,7 @@ function drumKick(ctx, dest, time) {
   env.gain.setValueAtTime(1.6, time);
   env.gain.exponentialRampToValueAtTime(0.001, time + 0.45);
   osc.start(time); osc.stop(time + 0.5);
+  _autoDisconnect(osc, time + 0.5);
 
   // Snap attack — short bandpass noise
   const sLen = Math.floor(ctx.sampleRate * 0.025);
@@ -2165,6 +2627,7 @@ function drumKick(ctx, dest, time) {
   snapG.gain.exponentialRampToValueAtTime(0.001, time + 0.025);
   snap.connect(snapF); snapF.connect(snapG); snapG.connect(dest);
   snap.start(time); snap.stop(time + 0.03);
+  _autoDisconnect(snap, time + 0.03);
 }
 
 function drumSnare(ctx, dest, time) {
@@ -2186,6 +2649,7 @@ function drumSnare(ctx, dest, time) {
   nEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
   noise.connect(hp); hp.connect(bp); bp.connect(nEnv); nEnv.connect(dest);
   noise.start(time); noise.stop(time + 0.22);
+  _autoDisconnect(noise, time + 0.22);
 
   // Drum head tone (pitched thud)
   const osc = ctx.createOscillator();
@@ -2197,6 +2661,7 @@ function drumSnare(ctx, dest, time) {
   oEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.09);
   osc.connect(oEnv); oEnv.connect(dest);
   osc.start(time); osc.stop(time + 0.1);
+  _autoDisconnect(osc, time + 0.1);
 }
 
 function drumHihat(ctx, dest, time, open = false, gainVal = 0.4) {
@@ -2220,50 +2685,50 @@ function drumHihat(ctx, dest, time, open = false, gainVal = 0.4) {
 
   noise.connect(hpf); hpf.connect(bpf); bpf.connect(env); env.connect(dest);
   noise.start(time); noise.stop(time + decay + 0.02);
+  _autoDisconnect(noise, time + decay + 0.02);
 }
 
 // ─── CHORD SYNTH (rhythm guitar) ─────────────────────────────────────────────
 function playChordSynth(ctx, dest, rootMidi, chordType, startTime, endTime) {
   const intervals = CHORD_IV[chordType] || CHORD_IV.maj;
-  const dur = endTime - startTime;
 
   const masterG = ctx.createGain();
   masterG.gain.setValueAtTime(0, startTime);
-  masterG.gain.linearRampToValueAtTime(0.38, startTime + 0.04);
-  masterG.gain.setValueAtTime(0.24, startTime + 0.25);
-  masterG.gain.setValueAtTime(0.22, endTime - 0.1);
+  masterG.gain.linearRampToValueAtTime(0.28, startTime + 0.06); // softer attack
+  masterG.gain.setValueAtTime(0.18, startTime + 0.3);
+  masterG.gain.setValueAtTime(0.16, endTime - 0.12);
   masterG.gain.linearRampToValueAtTime(0, endTime);
 
-  // Cabinet EQ (guitar speaker simulation)
+  // Cabinet EQ
   const hp = ctx.createBiquadFilter();
-  hp.type = 'highpass'; hp.frequency.value = 80;
+  hp.type = 'highpass'; hp.frequency.value = 100;
   const lp = ctx.createBiquadFilter();
-  lp.type = 'lowpass'; lp.frequency.value = 5000;
+  lp.type = 'lowpass'; lp.frequency.value = 3500; // roll off harshness
   const mid = ctx.createBiquadFilter();
-  mid.type = 'peaking'; mid.frequency.value = 800; mid.gain.value = 4; mid.Q.value = 1.2;
+  mid.type = 'peaking'; mid.frequency.value = 700; mid.gain.value = 2; mid.Q.value = 1;
 
-  // Light overdrive
-  const shaper = _makeWaveshaper(ctx, 45);
+  // Softer saturation (was 45 → now 18)
+  const shaper = _makeWaveshaper(ctx, 18);
 
   hp.connect(lp); lp.connect(mid); mid.connect(shaper);
   shaper.connect(masterG); masterG.connect(dest);
 
-  // Strum: slightly offset each string start
+  // Strum: one oscillator per note (+ light detune), less clutter
   intervals.forEach((iv, i) => {
     const freq = midiToFreq(rootMidi + iv);
-    const strumDelay = i * 0.008;
+    const strumDelay = i * 0.010;
 
-    // Two detuned oscillators per note (chorus-like)
-    [0, 7, -7].forEach((detune, di) => {
+    [0, 5].forEach((detune, di) => { // two oscs per note (was 3)
       const osc = ctx.createOscillator();
       osc.type = 'sawtooth';
       osc.frequency.value = freq;
       osc.detune.value = detune;
       const g = ctx.createGain();
-      g.gain.value = 0.11 / intervals.length;
+      g.gain.value = 0.09 / intervals.length;
       osc.connect(g); g.connect(hp);
-      osc.start(startTime + strumDelay + di * 0.001);
+      osc.start(startTime + strumDelay + di * 0.002);
       osc.stop(endTime + 0.1);
+      _autoDisconnect(osc, endTime + 0.1);
     });
   });
 }
@@ -2274,9 +2739,9 @@ function playBassSynth(ctx, dest, rootMidi, time, duration) {
 
   const masterG = ctx.createGain();
   masterG.gain.setValueAtTime(0, time);
-  masterG.gain.linearRampToValueAtTime(0.85, time + 0.018);  // punchy attack
-  masterG.gain.exponentialRampToValueAtTime(0.5, time + 0.08);
-  masterG.gain.setValueAtTime(0.42, time + duration - 0.06);
+  masterG.gain.linearRampToValueAtTime(0.65, time + 0.028);  // slightly softer attack
+  masterG.gain.exponentialRampToValueAtTime(0.38, time + 0.1);
+  masterG.gain.setValueAtTime(0.32, time + duration - 0.06);
   masterG.gain.linearRampToValueAtTime(0, time + duration);
   masterG.connect(dest);
 
@@ -2293,6 +2758,7 @@ function playBassSynth(ctx, dest, rootMidi, time, duration) {
   const sG = ctx.createGain(); sG.gain.value = 0.6;
   sine.connect(sG); sG.connect(lpf);
   sine.start(time); sine.stop(time + duration + 0.05);
+  _autoDisconnect(sine, time + duration + 0.05);
 
   // Pluck character — triangle at 2× with faster decay
   const tri = ctx.createOscillator();
@@ -2302,6 +2768,7 @@ function playBassSynth(ctx, dest, rootMidi, time, duration) {
   tEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
   tri.connect(tEnv); tEnv.connect(lpf);
   tri.start(time); tri.stop(time + 0.15);
+  _autoDisconnect(tri, time + 0.15);
 
   // Bite — short noise transient (finger/pick attack)
   const bLen = Math.floor(ctx.sampleRate * 0.02);
@@ -2315,6 +2782,7 @@ function playBassSynth(ctx, dest, rootMidi, time, duration) {
   const biteG = ctx.createGain(); biteG.gain.value = 0.35;
   bite.connect(biteBP); biteBP.connect(biteG); biteG.connect(masterG);
   bite.start(time); bite.stop(time + 0.022);
+  _autoDisconnect(bite, time + 0.022);
 }
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
@@ -2325,6 +2793,17 @@ const FRET_WIDTHS = []; // will be computed
 
 // NPS state
 const FB_STATE = { mode: 'all', npsPosition: 0 };
+
+function toggleTech() {
+  const active = document.body.classList.toggle('show-tech');
+  const btn = document.getElementById('tech-btn');
+  if (btn) {
+    btn.textContent = active ? 'Tecnica on' : 'Tecnica off';
+    btn.classList.toggle('active', active);
+  }
+  const leg = document.getElementById('legend-tech');
+  if (leg) leg.style.display = active ? 'flex' : 'none';
+}
 
 function setFbMode(mode) {
   FB_STATE.mode = mode;
@@ -2551,7 +3030,15 @@ function renderFretboard() {
       if (labelMode === 'name') dot.textContent = NOTES[openNoteIndex];
       else if (labelMode === 'interval') dot.textContent = INTERVAL_NAMES[openInterval];
       else dot.textContent = DEGREE_NAMES[openInterval];
-      dot.onclick = () => { const ctx = getAudioCtx(); playNote(noteToFreq(openNoteIndex, s < 3 ? 5 : 4), ctx.currentTime, 0.6); };
+      dot.dataset.note = openNoteIndex;
+      dot.dataset.string = s;
+      dot.dataset.fret = 'open';
+      dot.onclick = () => {
+        const ctx = getAudioCtx();
+        playNote(noteToFreq(openNoteIndex, s < 3 ? 5 : 4), ctx.currentTime, 0.6);
+        dot.classList.add('playing');
+        setTimeout(() => dot.classList.remove('playing'), 550);
+      };
       openCell.appendChild(dot);
     } else if (openIsDimmed) {
       const dot = document.createElement('div');
@@ -2587,9 +3074,21 @@ function renderFretboard() {
         if (labelMode === 'name') dot.textContent = NOTES[noteIndex];
         else if (labelMode === 'interval') dot.textContent = INTERVAL_NAMES[interval];
         else dot.textContent = DEGREE_NAMES[interval];
+        // Tecniche: assegnate per intervallo e posizione
+        if (interval === 3 || interval === 10) dot.dataset.tech = 'bend';
+        else if (interval === 0)               dot.dataset.tech = 'vibrato';
+        else if (interval === 2 || interval === 5) dot.dataset.tech = 'slide';
+        else if ((interval === 4 || interval === 11) && f >= 7) dot.dataset.tech = 'tap';
+        else if (interval === 7 && s <= 2)     dot.dataset.tech = 'whammy';
+        else if (interval === 1 || interval === 6) dot.dataset.tech = 'legato';
+        dot.dataset.note = noteIndex;
+        dot.dataset.string = s;
+        dot.dataset.fret = f;
         dot.onclick = () => {
           const ctx = getAudioCtx();
           playNote(noteToFreq(noteIndex, s < 3 ? 5 : 4), ctx.currentTime, 0.6);
+          dot.classList.add('playing');
+          setTimeout(() => dot.classList.remove('playing'), 550);
         };
         cell.appendChild(dot);
       } else if (isDimmed) {
@@ -2668,6 +3167,68 @@ function renderFretboard() {
     markerRow.appendChild(d);
   }
   fb.appendChild(markerRow);
+
+  // Disegna linee tratteggiate del pattern dopo che il DOM è stato costruito
+  requestAnimationFrame(drawPatternLines);
+}
+
+function drawPatternLines() {
+  const svg = document.getElementById('pattern-lines-svg');
+  if (!svg) return;
+  const fb = document.getElementById('fretboard');
+  if (!fb) return;
+  const fbRect = fb.getBoundingClientRect();
+  if (fbRect.width === 0) return;
+
+  const showLines = document.getElementById('toggle-pattern-lines') &&
+                    document.getElementById('toggle-pattern-lines').checked;
+  if (!showLines) { svg.innerHTML = ''; return; }
+
+  // Raccoglie le posizioni dei dot visibili, raggruppati per stringa
+  const byString = {};
+  fb.querySelectorAll('.note-dot[data-string][data-fret]').forEach(dot => {
+    const s = parseInt(dot.dataset.string);
+    const f = dot.dataset.fret === 'open' ? -1 : parseInt(dot.dataset.fret);
+    const r = dot.getBoundingClientRect();
+    if (r.width === 0) return;
+    if (!byString[s]) byString[s] = [];
+    byString[s].push({
+      x: r.left - fbRect.left + r.width / 2,
+      y: r.top  - fbRect.top  + r.height / 2,
+      f
+    });
+  });
+
+  // Ordina per fret dentro ogni stringa, poi connette dalla corda 5→0 (basso→acuto)
+  const segments = [];
+  [5,4,3,2,1,0].forEach(s => {
+    const dots = byString[s];
+    if (!dots || dots.length === 0) return;
+    dots.sort((a,b) => a.f - b.f);
+    dots.forEach((d,i) => { if (i > 0) segments.push([dots[i-1], d]); });
+    // Connetti ultima nota di questa stringa alla prima della successiva (acuto)
+    const nextS = s - 1;
+    const next = byString[nextS];
+    if (next && next.length > 0) {
+      const from = dots[dots.length - 1];
+      const to = [...next].sort((a,b) => a.f - b.f)[0];
+      segments.push([from, to, true]); // true = connessione tra corde
+    }
+  });
+
+  const W = fbRect.width;
+  const H = fbRect.height;
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  svg.innerHTML = segments.map(([a, b, cross]) => {
+    const color = cross ? 'rgba(255,255,255,0.50)' : 'rgba(255,200,50,0.75)';
+    const dash = cross ? '4,5' : '6,4';
+    const width = cross ? '1.5' : '2';
+    return `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"
+      stroke="${color}" stroke-width="${width}" stroke-dasharray="${dash}" stroke-linecap="round"/>`;
+  }).join('');
 }
 
 // ─── SCALES PAGE ─────────────────────────────────────────────────────────────
@@ -2726,7 +3287,7 @@ function buildScaleMiniDiagrams(keyIdx, intervals, scaleKey) {
       const frets = offsetsToFrets(b.offs, anchor);
       const svg = drawMiniDiagram(frets, '#f59e0b', '#ef4444', keyIdx, keyIdx, intervals);
       const fretLabel = anchor === 0 ? 'open' : `${anchor}fr`;
-      html.push(`<div class="mini-diag-card" title="Box ${i+1} (tasto ${anchor})">
+      html.push(`<div class="mini-diag-card" title="Box ${i+1} — clicca per vedere sul manico" onclick="loadScaleOnFretboard('${scaleKey}',${i},'penta')">
         <div class="mini-diag-label">Box ${i+1}</div>
         <div class="mini-diag-fret">${fretLabel}</div>${svg}</div>`);
     });
@@ -2737,7 +3298,7 @@ function buildScaleMiniDiagrams(keyIdx, intervals, scaleKey) {
       const frets = offsetsToFrets(p.offs, anchor);
       const svg = drawMiniDiagram(frets, '#f59e0b', '#3b82f6', keyIdx, keyIdx, intervals);
       const fretLabel = anchor === 0 ? 'open' : `${anchor}fr`;
-      html.push(`<div class="mini-diag-card" title="Pos ${i+1} – ${p.mode} (tasto ${anchor})">
+      html.push(`<div class="mini-diag-card" title="Pos ${i+1} – ${p.mode} — clicca per vedere sul manico" onclick="loadScaleOnFretboard('${scaleKey}',${i},'nps')">
         <div class="mini-diag-label">${p.mode}</div>
         <div class="mini-diag-fret">${fretLabel}</div>${svg}</div>`);
     });
@@ -2760,7 +3321,8 @@ function renderModesPage() {
     let diagHtml = '';
     if (npsPos) {
       const frets = offsetsToFrets(npsPos.offs, anchor);
-      const svg = drawMiniDiagram(frets, m.color, '#3b82f6', keyIdx, keyIdx, scaleData.intervals);
+      const modeKeyIdx = (keyIdx + npsPos.ao) % 12;
+      const svg = drawMiniDiagram(frets, m.color, '#3b82f6', modeKeyIdx, modeKeyIdx, scaleData.intervals);
       diagHtml = `<div style="margin:10px 0 8px">
         <div style="font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px">Pattern 3NPS (in C, tasto ${anchor === 0 ? 'aperto' : anchor})</div>
         <div style="display:inline-block">${svg}</div>
@@ -2791,10 +3353,14 @@ function renderModesPage() {
   });
 }
 
-function loadScaleOnFretboard(scaleKey) {
+function loadScaleOnFretboard(scaleKey, posIdx, posType) {
   document.getElementById('fb-scale').value = scaleKey;
   showPage('fretboard');
   renderFretboard();
+  if (posIdx !== undefined && posType === 'nps') {
+    const modeBtn = document.getElementById('mode-nps-btn');
+    if (modeBtn) { FB_STATE.mode = 'nps'; FB_STATE.npsPosition = posIdx; renderFretboard(); }
+  }
 }
 
 // ─── PROGRESSIONS PAGE ────────────────────────────────────────────────────────
@@ -3002,6 +3568,7 @@ const BACKING_TRACKS = {
 };
 
 // 16-step drum patterns (16th notes per bar)
+// "fill" = pattern rullante usato nell'ultimo bar di ogni giro (sostituisce snare/hihat normale)
 const DRUM_PATTERNS = {
   rock: {
     kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
@@ -3009,13 +3576,15 @@ const DRUM_PATTERNS = {
     hihat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
     ohat:  [0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,0],
     crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    fill:  [0,0,0,0, 0,0,0,0, 1,0,1,0, 1,1,1,1],
   },
   blues: {
     kick:  [1,0,0,0, 0,0,1,0, 1,0,0,0, 0,0,0,0],
     snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1],
-    hihat: [1,0,0,1, 0,0,1,0, 1,0,0,1, 0,0,1,0], // shuffle triplet feel
+    hihat: [1,0,0,1, 0,0,1,0, 1,0,0,1, 0,0,1,0],
     ohat:  [0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,0],
     crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    fill:  [0,0,0,0, 0,0,1,0, 1,0,1,0, 1,0,1,1],
   },
   metal: {
     kick:  [1,0,1,0, 1,0,1,0, 1,0,1,0, 0,0,1,0],
@@ -3023,6 +3592,7 @@ const DRUM_PATTERNS = {
     hihat: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
     ohat:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
     crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    fill:  [1,0,1,0, 1,1,0,0, 1,0,1,1, 1,1,1,1],
   },
   funk: {
     kick:  [1,0,0,0, 1,0,0,1, 0,0,1,0, 0,0,0,0],
@@ -3030,6 +3600,7 @@ const DRUM_PATTERNS = {
     hihat: [1,1,0,1, 1,0,1,1, 0,1,1,0, 1,0,1,1],
     ohat:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,1,0,0],
     crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    fill:  [0,0,1,0, 1,0,1,0, 0,1,0,1, 1,0,1,1],
   },
   ballad: {
     kick:  [1,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0],
@@ -3037,6 +3608,7 @@ const DRUM_PATTERNS = {
     hihat: [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
     ohat:  [0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,0,0],
     crash: [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    fill:  [0,0,0,0, 0,0,0,0, 1,0,0,0, 1,0,1,0],
   },
 };
 
@@ -3124,11 +3696,18 @@ function btScheduleNote(absStep, time) {
   BT.notesInQueue.push({ step: ps, loopStep: ls, time });
 
   // ── DRUMS ──
-  if (pat.kick[ps])  drumKick(ctx, BT.drumGain, time);
-  if (pat.snare[ps]) drumSnare(ctx, BT.drumGain, time);
-  if (pat.hihat[ps]) drumHihat(ctx, BT.drumGain, time, false, 0.38);
-  if (pat.ohat[ps])  drumHihat(ctx, BT.drumGain, time, true,  0.32);
-  if (pat.crash[ps]) drumHihat(ctx, BT.drumGain, time, true,  0.55);
+  // Inietta il fill nell'ultimo bar di ogni giro (dopo il primo)
+  const inFillBar = pat.fill && BT.loopTotalSteps > 16 &&
+                    ls >= BT.loopTotalSteps - 16 &&
+                    absStep >= BT.loopTotalSteps;
+  const snareHit = inFillBar ? pat.fill[ps] : pat.snare[ps];
+  const hihatHit = inFillBar ? 0            : pat.hihat[ps];
+
+  if (pat.kick[ps]) drumKick(ctx, BT.drumGain, time);
+  if (snareHit)     drumSnare(ctx, BT.drumGain, time);
+  if (hihatHit)     drumHihat(ctx, BT.drumGain, time, false, 0.38);
+  if (pat.ohat[ps]) drumHihat(ctx, BT.drumGain, time, true,  0.32);
+  if (pat.crash[ps])drumHihat(ctx, BT.drumGain, time, true,  0.55);
 
   const chord = btChordAt(absStep);
   const rootMidi = 48 + BT.rootIdx + chord.s;
@@ -3226,9 +3805,26 @@ function jamUpdateSettings() {
   BT.modeKey  = document.getElementById('jam-mode').value;
   BT.rootIdx  = parseInt(document.getElementById('jam-key').value);
   BT.styleKey = document.getElementById('jam-style').value;
-  if (BT.playing) { btBuildProg(); BT.absoluteStep = 0; }
   jamRebuildChordUI();
   jamRenderModeInfo();
+  if (BT.playing && BT.ctx && BT.masterGain) {
+    // Fade out quickly, stop scheduler, then restart with new settings
+    clearTimeout(BT.timerID);
+    BT.notesInQueue = [];
+    const g = BT.masterGain.gain;
+    const now = BT.ctx.currentTime;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value, now);
+    g.linearRampToValueAtTime(0, now + 0.08);
+    setTimeout(() => {
+      if (!BT.playing) return;
+      btBuildProg();
+      BT.absoluteStep = 0;
+      BT.nextNoteTime = BT.ctx.currentTime + 0.02;
+      g.setValueAtTime(0.7, BT.ctx.currentTime);
+      btSchedulerLoop();
+    }, 100);
+  }
 }
 
 function jamSetBPM(v) {
@@ -3240,8 +3836,12 @@ function jamChangeBPM(d) { jamSetBPM(BT.bpm + d); }
 
 function jamTap() {
   const now = performance.now();
+  // Reset se l'ultimo tap è stato più di 3 secondi fa (nuova sessione di tap)
+  if (BT.tapTimes.length && now - BT.tapTimes[BT.tapTimes.length - 1] > 3000) {
+    BT.tapTimes = [];
+  }
   BT.tapTimes.push(now);
-  if (BT.tapTimes.length > 5) BT.tapTimes.shift();
+  if (BT.tapTimes.length > 8) BT.tapTimes.shift();
   if (BT.tapTimes.length >= 2) {
     let s = 0;
     for (let i = 1; i < BT.tapTimes.length; i++) s += BT.tapTimes[i] - BT.tapTimes[i-1];
@@ -3916,7 +4516,18 @@ function renderCaged() {
     const card = document.createElement('div');
     card.className = 'caged-card' + (idx === CAGED_STATE.selected ? ' caged-active' : '');
     card.style.borderColor = idx === CAGED_STATE.selected ? def.color : '';
-    card.onclick = () => { CAGED_STATE.selected = idx; renderCaged(); };
+    card.onclick = () => {
+      // Prima suona l'accordo (prima che renderCaged() ricrei il DOM)
+      const actx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+      if (!audioCtx) audioCtx = actx;
+      const now = actx.currentTime;
+      playedFrets.slice().reverse().forEach((n, j) => {
+        const noteIndex = (OPEN_STRINGS[n.s] + n.fret) % 12;
+        playNote(noteToFreq(noteIndex, n.s < 2 ? 5 : 4), now + j * 0.06, 1.2);
+      });
+      CAGED_STATE.selected = idx;
+      renderCaged();
+    };
 
     const notePills = playedFrets.map(n => {
       const noteName = NOTES[(OPEN_STRINGS[n.s] + n.fret) % 12];
@@ -3930,16 +4541,6 @@ function renderCaged() {
       <div class="chord-svg-wrap">${drawChordDiagram(name, rootNote, quality, idx===CAGED_STATE.selected)}</div>
       <div class="chord-note-pills">${notePills}</div>`;
 
-    card.addEventListener('click', () => {
-      // Play chord
-      if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-      const now = audioCtx.currentTime;
-      playedFrets.slice().reverse().forEach((n, j) => {
-        const noteIndex = (OPEN_STRINGS[n.s] + n.fret) % 12;
-        const octave = n.s < 2 ? 5 : 4;
-        playNote(noteToFreq(noteIndex, octave), now + j*0.06, 1.2);
-      });
-    });
 
     cardsEl.appendChild(card);
   });
@@ -4132,8 +4733,8 @@ function drawP5Fretboard(box, keyIdx, quality) {
   const NOTES_ARR = NOTES;
   const OPEN_S = OPEN_STRINGS;
 
-  const cellH = 44, cellW = 52;
-  const leftPad = 30, topPad = 18, rightPad = 10;
+  const cellH = 26, cellW = 32;
+  const leftPad = 30, topPad = 18, rightPad = 12;
   const nFrets = maxF - minF + 1;
   const W = leftPad + nFrets * cellW + rightPad;
   const H = topPad + 6 * cellH + 18;
@@ -4141,13 +4742,13 @@ function drawP5Fretboard(box, keyIdx, quality) {
   const activeSet = new Set(fretsByString.flatMap((frets, s) => frets.map(f => s + ',' + f)));
   const sNames = ['e','B','G','D','A','E'];
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:500px">`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:${W}px">`;
   svg += `<rect width="${W}" height="${H}" fill="#1a1a1a" rx="8"/>`;
 
   // Fret numbers
   for (let f = minF; f <= maxF; f++) {
     const x = leftPad + (f - minF) * cellW + cellW / 2;
-    svg += `<text x="${x}" y="12" text-anchor="middle" font-size="9" fill="#555" font-family="monospace">${f === 0 ? '0' : f}</text>`;
+    svg += `<text x="${x}" y="13" text-anchor="middle" font-size="8" fill="#555" font-family="monospace">${f === 0 ? '0' : f}</text>`;
   }
 
   // Nut
@@ -4159,7 +4760,7 @@ function drawP5Fretboard(box, keyIdx, quality) {
   for (let s = 0; s < 6; s++) {
     const y = topPad + s * cellH + cellH / 2;
     svg += `<line x1="${leftPad}" y1="${y}" x2="${W-rightPad}" y2="${y}" stroke="#c8a84b" stroke-width="${s===0||s===5?1.2:0.7}" opacity="0.4"/>`;
-    svg += `<text x="${leftPad-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
+    svg += `<text x="${leftPad-4}" y="${y+3}" text-anchor="end" font-size="8" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
   }
   for (let f = minF; f <= maxF; f++) {
     const x = leftPad + (f - minF) * cellW;
@@ -4179,18 +4780,6 @@ function drawP5Fretboard(box, keyIdx, quality) {
     }
   });
 
-  // Ghost notes (in scale but not in box) — very dim
-  for (let s = 0; s < 6; s++) {
-    for (let f = minF; f <= maxF; f++) {
-      const noteIdx = (OPEN_S[s] + f) % 12;
-      if (!scaleSet.has(noteIdx)) continue;
-      if (activeSet.has(s + ',' + f)) continue;
-      const x = leftPad + (f - minF) * cellW + cellW / 2;
-      const y = topPad + s * cellH + cellH / 2;
-      svg += `<circle cx="${x}" cy="${y}" r="11" fill="#1e1e1e" stroke="#2a2a2a" stroke-width="1" opacity="0.6"/>`;
-    }
-  }
-
   // Active notes
   for (let s = 0; s < 6; s++) {
     fretsByString[s].forEach(f => {
@@ -4204,9 +4793,9 @@ function drawP5Fretboard(box, keyIdx, quality) {
       const col = isRoot ? '#f59e0b' : box.color;
       const textCol = isRoot ? '#000' : '#fff';
 
-      svg += `<circle cx="${x}" cy="${y}" r="13" fill="${col}" opacity="0.92"/>`;
-      if (isRoot) svg += `<circle cx="${x}" cy="${y}" r="13" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.4"/>`;
-      svg += `<text x="${x}" y="${y+3.5}" text-anchor="middle" font-size="8.5" fill="${textCol}" font-weight="bold" font-family="monospace">${noteName}</text>`;
+      svg += `<circle cx="${x}" cy="${y}" r="9" fill="${col}" opacity="0.95"/>`;
+      if (isRoot) svg += `<circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.5"/>`;
+      svg += `<text x="${x}" y="${y+3}" text-anchor="middle" font-size="7" fill="${textCol}" font-weight="bold" font-family="monospace">${noteName}</text>`;
     });
   }
 
@@ -4237,42 +4826,42 @@ function drawP5Overview(keyIdx, quality) {
   });
 
   const fretCount = 17;
-  const cellH = 22, cellW = 38;
-  const leftPad = 28, topPad = 14;
-  const W = leftPad + (fretCount + 1) * cellW + 10;
+  const cellH = 16, cellW = 18;
+  const leftPad = 22, topPad = 14;
+  const W = leftPad + (fretCount + 1) * cellW + 8;
   const H = topPad + 6 * cellH + 16;
   const sNames = ['e','B','G','D','A','E'];
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:600px">`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">`;
   svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="8"/>`;
 
   // Fret numbers
   for (let f = 0; f <= fretCount; f++) {
     const x = leftPad + f * cellW + cellW / 2;
-    svg += `<text x="${x}" y="10" text-anchor="middle" font-size="7.5" fill="#444" font-family="monospace">${f}</text>`;
+    svg += `<text x="${x}" y="10" text-anchor="middle" font-size="6" fill="#444" font-family="monospace">${f}</text>`;
   }
 
   // Nut
-  svg += `<rect x="${leftPad + cellW}" y="${topPad}" width="2.5" height="${6*cellH}" fill="#d4af6a" rx="1"/>`;
+  svg += `<rect x="${leftPad + cellW}" y="${topPad}" width="2" height="${6*cellH}" fill="#d4af6a" rx="1"/>`;
 
   // Fret markers
   [3,5,7,9,12,15,17].forEach(mf => {
     if (mf > fretCount) return;
     const x = leftPad + mf * cellW + cellW / 2;
-    const y = topPad + 6 * cellH + 9;
+    const y = topPad + 6 * cellH + 8;
     if (mf === 12) {
-      svg += `<circle cx="${x-5}" cy="${y}" r="2.5" fill="#3d2c10"/>`;
-      svg += `<circle cx="${x+5}" cy="${y}" r="2.5" fill="#3d2c10"/>`;
+      svg += `<circle cx="${x-3}" cy="${y}" r="2" fill="#3d2c10"/>`;
+      svg += `<circle cx="${x+3}" cy="${y}" r="2" fill="#3d2c10"/>`;
     } else {
-      svg += `<circle cx="${x}" cy="${y}" r="2.5" fill="#222"/>`;
+      svg += `<circle cx="${x}" cy="${y}" r="2" fill="#222"/>`;
     }
   });
 
   // Grid
   for (let s = 0; s < 6; s++) {
     const y = topPad + s * cellH + cellH / 2;
-    svg += `<line x1="${leftPad}" y1="${y}" x2="${W-8}" y2="${y}" stroke="#c8a84b" stroke-width="0.6" opacity="0.35"/>`;
-    svg += `<text x="${leftPad-3}" y="${y+3}" text-anchor="end" font-size="7" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
+    svg += `<line x1="${leftPad}" y1="${y}" x2="${W-8}" y2="${y}" stroke="#c8a84b" stroke-width="0.5" opacity="0.35"/>`;
+    svg += `<text x="${leftPad-2}" y="${y+3}" text-anchor="end" font-size="6" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
   }
   for (let f = 0; f <= fretCount; f++) {
     const x = leftPad + f * cellW;
@@ -4301,10 +4890,10 @@ function drawP5Overview(keyIdx, quality) {
     if (f < 0 || f > fretCount) continue;
     const x = leftPad + f * cellW + cellW / 2;
     const y = topPad + s * cellH + cellH / 2;
-    svg += `<circle cx="${x}" cy="${y}" r="7" fill="${info.color}" opacity="0.9"/>`;
-    if (info.isRoot) svg += `<circle cx="${x}" cy="${y}" r="7" fill="none" stroke="#fff" stroke-width="1" opacity="0.5"/>`;
+    svg += `<circle cx="${x}" cy="${y}" r="5" fill="${info.color}" opacity="0.9"/>`;
+    if (info.isRoot) svg += `<circle cx="${x}" cy="${y}" r="5" fill="none" stroke="#fff" stroke-width="1" opacity="0.5"/>`;
     const noteName = NOTES[(OPEN_STRINGS[s] + f) % 12];
-    svg += `<text x="${x}" y="${y+2.5}" text-anchor="middle" font-size="5.5" fill="${info.isRoot?'#000':'#fff'}" font-weight="bold" font-family="monospace">${noteName}</text>`;
+    svg += `<text x="${x}" y="${y+1.5}" text-anchor="middle" font-size="4" fill="${info.isRoot?'#000':'#fff'}" font-weight="bold" font-family="monospace">${noteName}</text>`;
   }
 
   svg += '</svg>';
@@ -4420,6 +5009,77 @@ function showPage(name) {
   });
 }
 
+// ─── METRONOMO STANDALONE ─────────────────────────────────────────────────────
+const METRO = { timerID: null, playing: false, nextTime: 0, beat: 0 };
+
+function metroStart() {
+  if (METRO.playing) return;
+  const ctx = getAudioCtx();
+  METRO.playing = true;
+  METRO.beat = 0;
+  METRO.nextTime = ctx.currentTime + 0.05;
+  metroLoop();
+  const btn = document.getElementById('metro-btn');
+  if (btn) { btn.textContent = '■ Stop'; btn.classList.add('metro-playing'); }
+}
+
+function metroStop() {
+  METRO.playing = false;
+  clearTimeout(METRO.timerID);
+  const btn = document.getElementById('metro-btn');
+  if (btn) { btn.textContent = '▶ Metronomo'; btn.classList.remove('metro-playing'); }
+}
+
+function metroToggle() { METRO.playing ? metroStop() : metroStart(); }
+
+function metroTick(ctx, time, isDownbeat) {
+  const osc = ctx.createOscillator();
+  const g   = ctx.createGain();
+  osc.type = 'square';
+  osc.frequency.value = isDownbeat ? 1200 : 880;
+  g.gain.setValueAtTime(isDownbeat ? 0.22 : 0.12, time);
+  g.gain.exponentialRampToValueAtTime(0.001, time + 0.032);
+  osc.connect(g);
+  g.connect(_masterOut);
+  osc.start(time);
+  osc.stop(time + 0.04);
+  _autoDisconnect(osc, time + 0.04);
+}
+
+function metroLoop() {
+  if (!METRO.playing) return;
+  const ctx = getAudioCtx();
+  const subEl = document.getElementById('metro-sub');
+  const sub = subEl ? parseInt(subEl.value) : 4;
+  // un beat a BT.bpm, subdiviso in "sub" parti per quarto
+  const step = (60 / BT.bpm) / (sub / 4);
+  while (METRO.nextTime < ctx.currentTime + 0.15) {
+    const isDownbeat = METRO.beat % sub === 0;
+    metroTick(ctx, METRO.nextTime, isDownbeat);
+    METRO.nextTime += step;
+    METRO.beat++;
+  }
+  METRO.timerID = setTimeout(metroLoop, 25);
+}
+
+// ─── GLOBAL KEY ──────────────────────────────────────────────────────────────
+// Propaga la tonalità selezionata nell'header a tutte le sezioni dell'app
+function setGlobalKey(idx) {
+  const v = parseInt(idx);
+  // Sincronizza tutti i selettori di tonalità
+  ['fb-key', 'jam-key', 'prog-key'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = v;
+  });
+  // CAGED e Penta5 usano state object
+  if (typeof CAGED_STATE !== 'undefined') { CAGED_STATE.keyIdx = v; renderCaged(); }
+  if (typeof P5_STATE !== 'undefined')    { P5_STATE.keyIdx = v; renderPenta5(); }
+  // Re-render sezioni attive
+  renderFretboard();
+  renderProgressions();
+  if (typeof BT !== 'undefined') jamUpdateSettings();
+}
+
 // ─── INIT ────────────────────────────────────────────────────────────────────
 
 window.addEventListener('DOMContentLoaded', function() {
@@ -4438,6 +5098,22 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="page-jam" class="page">
   <h2>Basi di Accompagnamento</h2>
   <div class="subtitle">// suona improvvisazioni live su basi generate in tempo reale — drums, basso e accordi</div>
+
+  <!-- Metronomo standalone -->
+  <div class="metro-panel">
+    <span class="ctrl-label">Metronomo</span>
+    <button id="metro-btn" class="tap-btn" onclick="metroToggle()">▶ Metronomo</button>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Suddivisione</div>
+      <select id="metro-sub">
+        <option value="4">Quarti (♩)</option>
+        <option value="8">Ottavi (♪♪)</option>
+        <option value="12">Terzine (♪♪♪)</option>
+        <option value="16">Sedicesimi</option>
+      </select>
+    </div>
+    <span class="ctrl-label" style="color:var(--text-dim);font-size:10px">// usa il BPM del jam · indipendente dalla base</span>
+  </div>
 
   <div class="jam-controls-row">
     <div class="ctrl-group">
@@ -4559,6 +5235,739 @@ window.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 </div>
+
+<!-- ═══════════════════════════════ ACCORDATORE ════════════════════════════════ -->
+<div id="page-tuner" class="page">
+  <h2>Accordatore</h2>
+  <div class="subtitle">// usa il microfono per accordare la chitarra · A = 440 Hz</div>
+
+  <div class="controls" style="margin-bottom:16px">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Accordatura</div>
+      <select id="tuner-preset" onchange="tunerSetPreset(this.value)">
+        <option value="standard">Standard (E A D G B E)</option>
+        <option value="drop_d">Drop D (D A D G B E)</option>
+        <option value="dadgad">DADGAD</option>
+        <option value="open_g">Open G (D G D G B D)</option>
+        <option value="open_d">Open D (D A D F# A D)</option>
+        <option value="open_e">Open E (E B E G# B E)</option>
+        <option value="open_a">Open A (E A E A C# E)</option>
+        <option value="drop_c">Drop C (C G C F A D)</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">La di riferimento: <span id="tuner-aref-val">440</span> Hz</div>
+      <input type="range" id="tuner-aref" min="432" max="446" value="440" step="1"
+             oninput="tunerSetRef(this.value)"
+             style="width:100%;margin-top:6px;accent-color:var(--amber)">
+    </div>
+  </div>
+
+  <div class="tuner-btn">
+    <button class="play-btn" id="tuner-toggle" onclick="tunerToggle()">🎤 Avvia accordatore</button>
+  </div>
+
+  <div class="tuner-display">
+    <div class="tuner-note" id="tuner-note">–</div>
+    <div class="tuner-freq" id="tuner-freq">in attesa del microfono...</div>
+    <div class="tuner-meter">
+      <div class="tuner-center"></div>
+      <div class="tuner-meter-bar" id="tuner-bar" style="width:0%;left:50%"></div>
+    </div>
+    <div class="tuner-cents" id="tuner-cents">± 0 cents</div>
+  </div>
+
+  <div class="tuner-strings" id="tuner-strings-list">
+    <div class="tuner-str" onclick="tunerPlayRef(0)" title="Tocca per sentire il tono di riferimento"><div class="str-name">E</div><div class="str-freq">82.4 Hz</div><div class="ctrl-label">6ª</div><div class="str-hint">▶ tono</div></div>
+    <div class="tuner-str" onclick="tunerPlayRef(1)" title="Tocca per sentire il tono di riferimento"><div class="str-name">A</div><div class="str-freq">110 Hz</div><div class="ctrl-label">5ª</div><div class="str-hint">▶ tono</div></div>
+    <div class="tuner-str" onclick="tunerPlayRef(2)" title="Tocca per sentire il tono di riferimento"><div class="str-name">D</div><div class="str-freq">146.8 Hz</div><div class="ctrl-label">4ª</div><div class="str-hint">▶ tono</div></div>
+    <div class="tuner-str" onclick="tunerPlayRef(3)" title="Tocca per sentire il tono di riferimento"><div class="str-name">G</div><div class="str-freq">196 Hz</div><div class="ctrl-label">3ª</div><div class="str-hint">▶ tono</div></div>
+    <div class="tuner-str" onclick="tunerPlayRef(4)" title="Tocca per sentire il tono di riferimento"><div class="str-name">B</div><div class="str-freq">246.9 Hz</div><div class="ctrl-label">2ª</div><div class="str-hint">▶ tono</div></div>
+    <div class="tuner-str" onclick="tunerPlayRef(5)" title="Tocca per sentire il tono di riferimento"><div class="str-name">E</div><div class="str-freq">329.6 Hz</div><div class="ctrl-label">1ª</div><div class="str-hint">▶ tono</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ TECNICA AVANZATA ═══════════════════════════ -->
+<div id="page-technique" class="page">
+  <h2>⚡ Tecnica Avanzata</h2>
+  <div class="subtitle">// sweep picking, alternate, legato, tapping — studia i virtuosi del rock</div>
+
+  <div class="tech-tabs" id="tech-tabs"></div>
+
+  <!-- SWEEP PICKING -->
+  <div id="tp-sweep" class="tech-panel active">
+    <div class="notice">
+      <strong>Sweep Picking:</strong> Si usa un singolo movimento continuo del plettro su più corde, come si spazzola, creando arpeggi veloci e fluidi. La mano sinistra deve silenziare ogni nota appena suonata per evitare che si sovrappongano.
+    </div>
+    <div class="controls" style="margin-bottom:16px">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Tonalità</div>
+        <select id="sweep-key" onchange="renderSweepPanel()">
+          <option value="9">A</option><option value="10">A# / Bb</option>
+          <option value="11">B</option><option value="0">C</option>
+          <option value="1">C# / Db</option><option value="2">D</option>
+          <option value="3">D# / Eb</option><option value="4">E</option>
+          <option value="5">F</option><option value="6">F# / Gb</option>
+          <option value="7">G</option><option value="8">G# / Ab</option>
+        </select>
+      </div>
+    </div>
+    <div class="sweep-shapes-row" id="sweep-shape-btns"></div>
+    <div class="sweep-layout">
+      <div class="sweep-diagram-box">
+        <div class="msect-lbl" style="margin-top:0">Forma</div>
+        <div id="sweep-diagram"></div>
+      </div>
+      <div class="sweep-info-box">
+        <h3 id="sweep-shape-name" style="color:var(--amber)"></h3>
+        <div id="sweep-interval-row" class="sweep-interval-row"></div>
+        <div class="msect-lbl">Tablatura (▲ sweep up · ▼ sweep down)</div>
+        <div class="sweep-tab-display" id="sweep-tab-display"></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="play-btn" onclick="playSweepArp(false)" style="padding:8px 16px;font-size:13px">▲ Play Up</button>
+          <button class="play-btn" onclick="playSweepArp(true)" style="padding:8px 16px;font-size:13px">▼ Play Down</button>
+          <button class="play-btn" onclick="playSweepArp(null)" style="padding:8px 16px;font-size:13px;background:rgba(245,158,11,0.15)">↑↓ Up+Down</button>
+        </div>
+        <div id="sweep-players" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALTERNATE PICKING -->
+  <div id="tp-alternate" class="tech-panel">
+    <div class="notice">
+      <strong>Alternate Picking:</strong> Ogni nota alternates giù-su (↓↑). È la tecnica più efficiente per velocità, precisione e controllo del timing. Il metronomo è obbligatorio — comincia lento e aumenta di 5 BPM alla volta.
+    </div>
+    <div class="ex-grid" id="ex-alternate-grid"></div>
+  </div>
+
+  <!-- LEGATO -->
+  <div id="tp-legato" class="tech-panel">
+    <div class="notice">
+      <strong>Legato:</strong> Hammer-on (↑) e pull-off (↓) permettono di suonare più note con un solo pizzico. Crea un suono fluido, legato appunto, come la voce o un sassofono. La chiave è la forza e precisione della mano sinistra.
+    </div>
+    <div class="ex-grid" id="ex-legato-grid"></div>
+  </div>
+
+  <!-- TAPPING -->
+  <div id="tp-tapping" class="tech-panel">
+    <div class="notice">
+      <strong>Tapping a due mani:</strong> La mano destra tocca (tappa) direttamente le corde, estendendo enormemente il range di note raggiungibili. Inventato nel rock da Eddie Van Halen, sviluppato da Steve Vai, Joe Satriani e molti altri.
+    </div>
+    <div class="ex-grid" id="ex-tapping-grid"></div>
+  </div>
+
+  <!-- STRING SKIPPING -->
+  <div id="tp-skipping" class="tech-panel">
+    <div class="notice">
+      <strong>String Skipping:</strong> Saltare corde non adiacenti crea intervalli ampi (6e, 7e, 10e) impossibili con le dita consecutive. Suono moderno, tecnico. Marchio di fabbrica di Paul Gilbert e molti shredder moderni.
+    </div>
+    <div class="ex-grid" id="ex-skipping-grid"></div>
+  </div>
+
+  <!-- I MAESTRI -->
+  <div id="tp-masters" class="tech-panel">
+    <div class="masters-grid" id="masters-grid"></div>
+  </div>
+</div>
+
+<script>
+// ─── ACCORDATORE (Pitch Detection via Autocorrelazione) ──────────────────────
+const TUNER_PRESETS = {
+  standard: { name:'Standard (E A D G B E)', notes:['E','A','D','G','B','E'], notesFull:['E2','A2','D3','G3','B3','E4'], freqs:[82.41,110.00,146.83,196.00,246.94,329.63] },
+  drop_d:   { name:'Drop D (D A D G B E)',   notes:['D','A','D','G','B','E'], notesFull:['D2','A2','D3','G3','B3','E4'], freqs:[73.42,110.00,146.83,196.00,246.94,329.63] },
+  dadgad:   { name:'DADGAD',                 notes:['D','A','D','G','A','D'], notesFull:['D2','A2','D3','G3','A3','D4'], freqs:[73.42,110.00,146.83,196.00,220.00,293.66] },
+  open_g:   { name:'Open G (D G D G B D)',   notes:['D','G','D','G','B','D'], notesFull:['D2','G2','D3','G3','B3','D4'], freqs:[73.42,98.00,146.83,196.00,246.94,293.66] },
+  open_d:   { name:'Open D (D A D F# A D)',  notes:['D','A','D','F#','A','D'],notesFull:['D2','A2','D3','F#3','A3','D4'],freqs:[73.42,110.00,146.83,184.99,220.00,293.66] },
+  open_e:   { name:'Open E (E B E G# B E)',  notes:['E','B','E','G#','B','E'],notesFull:['E2','B2','E3','G#3','B3','E4'],freqs:[82.41,123.47,164.81,207.65,246.94,329.63] },
+  open_a:   { name:'Open A (E A E A C# E)',  notes:['E','A','E','A','C#','E'],notesFull:['E2','A2','E3','A3','C#4','E4'],freqs:[82.41,110.00,164.81,220.00,277.18,329.63] },
+  drop_c:   { name:'Drop C (C G C F A D)',   notes:['C','G','C','F','A','D'], notesFull:['C2','G2','C3','F3','A3','D4'], freqs:[65.41,98.00,130.81,174.61,220.00,293.66] },
+};
+
+const TUNER = {
+  running: false, stream: null, ctx: null,
+  analyser: null, buf: null, rafId: null,
+  aRef: 440,
+  activeTuning: null  // set after TUNER_PRESETS declared
+};
+TUNER.activeTuning = TUNER_PRESETS.standard;
+
+const NOTE_STRINGS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+function tunerSetPreset(key) {
+  TUNER.activeTuning = TUNER_PRESETS[key] || TUNER_PRESETS.standard;
+  _updateTunerStringsDisplay();
+}
+
+function tunerSetRef(val) {
+  TUNER.aRef = parseFloat(val);
+  document.getElementById('tuner-aref-val').textContent = val;
+}
+
+function _updateTunerStringsDisplay() {
+  const t = TUNER.activeTuning;
+  const labels = ['6ª','5ª','4ª','3ª','2ª','1ª'];
+  const stringsEl = document.getElementById('tuner-strings-list');
+  if (stringsEl) stringsEl.innerHTML = t.notesFull.map((n,i) =>
+    `<div class="tuner-str" onclick="tunerPlayRef(${i})" title="Tocca per sentire il tono di riferimento">
+      <div class="str-name">${t.notes[i]}</div>
+      <div class="str-freq">${t.freqs[i].toFixed(1)} Hz</div>
+      <div class="ctrl-label">${labels[i]}</div>
+      <div class="str-hint">▶ tono</div>
+    </div>`
+  ).join('');
+}
+
+function tunerPlayRef(stringIdx) {
+  const t = TUNER.activeTuning;
+  if (!t) return;
+  const freq = t.freqs[stringIdx] * (TUNER.aRef / 440);
+  const ctx = getAudioCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.02);
+  gain.gain.setValueAtTime(0.35, ctx.currentTime + 1.2);
+  gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5);
+  osc.connect(gain);
+  gain.connect(_masterOut || ctx.destination);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 1.6);
+  osc.addEventListener('ended', () => { try { osc.disconnect(); gain.disconnect(); } catch(e){} });
+}
+
+function freqToNote(freq) {
+  if (!freq || freq < 20) return null;
+  const midi = 12 * Math.log2(freq / TUNER.aRef) + 69;
+  const midiRound = Math.round(midi);
+  const cents = Math.round((midi - midiRound) * 100);
+  const octave = Math.floor(midiRound / 12) - 1;
+  const name = NOTE_STRINGS[((midiRound % 12) + 12) % 12];
+  return { name: name + octave, cents, freq };
+}
+
+function autocorrelate(buf, sampleRate) {
+  const n = buf.length;
+  let rms = 0;
+  for (let i = 0; i < n; i++) rms += buf[i] * buf[i];
+  if (Math.sqrt(rms / n) < 0.015) return -1;
+
+  // Limit lag range to guitar frequencies (75–1300 Hz) — avoids O(n²) over full buffer
+  const minLag = Math.floor(sampleRate / 1300);
+  const maxLag = Math.min(n - 2, Math.ceil(sampleRate / 75));
+
+  let maxCorr = -1, bestLag = -1;
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    let c = 0;
+    const lim = n - lag;
+    for (let j = 0; j < lim; j++) c += buf[j] * buf[j + lag];
+    if (c > maxCorr) { maxCorr = c; bestLag = lag; }
+  }
+  if (bestLag < 1 || maxCorr < 0) return -1;
+
+  // Parabolic interpolation for sub-sample precision
+  const cl = bestLag > minLag ? (() => { let c=0,l=n-bestLag+1; for(let j=0;j<l;j++) c+=buf[j]*buf[j+bestLag-1]; return c; })() : maxCorr;
+  const cr = bestLag < maxLag ? (() => { let c=0,l=n-bestLag-1; for(let j=0;j<l;j++) c+=buf[j]*buf[j+bestLag+1]; return c; })() : maxCorr;
+  let T0 = bestLag;
+  if (maxCorr > 0) T0 += (cr - cl) / (2 * (2 * maxCorr - cl - cr) || 1);
+  return sampleRate / T0;
+}
+
+let _tunerFrame = 0;
+function tunerTick() {
+  if (!TUNER.running) return;
+  TUNER.rafId = requestAnimationFrame(tunerTick);
+  if (++_tunerFrame % 4 !== 0) return; // run analysis at ~15fps to save CPU on mobile
+  TUNER.analyser.getFloatTimeDomainData(TUNER.buf);
+  const freq = autocorrelate(TUNER.buf, TUNER.ctx.sampleRate);
+  const noteEl  = document.getElementById('tuner-note');
+  const freqEl  = document.getElementById('tuner-freq');
+  const barEl   = document.getElementById('tuner-bar');
+  const centsEl = document.getElementById('tuner-cents');
+
+  if (freq > 0) {
+    const info = freqToNote(freq);
+    const inTune = Math.abs(info.cents) <= 5;
+    noteEl.textContent = info.name;
+    noteEl.className = 'tuner-note' + (inTune ? ' in-tune' : '');
+    freqEl.textContent = freq.toFixed(1) + ' Hz';
+    centsEl.textContent = (info.cents >= 0 ? '+' : '') + info.cents + ' cents';
+    // Barra centrata: 50% = in tune; range ± 50 cents
+    const offset = Math.max(-50, Math.min(50, info.cents));
+    const pct = Math.abs(offset) * 0.45; // max 45% per lato
+    if (offset >= 0) {
+      barEl.style.left = '50%'; barEl.style.width = pct + '%';
+    } else {
+      barEl.style.left = (50 - pct) + '%'; barEl.style.width = pct + '%';
+    }
+    barEl.className = 'tuner-meter-bar' + (inTune ? ' in-tune' : '');
+
+    // Evidenzia la corda più vicina
+    document.querySelectorAll('#tuner-strings-list .tuner-str').forEach((el, i) => {
+      const diff = Math.abs(TUNER.activeTuning.freqs[i] - freq);
+      el.className = 'tuner-str' + (diff < 10 ? ' active' : '');
+    });
+  } else {
+    noteEl.textContent = '–';
+    noteEl.className = 'tuner-note';
+    freqEl.textContent = 'suona una nota...';
+    barEl.style.width = '0%'; barEl.style.left = '50%';
+    centsEl.textContent = '± 0 cents';
+  }
+}
+
+async function tunerToggle() {
+  const btn = document.getElementById('tuner-toggle');
+  if (TUNER.running) {
+    TUNER.running = false;
+    cancelAnimationFrame(TUNER.rafId);
+    if (TUNER.stream) TUNER.stream.getTracks().forEach(t => t.stop());
+    if (TUNER.ctx)    TUNER.ctx.close();
+    TUNER.stream = TUNER.ctx = null;
+    btn.textContent = '🎤 Avvia accordatore';
+    document.getElementById('tuner-note').textContent = '–';
+    document.getElementById('tuner-freq').textContent = 'in attesa del microfono...';
+    return;
+  }
+  try {
+    TUNER.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    TUNER.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    TUNER.analyser = TUNER.ctx.createAnalyser();
+    TUNER.analyser.fftSize = 2048;
+    TUNER.buf = new Float32Array(TUNER.analyser.fftSize);
+    TUNER.ctx.createMediaStreamSource(TUNER.stream).connect(TUNER.analyser);
+    TUNER.running = true;
+    btn.textContent = '⏹ Ferma accordatore';
+    tunerTick();
+  } catch (e) {
+    alert('Microfono non disponibile: ' + (e.message || e));
+  }
+}
+
+// ─── TECNICA AVANZATA ─────────────────────────────────────────────────────────
+
+const NOTES_TECH = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+// String open MIDI notes (index 0=e, 1=B, 2=G, 3=D, 4=A, 5=E)
+const TECH_OPEN_MIDI = [64, 59, 55, 50, 45, 40];
+
+// Sweep arpeggio shapes — each entry has:
+//   name, quality, intervals (display), color
+//   shapes: array of {string (0=e..5=E), interval (semitones from root)}
+const SWEEP_SHAPES = [
+  {
+    id:'am5', name:'Am Minore 5 corde', quality:'minor', color:'#ef4444',
+    intervals:['1','b3','5','b3','1'],
+    strings:[5,4,3,2,1],  // E A D G B
+    semitones:[0,3,7,3,0],
+    tab: 'e ---|-----|---\nB ---|-----|---\nG ---|--5--|---\nD ---|--5--|---\nA --7|-----|---\nE --5|-----|---\n     ▲  sweep up',
+    players:['Al Di Meola','Frank Gambale','Jason Becker']
+  },
+  {
+    id:'am6', name:'Am Minore 6 corde', quality:'minor', color:'#f97316',
+    intervals:['1','b3','5','1','b3','1'],
+    strings:[5,4,3,2,1,0],
+    semitones:[0,3,7,0,3,0],
+    tab: 'e --5|-----|---\nB ---|--8--|---\nG ---|--5--|---\nD ---|--7--|---\nA --7|-----|---\nE --5|-----|---\n     ▲  sweep up',
+    players:['Yngwie Malmsteen','Jason Becker','Marty Friedman']
+  },
+  {
+    id:'maj5', name:'Maggiore 5 corde', quality:'major', color:'#22c55e',
+    intervals:['1','3','5','3','1'],
+    strings:[5,4,3,2,1],
+    semitones:[0,4,7,4,0],
+    tab: 'e ---|-----|---\nB ---|--5--|---\nG ---|--6--|---\nD ---|--6--|---\nA --7|-----|---\nE --5|-----|---\n     ▲  sweep up',
+    players:['Frank Gambale','Tony MacAlpine','Vinnie Moore']
+  },
+  {
+    id:'maj6', name:'Maggiore 6 corde', quality:'major', color:'#3b82f6',
+    intervals:['1','3','5','1','3','1'],
+    strings:[5,4,3,2,1,0],
+    semitones:[0,4,7,0,4,0],
+    tab: 'e --5|-----|---\nB ---|--9--|---\nG ---|--6--|---\nD ---|--7--|---\nA --7|-----|---\nE --5|-----|---\n     ▲  sweep up',
+    players:['Yngwie Malmsteen','Richie Kotzen']
+  },
+  {
+    id:'dim5', name:'Diminuito 5 corde', quality:'dim', color:'#a855f7',
+    intervals:['1','b3','b5','b3','1'],
+    strings:[5,4,3,2,1],
+    semitones:[0,3,6,3,0],
+    tab: 'e ---|-----|---\nB ---|--4--|---\nG ---|--4--|---\nD ---|--4--|---\nA --6|-----|---\nE --5|-----|---\n     ▲  sweep up',
+    players:['Jason Becker','Shawn Lane']
+  },
+  {
+    id:'dom7', name:'Dom7 4 corde', quality:'dom7', color:'#eab308',
+    intervals:['1','3','b7','5'],
+    strings:[4,3,2,1],
+    semitones:[0,4,10,7],
+    tab: 'e ---|-----|---\nB ---|--8--|---\nG ---|--7--|---\nD ---|--7--|---\nA --7|-----|---\nE ---|-----|---\n     ▲  sweep up',
+    players:['Frank Gambale','Guthrie Govan']
+  },
+  {
+    id:'min7', name:'Min7 4 corde', quality:'min7', color:'#06b6d4',
+    intervals:['1','b3','b7','5'],
+    strings:[4,3,2,1],
+    semitones:[0,3,10,7],
+    tab: 'e ---|-----|---\nB ---|--8--|---\nG ---|--6--|---\nD ---|--5--|---\nA --7|-----|---\nE ---|-----|---\n     ▲  sweep up',
+    players:['John Petrucci','Michael Romeo']
+  }
+];
+
+const TECH_EXERCISES = {
+  alternate: [
+    { title:'Scala cromatica', diff:1, bpmSlow:60, bpmMid:100, bpmFast:140,
+      tab:'e |--1-2-3-4--|--5-6-7-8--|\nB |-----------|----------|\nG |-----------|----------|\nD |-----------|----------|\nA |-----------|----------|\nE |-----------|----------|',
+      tips:['Pennata rigorosamente ↓↑↓↑','Usa il metronomo','Registrati e ascolta'],
+      tags:['cromatico','riscaldamento'] },
+    { title:'Scale pentatonica Am (pattern 1)', diff:2, bpmSlow:70, bpmMid:110, bpmFast:150,
+      tab:'e |--5-8------|--8-5------|\nB |--5-8------|--8-5------|\nG |--5-7------|--7-5------|\nD |--5-7------|--7-5------|\nA |--5-7------|--7-5------|\nE |--5-8------|--8-5------|',
+      tips:['Tieni il polso rilassato','Partenza con pennata verso il basso','Segna i punti di corda cambiamento'],
+      tags:['pentatonica','scale'] },
+    { title:'Sequenza di 3 note (triplet run)', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
+      tab:'e |--5-7-8-7-5-3-|\nB |-------------5-|\nG |--------------|\nD |--------------|\nA |--------------|\nE |--------------|',
+      tips:['Ogni gruppo di 3 comincia ↓','Accelera solo quando il ritmo è preciso'],
+      tags:['sequenza','triplet'] },
+    { title:'Inside/Outside picking', diff:4, bpmSlow:50, bpmMid:80, bpmFast:110,
+      tab:'e |--8-10------|--10-8------|\nB |--8-10------|--10-8------|\nG |------------|------------|\nD |--7-9-------|--9-7-------|\nA |--7-9-------|--9-7-------|\nE |------------|------------|',
+      tips:['Inside = pennata nel mezzo delle corde','Outside = pennata verso fuori','Difficile: parte slow'],
+      tags:['inside','outside','avanzato'] },
+  ],
+  legato: [
+    { title:'Hammer-on semplice', diff:1, bpmSlow:60, bpmMid:100, bpmFast:130,
+      tab:'e |--5h7h8------|--8p7p5------|\nB |-------------|------------|\nG |-------------|------------|\nD |-------------|------------|\nA |-------------|------------|\nE |-------------|------------|',
+      tips:['Colpisci forte con le dita di arrivo','Non sollevare le dita sulla corda'],
+      tags:['hammer-on','pull-off'] },
+    { title:'Scala legato 3 note per corda', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
+      tab:'e |--5h7h8-----|--8p7p5-----|\nB |--5h7h8-----|--8p7p5-----|\nG |--5h7h9-----|--9p7p5-----|\nD |--5h7h9-----|--9p7p5-----|\nA |--5h7h8-----|--8p7p5-----|\nE |--5h7h8-----|--8p7p5-----|',
+      tips:['Primo pizzico per ogni corda','Massima efficienza mano sinistra'],
+      tags:['scale','legato'] },
+    { title:'Legato con hammer-on da vuoto', diff:2, bpmSlow:60, bpmMid:95, bpmFast:125,
+      tab:'e |--0h5h7------|--7p5p0------|\nB |-------------|------------|\nG |-------------|------------|\nD |-------------|------------|\nA |-------------|------------|\nE |-------------|------------|',
+      tips:['Apri con corda vuota per avere più slancio','Tieni le dita già posizionate'],
+      tags:['corda vuota','hammer-on'] },
+    { title:'Trill su 2 note', diff:2, bpmSlow:80, bpmMid:110, bpmFast:140,
+      tab:'e |--7h8p7h8p7h8------|\nB |-------------------|\nG |-------------------|\nD |-------------------|\nA |-------------------|\nE |-------------------|',
+      tips:['Aumenta gradualmente la velocità','Usa come riscaldamento dita'],
+      tags:['trill','riscaldamento'] },
+  ],
+  tapping: [
+    { title:'Tapping base (Eddie Van Halen style)', diff:2, bpmSlow:60, bpmMid:90, bpmFast:120,
+      tab:'e |--T12p7h5--T12p7h5---|\nB |--------------------|\nG |--------------------|\nD |--------------------|\nA |--------------------|\nE |--------------------|',
+      tips:['T = dito indice o medio della mano destra','Forza moderata sul tap','Fai rimbalzare il pull-off'],
+      tags:['tapping','base'] },
+    { title:'Tapping su due corde', diff:3, bpmSlow:55, bpmMid:80, bpmFast:110,
+      tab:'e |--T12p8h5-----------|\nB |--------T15p10h7----|\nG |--------------------|\nD |--------------------|\nA |--------------------|\nE |--------------------|',
+      tips:['Passa veloce da una corda all'altra','Usa sempre la stessa posizione del braccio'],
+      tags:['tapping','due corde'] },
+    { title:'Tapping 8 dita (Greg Howe style)', diff:5, bpmSlow:50, bpmMid:70, bpmFast:95,
+      tab:'e |--T15-T12--7--T15-T12--5---|\nB |---------------------------|\nG |---------------------------|\nD |---------------------------|\nA |---------------------------|\nE |---------------------------|',
+      tips:['Richiede muto delle corde basse con palmo','Pratica ogni mano separatamente'],
+      tags:['tapping','8 dita','avanzato'] },
+    { title:'Tapping arpeggio (Steve Vai style)', diff:4, bpmSlow:55, bpmMid:80, bpmFast:105,
+      tab:'e |--T17p12h9-----------|\nB |-----------T15p10h7--|\nG |---------------------|\nD |---------------------|\nA |---------------------|\nE |---------------------|',
+      tips:['Nota le corde diverse per ogni gruppo','Ogni tap è una nota dell\'accordo'],
+      tags:['tapping','arpeggio'] },
+  ],
+  skipping: [
+    { title:'Skip di 2 corde (Gilbert pattern)', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
+      tab:'e |--5-7-8-----------|\nB |------------------|\nG |------5-7-9-------|\nD |------------------|\nA |----------5-7-8---|\nE |------------------|',
+      tips:['Salta sempre 1 corda','Ancora la mano sul corpo della chitarra'],
+      tags:['string skipping','Paul Gilbert'] },
+    { title:'Ottave skipping', diff:2, bpmSlow:70, bpmMid:100, bpmFast:130,
+      tab:'e |--5---7---8---10--|\nB |------------------|\nG |--2---4---5---7---|\nD |------------------|\nA |------------------|\nE |------------------|',
+      tips:['Muta con le dita della mano sinistra','Suona le due corde quasi insieme'],
+      tags:['ottave','string skipping'] },
+    { title:'10e intervalli (Guthrie Govan)', diff:4, bpmSlow:50, bpmMid:75, bpmFast:100,
+      tab:'e |--5-----------8---|\nB |------------------|\nG |------------------|\nD |------7-----------|\nA |------------------|\nE |------------------|\n(e+D skip 2 corde)',
+      tips:['Intervalli di 10a = ottava + terza','Stira le dita gradualmente'],
+      tags:['10e','avanzato'] },
+  ]
+};
+
+const MAESTRI = [
+  {
+    name:'Yngwie Malmsteen', origin:'Svezia', active:'1980–presente', color:'#f97316',
+    techs:['Sweep Picking','Alternate Picking','Vibrato classico','Scale neoclassiche'],
+    sound:'Marshall con drive moderato, chorus leggero, chitarre Fender Strat',
+    songs:['Far Beyond the Sun','Black Star','Rising Force','Trilogy Suite Op. 5'],
+    challenge:'Suona la scala di La minore armonica a 3 note per corda con alternate picking a 120 BPM, poi sale il BPM di 5 ogni settimana.'
+  },
+  {
+    name:'Steve Vai', origin:'USA', active:'1979–presente', color:'#a855f7',
+    techs:['Tapping a due mani','Whammy bar estremo','Legato','Scale esotiche','Ritmo polifonico'],
+    sound:'Ibanez JEM con DiMarzio, Marshall e rack di effetti. Delay sync a tempo.',
+    songs:['For the Love of God','Tender Surrender','Eruption (cover)','Bad Horsie'],
+    challenge:'Impara "For the Love of God" intro (Fm - posizione 1) con legato puro, nessun alternate picking.'
+  },
+  {
+    name:'Joe Satriani', origin:'USA', active:'1978–presente', color:'#22c55e',
+    techs:['Legato fluido','Tapping melodico','Vibrato largo','Bend precisi','Alternate picking'],
+    sound:'Ibanez JS con pickup Satch custom, Marshall JVM, delay e flanger.',
+    songs:['Surfing With the Alien','Always With Me Always With You','Flying in a Blue Dream'],
+    challenge:'Suona il riff di "Surfing With the Alien" pulito a 90 BPM con tutte le note ben definite.'
+  },
+  {
+    name:'Paul Gilbert', origin:'USA', active:'1984–presente', color:'#3b82f6',
+    techs:['Alternate picking estremo','String skipping','Arpeggi con pick','Muting'],
+    sound:'Ibanez RG, Mesa Boogie drive crunch. Tone brillante e attaccato.',
+    songs:['Scarified (Mr. Big)','Technical Difficulties','Racer X solos'],
+    challenge:'Esercizio "3-string skip" di Gilbert: e-G-e con note chromatiche a 80 BPM alternate picking stretto.'
+  },
+  {
+    name:'Eddie Van Halen', origin:'USA', active:'1972–2020', color:'#eab308',
+    techs:['Tapping inventore','Two-hand tapping','Legato veloce','Whammy bar creativo'],
+    sound:'Marshall Plexi modificato "Frankenstrat". Brown sound caldo e compresso.',
+    songs:['Eruption','Hot for Teacher','Panama','Jump'],
+    challenge:'Impara il tapping di "Eruption" misura per misura. Inizia le prime 4 note T12p7h5 a 80 BPM.'
+  },
+  {
+    name:'John Petrucci', origin:'USA', active:'1985–presente', color:'#06b6d4',
+    techs:['Alternate picking pulitissimo','Legato','Sweep su accordi complessi','Poliritmia'],
+    sound:'Mesa Boogie Dual Rectifier, Ernie Ball Music Man JP, DiMarzio custom.',
+    songs:['Metropolis Pt.1','The Dance of Eternity','Stream of Consciousness','Pull Me Under'],
+    challenge:'Suona la scala diminuita (toni-semitoni) con 3 note per corda alternate picking a 70 BPM.'
+  },
+  {
+    name:'Guthrie Govan', origin:'UK', active:'1990–presente', color:'#ec4899',
+    techs:['String skipping estremo','Hybrid picking','Legato','Bending microtonale','Tecnica poliedrica'],
+    sound:'Suhr Custom, Cornford amp. Molti effetti contemporanei. Blend jazz-rock-fusion.',
+    songs:['Wonderful Slippery Thing','Sevens','Ner Ner','This Is Science'],
+    challenge:'Improvvisa su Am pentatonica usando solo corde alternate (e-G-B-E, non A-D). Usa string skipping per melodie più aperte.'
+  },
+  {
+    name:'Frank Gambale', origin:'Australia', active:'1980–presente', color:'#14b8a6',
+    techs:['Economy picking (sweep picking sistematico)','Scale modalità','Sweep arpeggi'],
+    sound:'Ibanez signature, Yamaha amp. Tone jazz-fusion pulito con lieve compression.',
+    songs:['Passages','Turbulence','Brutal Imagination','Live Wires'],
+    challenge:'Suona l\'arpeggio Am 5 corde con "economy picking": su ogni cambio di corda, la pennata segue la direzione dello spostamento.'
+  }
+];
+
+let _techInitialized = false;
+
+function initTechPage() {
+  if (_techInitialized) return;
+  _techInitialized = true;
+
+  // Build tabs
+  const tabs = [
+    { id:'sweep',     label:'Sweep Picking' },
+    { id:'alternate', label:'Alternate Picking' },
+    { id:'legato',    label:'Legato' },
+    { id:'tapping',   label:'Tapping' },
+    { id:'skipping',  label:'String Skipping' },
+    { id:'masters',   label:'I Maestri' },
+  ];
+  const tabsEl = document.getElementById('tech-tabs');
+  tabsEl.innerHTML = tabs.map(t =>
+    `<button class="tech-tab${t.id==='sweep'?' active':''}" onclick="showTechTab('${t.id}')">${t.label}</button>`
+  ).join('');
+
+  // Sweep shape buttons
+  const shapeBtns = document.getElementById('sweep-shape-btns');
+  shapeBtns.innerHTML = SWEEP_SHAPES.map((s,i) =>
+    `<button class="sweep-shape-btn${i===0?' active':''}" style="border-color:${s.color}" onclick="selectSweepShape(${i})">${s.name}</button>`
+  ).join('');
+
+  // Render exercise grids
+  ['alternate','legato','tapping','skipping'].forEach(key => {
+    const grid = document.getElementById('ex-' + key + '-grid');
+    if (!grid) return;
+    grid.innerHTML = (TECH_EXERCISES[key] || []).map(ex => `
+      <div class="ex-card">
+        <div class="ex-card-header">
+          <span class="ex-card-title">${ex.title}</span>
+          <span class="ex-diff">${'⬤'.repeat(ex.diff)}<span style="color:var(--text-dim)">${'⬤'.repeat(5-ex.diff)}</span></span>
+        </div>
+        <pre class="ex-tab">${ex.tab}</pre>
+        <div class="ex-bpm-row">
+          <span class="ex-bpm-slow">Slow ${ex.bpmSlow}</span>
+          <span class="ex-bpm-mid">Mid ${ex.bpmMid}</span>
+          <span class="ex-bpm-fast">Fast ${ex.bpmFast}</span>
+        </div>
+        <div class="ex-chips">${ex.tags.map(t=>`<span class="ex-chip">${t}</span>`).join('')}</div>
+        <div class="ex-tips">${ex.tips.map(t=>`<div>• ${t}</div>`).join('')}</div>
+      </div>
+    `).join('');
+  });
+
+  // Render maestri
+  const mastersGrid = document.getElementById('masters-grid');
+  mastersGrid.innerHTML = MAESTRI.map(m => `
+    <div class="master-card">
+      <div class="master-header" style="border-color:${m.color}">
+        <span class="master-name" style="color:${m.color}">${m.name}</span>
+        <span class="master-meta">${m.origin} · ${m.active}</span>
+      </div>
+      <div class="master-body">
+        <div class="master-techs">${m.techs.map(t=>`<span class="master-tech-tag" style="border-color:${m.color};color:${m.color}">${t}</span>`).join('')}</div>
+        <div class="master-sound">🎛 ${m.sound}</div>
+        <div class="master-songs">
+          ${m.songs.map(s=>`<span class="master-song">♪ ${s}</span>`).join('')}
+        </div>
+        <div class="master-challenge">🎯 <em>${m.challenge}</em></div>
+      </div>
+    </div>
+  `).join('');
+
+  // Initial sweep render
+  renderSweepPanel();
+}
+
+function showTechTab(id) {
+  document.querySelectorAll('.tech-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tech-panel').forEach(p => p.classList.remove('active'));
+  const btn = Array.from(document.querySelectorAll('.tech-tab')).find(b => b.getAttribute('onclick').includes("'"+id+"'"));
+  if (btn) btn.classList.add('active');
+  const panel = document.getElementById('tp-' + id);
+  if (panel) panel.classList.add('active');
+}
+
+let _sweepShapeIdx = 0;
+
+function selectSweepShape(idx) {
+  _sweepShapeIdx = idx;
+  document.querySelectorAll('.sweep-shape-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
+  renderSweepPanel();
+}
+
+function computeArpFrets(rootNoteIdx, strings, semitones) {
+  // strings: array of string indices (0=e..5=E), ascending order (lowest string first)
+  // semitones: interval in semitones from root for each string
+  // Returns fret numbers ensuring strictly ascending MIDI pitch
+  const result = [];
+  let prevMidi = -1;
+  for (let i = 0; i < strings.length; i++) {
+    const si = strings[i];
+    const openMidi = TECH_OPEN_MIDI[si];
+    const noteClass = (rootNoteIdx + semitones[i]) % 12;
+    let fret = ((noteClass - openMidi % 12) + 12) % 12;
+    // Ensure ascending pitch
+    while (openMidi + fret <= prevMidi) fret += 12;
+    result.push(fret);
+    prevMidi = openMidi + fret;
+  }
+  return result;
+}
+
+function renderSweepPanel() {
+  const shape = SWEEP_SHAPES[_sweepShapeIdx];
+  if (!shape) return;
+  const keyIdx = parseInt(document.getElementById('sweep-key')?.value || '9');
+  const keyName = NOTES_TECH[keyIdx];
+
+  // Compute actual frets for this key
+  const frets = computeArpFrets(keyIdx, shape.strings, shape.semitones);
+
+  // Build mini fretboard diagram
+  const minFret = Math.max(0, Math.min(...frets) - 1);
+  const maxFret = Math.max(...frets) + 1;
+  const cellW = 36, cellH = 28, leftPad = 22, topPad = 18;
+  const fretSpan = Math.max(maxFret - minFret, 4);
+  const W = leftPad + fretSpan * cellW + 20;
+  const H = topPad + 6 * cellH + 14;
+  const sNames = ['e','B','G','D','A','E'];
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:360px;height:auto;display:block">`;
+  svg += `<rect width="${W}" height="${H}" fill="#151515" rx="8"/>`;
+
+  // Nut
+  if (minFret === 0) {
+    svg += `<line x1="${leftPad}" y1="${topPad}" x2="${leftPad}" y2="${topPad+5*cellH}" stroke="#aaa" stroke-width="3"/>`;
+  }
+
+  // Fret lines & numbers
+  for (let f = 0; f <= fretSpan; f++) {
+    const x = leftPad + f * cellW;
+    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+5*cellH}" stroke="#333" stroke-width="1"/>`;
+    const fn = minFret + f;
+    if (fn > 0) svg += `<text x="${x + cellW/2}" y="${topPad-5}" text-anchor="middle" font-size="8" fill="#555" font-family="monospace">${fn}</text>`;
+  }
+
+  // Strings
+  for (let s = 0; s < 6; s++) {
+    const y = topPad + s * cellH;
+    svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + fretSpan * cellW}" y2="${y}" stroke="#555" stroke-width="${s===0?0.7:s===5?1.5:1}"/>`;
+    svg += `<text x="${leftPad-4}" y="${y+4}" text-anchor="end" font-size="8" fill="#888" font-family="monospace">${sNames[s]}</text>`;
+  }
+
+  // Dots for this shape
+  const shapeStringsForward = [...shape.strings]; // e.g. [5,4,3,2,1] or [5,4,3,2,1,0]
+  shapeStringsForward.forEach((si, ii) => {
+    const f = frets[ii];
+    const dotX = leftPad + (f - minFret - 0.5) * cellW;
+    const dotY = topPad + si * cellH;
+    const isRoot = shape.semitones[ii] === 0;
+    svg += `<circle cx="${dotX}" cy="${dotY}" r="10" fill="${isRoot ? shape.color : '#2563eb'}" stroke="${isRoot ? '#fff' : 'none'}" stroke-width="1.5"/>`;
+    svg += `<text x="${dotX}" y="${dotY+4}" text-anchor="middle" font-size="9" fill="#fff" font-family="monospace" font-weight="bold">${f}</text>`;
+  });
+
+  svg += '</svg>';
+
+  document.getElementById('sweep-diagram').innerHTML = svg;
+  document.getElementById('sweep-shape-name').textContent = keyName + ' ' + shape.name;
+
+  // Intervals
+  const intervals = shape.intervals || [];
+  document.getElementById('sweep-interval-row').innerHTML =
+    intervals.map((iv, i) => `<span class="sweep-pill" style="background:${shape.semitones[i]===0?shape.color:'rgba(59,130,246,0.25)'}">${iv}</span>`).join('');
+
+  // Tab — transpose numbers by computing fret differences
+  // Build a simple tab from computed frets
+  const tabLines = ['e','B','G','D','A','E'].map((sn, si) => {
+    const idx = shape.strings.indexOf(si);
+    const fval = idx >= 0 ? String(frets[idx]) : '---';
+    return `${sn} |--${fval.padEnd(3,'-')}--|`;
+  });
+  document.getElementById('sweep-tab-display').textContent = tabLines.join('\n') + '\n    ▲ sweep up';
+
+  // Players
+  if (shape.players && shape.players.length) {
+    document.getElementById('sweep-players').innerHTML =
+      '<div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">USATO DA:</div>' +
+      shape.players.map(p => `<span class="master-tech-tag" style="border-color:${shape.color};color:${shape.color}">${p}</span>`).join(' ');
+  }
+}
+
+function playSweepArp(direction) {
+  // direction: false=up, true=down, null=up+down
+  const shape = SWEEP_SHAPES[_sweepShapeIdx];
+  if (!shape) return;
+  const keyIdx = parseInt(document.getElementById('sweep-key')?.value || '9');
+  const frets = computeArpFrets(keyIdx, shape.strings, shape.semitones);
+
+  // Build sequence of MIDI notes
+  let midiNotes = shape.strings.map((si, ii) => TECH_OPEN_MIDI[si] + frets[ii]);
+
+  let seq = [];
+  if (direction === false) seq = [...midiNotes];            // up
+  else if (direction === true) seq = [...midiNotes].reverse(); // down
+  else seq = [...midiNotes, ...[...midiNotes].reverse()];    // up+down
+
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+  const step = 0.10; // seconds between notes
+
+  seq.forEach((midi, i) => {
+    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+    const t = now + i * step;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.3, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + step * 0.9);
+    osc.connect(gain);
+    gain.connect(_masterOut || ctx.destination);
+    osc.start(t);
+    osc.stop(t + step);
+    osc.addEventListener('ended', () => { try { osc.disconnect(); gain.disconnect(); } catch(e){} });
+  });
+}
+</script>
 
 </body>
 </html>
