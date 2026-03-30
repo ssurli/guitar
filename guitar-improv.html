@@ -2516,79 +2516,93 @@ function _autoDisconnect(node, stopTime) {
   setTimeout(() => { try { node.disconnect(); } catch(e) {} }, delay);
 }
 
-// ── GUITAR SINGLE NOTE (click on fretboard) ─────────────────────────────────
-// Karplus-Strong inspired: noise burst → resonant filter → harmonics → amp sim
+// ── GUITAR SINGLE NOTE — Karplus-Strong string synthesis ─────────────────────
+// Un burst di rumore excita una delay line con feedback filtrato:
+// il ritardo (= 1/freq) determina la pitch, il filtro LP simula la perdita
+// di energia per ciclo (le corde si smorzano dal tono più brillante al più scuro).
 function playNote(freq, time, duration = 0.8) {
   const ctx = getAudioCtx();
   const dest = _masterOut;
   const now = time || ctx.currentTime;
 
-  // Lower notes sustain longer — scale decay naturally with pitch
-  const decay = duration * Math.max(0.7, Math.min(2.2, 80 / freq));
+  // Sustain naturale: note basse tengono più a lungo
+  const sustain = Math.min(4.5, Math.max(1.2, duration * Math.max(0.9, 160 / freq)));
+  const delayTime = 1 / freq;
 
-  // ── Pick transient: sharp noise burst at attack ──
-  const transLen = Math.floor(ctx.sampleRate * 0.014);
-  const transBuf = ctx.createBuffer(1, transLen, ctx.sampleRate);
-  const td = transBuf.getChannelData(0);
-  for (let i = 0; i < transLen; i++) td[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / transLen, 3);
-  const transNoise = ctx.createBufferSource();
-  transNoise.buffer = transBuf;
-  const transFilter = ctx.createBiquadFilter();
-  transFilter.type = 'bandpass';
-  transFilter.frequency.value = Math.min(5000, freq * 5);
-  transFilter.Q.value = 0.9;
-  const transGain = ctx.createGain();
-  transGain.gain.setValueAtTime(0.5, now);
-  transGain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
-  transNoise.connect(transFilter); transFilter.connect(transGain); transGain.connect(dest);
-  transNoise.start(now); transNoise.stop(now + 0.018);
-  _autoDisconnect(transNoise, now + 0.02);
+  // Guadagno di feedback per ciclo: pow(0.001, delayTime/sustain) → −60 dB in `sustain` sec
+  const fbGain = Math.pow(0.001, delayTime / sustain);
 
-  // ── Tone shaping chain ──
-  // LP: bright at pick → darkens as string vibration loses energy
-  const lpf = ctx.createBiquadFilter();
-  lpf.type = 'lowpass';
-  lpf.frequency.setValueAtTime(Math.min(7000, freq * 14), now);
-  lpf.frequency.exponentialRampToValueAtTime(Math.max(700, freq * 3.5), now + decay * 0.65);
-  lpf.Q.value = 0.45;
+  // Eccitazione: rumore che copre almeno 1 periodo intero della corda (seed KS)
+  const exciteLen = Math.max(Math.ceil(ctx.sampleRate * delayTime) + 4, Math.ceil(ctx.sampleRate * 0.003));
+  const exciteBuf = ctx.createBuffer(1, exciteLen, ctx.sampleRate);
+  const ed = exciteBuf.getChannelData(0);
+  for (let i = 0; i < exciteLen; i++)
+    ed[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / exciteLen, 0.6);
+  const excite = ctx.createBufferSource();
+  excite.buffer = exciteBuf;
 
-  // Body resonance: peak near note fundamental for warmth
-  const bodyRes = ctx.createBiquadFilter();
-  bodyRes.type = 'peaking';
-  bodyRes.frequency.value = Math.min(280, Math.max(80, freq * 0.9));
-  bodyRes.Q.value = 1.8;
-  bodyRes.gain.value = freq < 250 ? 6 : 3;
+  // Filtro pick: modella la brillantezza iniziale del pizzico
+  const pickF = ctx.createBiquadFilter();
+  pickF.type = 'lowpass';
+  pickF.frequency.value = Math.min(9000, freq * 10);
+  pickF.Q.value = 0.5;
 
-  // Mild saturation — just enough warmth
-  const shaper = _makeWaveshaper(ctx, 18);
-  lpf.connect(bodyRes); bodyRes.connect(shaper); shaper.connect(dest);
+  // Delay line KS (la "corda")
+  const delay = ctx.createDelay(0.5);
+  delay.delayTime.value = delayTime;
 
-  // ── Harmonic series — each partial decays at 1/mul speed ──
-  // Slight inharmonicity: higher partials are slightly sharp (real string physics)
-  const B = 0.0003; // inharmonicity constant (low = cleaner, high = more piano-like)
-  [
-    { mul: 1, vol: 0.50 },
-    { mul: 2, vol: 0.24 },
-    { mul: 3, vol: 0.14 },
-    { mul: 4, vol: 0.07 },
-    { mul: 5, vol: 0.04 },
-  ].forEach(({ mul, vol }) => {
-    const inharmonicFreq = freq * mul * Math.sqrt(1 + B * mul * mul);
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = inharmonicFreq;
-    osc.detune.value = (Math.random() - 0.5) * 3;
-    const env = ctx.createGain();
-    const partialDecay = decay / mul;
-    env.gain.setValueAtTime(0, now);
-    env.gain.linearRampToValueAtTime(vol, now + 0.003);
-    env.gain.exponentialRampToValueAtTime(0.001, now + partialDecay);
-    osc.connect(env); env.connect(lpf);
-    osc.start(now);
-    const stopT = now + partialDecay + 0.04;
-    osc.stop(stopT);
-    _autoDisconnect(osc, stopT); _autoDisconnect(env, stopT);
-  });
+  // Filtro di averaging KS: scorre da brillante a scuro simulando la perdita di energia
+  const ksF = ctx.createBiquadFilter();
+  ksF.type = 'lowpass';
+  ksF.frequency.setValueAtTime(Math.min(9000, freq * 14), now);
+  ksF.frequency.exponentialRampToValueAtTime(Math.max(300, freq * 2.5), now + sustain * 0.5);
+  ksF.Q.value = 0.4;
+
+  // Gain di feedback
+  const fb = ctx.createGain();
+  fb.gain.value = fbGain;
+
+  // Risonanza corpo chitarra (calore sui medi-bassi)
+  const body = ctx.createBiquadFilter();
+  body.type = 'peaking';
+  body.frequency.value = Math.min(280, Math.max(80, freq * 0.9));
+  body.Q.value = 2.0;
+  body.gain.value = freq < 200 ? 5 : 2.5;
+
+  // Taglio alti per rimuovere harshness
+  const hiCut = ctx.createBiquadFilter();
+  hiCut.type = 'highshelf';
+  hiCut.frequency.value = 4000;
+  hiCut.gain.value = -5;
+
+  // Envelope di uscita
+  const outGain = ctx.createGain();
+  outGain.gain.setValueAtTime(0, now);
+  outGain.gain.linearRampToValueAtTime(0.55, now + 0.003);
+  outGain.gain.setValueAtTime(0.55, now + sustain * 0.6);
+  outGain.gain.exponentialRampToValueAtTime(0.001, now + sustain);
+
+  // Lieve saturazione valvolare
+  const shaper = _makeWaveshaper(ctx, 12);
+
+  // Connessioni
+  excite.connect(pickF);
+  pickF.connect(delay);
+  delay.connect(ksF);
+  ksF.connect(fb);
+  fb.connect(delay);      // loop KS
+  ksF.connect(body);
+  body.connect(hiCut);
+  hiCut.connect(outGain);
+  outGain.connect(shaper);
+  shaper.connect(dest);
+
+  excite.start(now);
+  excite.stop(now + exciteLen / ctx.sampleRate + 0.002);
+
+  const stopAt = now + sustain + 0.15;
+  _autoDisconnect(outGain, stopAt);
+  _autoDisconnect(fb, stopAt);
 }
 
 function noteToFreq(noteIndex, octave = 4) {
@@ -2604,24 +2618,30 @@ function playScale() {
   if (!scale) return;
   const now = ctx.currentTime;
   const step = 0.22;
-  scale.intervals.forEach((interval, i) => {
+
+  // Costruisci sequenza MIDI ascendente: ogni nota deve essere più alta della precedente
+  let prevMidi = -1;
+  const seq = scale.intervals.map(interval => {
     const noteIdx = (keyIndex + interval) % 12;
-    playNote(noteToFreq(noteIdx, 4), now + i * step, 0.55);
+    let midi = 60 + noteIdx; // base in ottava 4-5
+    if (midi <= prevMidi) midi += 12; // forza ascesa se non sta salendo
+    prevMidi = midi;
+    return { noteIdx, midi };
+  });
+  // Nota finale: tonica all'ottava superiore
+  const rootMidi = 60 + keyIndex;
+  const finalMidi = rootMidi <= prevMidi ? rootMidi + 12 : rootMidi;
+  seq.push({ noteIdx: keyIndex, midi: finalMidi, isFinal: true });
+
+  seq.forEach(({ noteIdx, midi, isFinal }, i) => {
+    playNote(midiToFreq(midi), now + i * step, isFinal ? 0.8 : 0.55);
     setTimeout(() => {
       document.querySelectorAll(`#fretboard .note-dot[data-note="${noteIdx}"]`).forEach(d => {
         d.classList.add('playing');
-        setTimeout(() => d.classList.remove('playing'), 480);
+        setTimeout(() => d.classList.remove('playing'), isFinal ? 650 : 480);
       });
     }, Math.round(i * step * 1000));
   });
-  const last = scale.intervals.length;
-  playNote(noteToFreq(keyIndex, 5), now + last * step, 0.7);
-  setTimeout(() => {
-    document.querySelectorAll(`#fretboard .note-dot[data-note="${keyIndex}"]`).forEach(d => {
-      d.classList.add('playing');
-      setTimeout(() => d.classList.remove('playing'), 580);
-    });
-  }, Math.round(last * step * 1000));
 }
 
 // ─── DRUMS ────────────────────────────────────────────────────────────────────
@@ -5498,21 +5518,8 @@ function tunerPlayRef(stringIdx) {
   const t = TUNER.activeTuning;
   if (!t) return;
   const freq = t.freqs[stringIdx] * (TUNER.aRef / 440);
-  const ctx = getAudioCtx();
-  if (ctx.state === 'suspended') ctx.resume();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sine';
-  osc.frequency.value = freq;
-  gain.gain.setValueAtTime(0, ctx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.02);
-  gain.gain.setValueAtTime(0.35, ctx.currentTime + 1.2);
-  gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5);
-  osc.connect(gain);
-  gain.connect(_masterOut || ctx.destination);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 1.6);
-  osc.addEventListener('ended', () => { try { osc.disconnect(); gain.disconnect(); } catch(e){} });
+  getAudioCtx(); // assicura ctx e _masterOut inizializzati
+  playNote(freq, null, 3.0); // tono di riferimento con sintesi KS — udibile su qualsiasi speaker
 }
 
 function freqToNote(freq) {
@@ -6060,17 +6067,7 @@ function playSweepArp(direction) {
   seq.forEach((midi, i) => {
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
     const t = now + i * step;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.3, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + step * 0.9);
-    osc.connect(gain);
-    gain.connect(_masterOut || ctx.destination);
-    osc.start(t);
-    osc.stop(t + step);
-    osc.addEventListener('ended', () => { try { osc.disconnect(); gain.disconnect(); } catch(e){} });
+    playNote(freq, t, 0.7);
   });
 }
 
