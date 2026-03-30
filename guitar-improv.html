@@ -4287,9 +4287,7 @@ function initTriads() {
 const CAGED_DEFS = {
   C: { color:'#f59e0b', order:0, rootString:4, rootOffset:3, muted:[5],
     major:[ {s:4,fo:3,iv:0},{s:3,fo:2,iv:4},{s:2,fo:0,iv:7},{s:1,fo:1,iv:0},{s:0,fo:0,iv:4} ],
-    minor:[ {s:4,fo:3,iv:0},{s:3,fo:2,iv:4},{s:2,fo:0,iv:7},{s:1,fo:0,iv:3},{s:0,fo:0,iv:4} ],
-    // e string minor: fo:-1 (handled below per key)
-    minorEStr: true,   // flag: e string needs fo:-1 for min3
+    minor:[ {s:4,fo:3,iv:0},{s:3,fo:1,iv:3},{s:2,fo:0,iv:7},{s:1,fo:1,iv:0},{s:0,fo:3,iv:7} ],
     desc: 'Forma C — radice sulla corda A (al 3° offset). Comoda nelle posizioni aperte e alle prime posizioni.',
     fingers: 'Indice sul barre (se > 0), medio-anulare-mignolo per gli altri frets.',
   },
@@ -4346,8 +4344,6 @@ function cagedFrets(shapeName, rootNote, quality) {
     if (!note) { result.push({s, fret:-1, iv:-1, muted:true}); continue; }
 
     let fret = capo + note.fo;
-    // Special C-shape minor: e string needs fo=-1 for min3
-    if (shapeName === 'C' && quality === 'minor' && s === 0) fret = capo - 1;
 
     if (fret < 0) { result.push({s, fret:-1, iv:note.iv, muted:true}); continue; }
     result.push({s, fret, iv: note.iv, muted: false});
@@ -4570,8 +4566,7 @@ function renderCaged() {
       if (!audioCtx) audioCtx = actx;
       const now = actx.currentTime;
       playedFrets.slice().reverse().forEach((n, j) => {
-        const noteIndex = (OPEN_STRINGS[n.s] + n.fret) % 12;
-        playNote(noteToFreq(noteIndex, n.s < 2 ? 5 : 4), now + j * 0.06, 1.2);
+        playNote(midiToFreq(OPEN_STRING_MIDI[n.s] + n.fret), now + j * 0.06, 1.2);
       });
       CAGED_STATE.selected = idx;
       renderCaged();
@@ -4641,9 +4636,7 @@ function playCagedArpeggio() {
     const frets = cagedFrets(name, CAGED_STATE.keyIdx, CAGED_STATE.quality);
     const played = frets.filter(n => !n.muted);
     played.slice().reverse().forEach((n, j) => {
-      const noteIndex = (OPEN_STRINGS[n.s] + n.fret) % 12;
-      const octave = n.s < 2 ? 5 : 4;
-      playNote(noteToFreq(noteIndex, octave), t + j * 0.055, 0.9);
+      playNote(midiToFreq(OPEN_STRING_MIDI[n.s] + n.fret), t + j * 0.055, 0.9);
     });
     t += played.length * 0.055 + 0.3;
   });
