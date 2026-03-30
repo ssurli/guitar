@@ -5550,6 +5550,7 @@ function tunerTick() {
 
 async function tunerToggle() {
   const btn = document.getElementById('tuner-toggle');
+  const freqEl = document.getElementById('tuner-freq');
   if (TUNER.running) {
     TUNER.running = false;
     cancelAnimationFrame(TUNER.rafId);
@@ -5558,21 +5559,44 @@ async function tunerToggle() {
     TUNER.stream = TUNER.ctx = null;
     btn.textContent = '🎤 Avvia accordatore';
     document.getElementById('tuner-note').textContent = '–';
-    document.getElementById('tuner-freq').textContent = 'in attesa del microfono...';
+    freqEl.textContent = 'in attesa del microfono...';
+    freqEl.style.color = '';
     return;
   }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    freqEl.textContent = '⚠ Microfono non supportato in questo browser';
+    freqEl.style.color = '#ef4444';
+    return;
+  }
+  btn.textContent = '⏳ Accesso microfono...';
+  btn.disabled = true;
+  freqEl.style.color = '';
   try {
-    TUNER.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    TUNER.stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      video: false
+    });
     TUNER.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (TUNER.ctx.state === 'suspended') await TUNER.ctx.resume();
     TUNER.analyser = TUNER.ctx.createAnalyser();
     TUNER.analyser.fftSize = 2048;
     TUNER.buf = new Float32Array(TUNER.analyser.fftSize);
     TUNER.ctx.createMediaStreamSource(TUNER.stream).connect(TUNER.analyser);
     TUNER.running = true;
     btn.textContent = '⏹ Ferma accordatore';
+    btn.disabled = false;
+    freqEl.textContent = 'suona una corda...';
     tunerTick();
   } catch (e) {
-    alert('Microfono non disponibile: ' + (e.message || e));
+    btn.textContent = '🎤 Avvia accordatore';
+    btn.disabled = false;
+    const msg = e.name === 'NotAllowedError'
+      ? '⚠ Permesso microfono negato — abilita il microfono nelle impostazioni del browser'
+      : e.name === 'NotFoundError'
+      ? '⚠ Microfono non trovato'
+      : '⚠ Errore microfono: ' + (e.message || e.name || e);
+    freqEl.textContent = msg;
+    freqEl.style.color = '#ef4444';
   }
 }
 
@@ -5779,7 +5803,6 @@ let _techInitialized = false;
 
 function initTechPage() {
   if (_techInitialized) return;
-  _techInitialized = true;
 
   // Build tabs
   const tabs = [
@@ -5844,6 +5867,7 @@ function initTechPage() {
 
   // Initial sweep render
   renderSweepPanel();
+  _techInitialized = true;
 }
 
 function showTechTab(id) {
