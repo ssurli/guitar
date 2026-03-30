@@ -2896,12 +2896,19 @@ function computeNpsPositions(keyIndex, scaleIntervals, fretMax) {
     positions.push({ fretsByString: positionFrets, startFret: windowStart, sig });
   }
 
-  // Rotate so position 1 = first window that contains the root note on the low E string
+  // Rotate so position 1 = window where root is the FIRST note on low E
+  // (i.e., the window that STARTS on the root note of the scale)
   if (positions.length > 1) {
     const rootNote = keyIndex % 12;
-    const rotIdx = positions.findIndex(p =>
-      p.fretsByString[5].some(f => (OPEN_STRINGS[5] + f) % 12 === rootNote)
+    let rotIdx = positions.findIndex(p =>
+      (OPEN_STRINGS[5] + p.fretsByString[5][0]) % 12 === rootNote
     );
+    if (rotIdx < 0) {
+      // Fallback: first window that contains root anywhere on low E
+      rotIdx = positions.findIndex(p =>
+        p.fretsByString[5].some(f => (OPEN_STRINGS[5] + f) % 12 === rootNote)
+      );
+    }
     if (rotIdx > 0) {
       const before = positions.slice(0, rotIdx);
       positions.splice(0, rotIdx);
