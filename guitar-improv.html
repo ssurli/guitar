@@ -18,7 +18,7 @@
 <title>Guitar Improv Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0d0d0d;
@@ -137,6 +137,20 @@
   }
   .global-key-wrap select:focus,
   .global-key-wrap select:hover { border-color: var(--amber); }
+
+  /* ── SURLI LOGO ── */
+  .surli-logo {
+    font-family: 'Dancing Script', cursive;
+    font-size: 28px;
+    font-weight: 700;
+    color: #f0e8c8;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 12px rgba(245,158,11,0.3);
+    margin-left: auto;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    padding-left: 12px;
+  }
+  .surli-logo span { font-size: 14px; vertical-align: super; color: var(--text-dim); }
 
   /* ── LAYOUT ── */
   .page { display: none; padding: clamp(12px, 4vw, 24px); max-width: 1200px; margin: 0 auto; }
@@ -1817,23 +1831,7 @@
   <!-- Riga 1: logo + key selector — struttura fissa, niente flex-wrap -->
   <div class="header-top">
     <div class="logo">GUITAR <span>IMPROV</span> LAB</div>
-    <div class="global-key-wrap">
-      <span class="ctrl-label">KEY</span>
-      <select id="global-key" onchange="setGlobalKey(this.value)">
-        <option value="0">C</option>
-        <option value="1">C# / Db</option>
-        <option value="2">D</option>
-        <option value="3">D# / Eb</option>
-        <option value="4">E</option>
-        <option value="5">F</option>
-        <option value="6">F# / Gb</option>
-        <option value="7">G</option>
-        <option value="8">G# / Ab</option>
-        <option value="9" selected>A</option>
-        <option value="10">A# / Bb</option>
-        <option value="11">B</option>
-      </select>
-    </div>
+    <div class="surli-logo">Surli<span>®</span></div>
   </div>
   <!-- Riga 2: nav sempre sotto, scrollabile -->
   <nav>
@@ -4834,9 +4832,9 @@ function drawP5Fretboard(box, keyIdx, quality) {
       const col = isRoot ? '#f59e0b' : box.color;
       const textCol = isRoot ? '#000' : '#fff';
 
-      svg += `<circle cx="${x}" cy="${y}" r="9" fill="${col}" opacity="0.95"/>`;
-      if (isRoot) svg += `<circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.5"/>`;
-      svg += `<text x="${x}" y="${y+3}" text-anchor="middle" font-size="7" fill="${textCol}" font-weight="bold" font-family="monospace">${noteName}</text>`;
+      svg += `<circle id="p5-note-${s}-${f}" data-root="${isRoot?1:0}" cx="${x}" cy="${y}" r="9" fill="${col}" opacity="0.95" style="transition:r 0.08s"/>`;
+      if (isRoot) svg += `<circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.5" style="pointer-events:none"/>`;
+      svg += `<text x="${x}" y="${y+3}" text-anchor="middle" font-size="7" fill="${textCol}" font-weight="bold" font-family="monospace" style="pointer-events:none">${noteName}</text>`;
     });
   }
 
@@ -5028,15 +5026,49 @@ function playP5Box() {
   const fretsByString = p5BoxFrets(box, P5_STATE.keyIdx);
   const now = audioCtx.currentTime;
   let t = now + 0.05;
-  // Play E→e low→high, each string low→high fret
+  const step = 0.30; // rallentato rispetto al precedente 0.14
+
+  // Build sequence: E→e (corda bassa→alta), ogni corda tasto basso→alto
+  const seq = [];
   for (let s = 5; s >= 0; s--) {
     fretsByString[s].forEach(f => {
-      const ni = (OPEN_STRINGS[s] + f) % 12;
-      const oct = s < 3 ? 5 : 4;
-      playNote(noteToFreq(ni, oct), t, 0.35);
-      t += 0.14;
+      seq.push({ s, f, t });
+      t += step;
     });
   }
+
+  // Pianifica audio con ottave corrette via MIDI
+  seq.forEach(({ s, f, t: st }) => {
+    playNote(midiToFreq(OPEN_STRING_MIDI[s] + f), st, 0.35);
+  });
+
+  // Evidenzia le note durante la riproduzione
+  clearP5Highlights();
+  seq.forEach(({ s, f, t: st }) => {
+    const delay = Math.round((st - now) * 1000);
+    setTimeout(() => highlightP5Note(s, f), delay);
+  });
+  // Rimuovi highlight al termine
+  setTimeout(() => clearP5Highlights(), Math.round((t - now + 0.4) * 1000));
+}
+
+function highlightP5Note(s, f) {
+  document.querySelectorAll('[id^="p5-note-"]').forEach(el => {
+    el.setAttribute('r', el.dataset.root === '1' ? '9' : '9');
+    el.style.filter = '';
+  });
+  const el = document.getElementById('p5-note-' + s + '-' + f);
+  if (el) {
+    el.setAttribute('r', '12');
+    el.style.filter = 'drop-shadow(0 0 6px rgba(255,255,255,0.9))';
+  }
+}
+
+function clearP5Highlights() {
+  document.querySelectorAll('[id^="p5-note-"]').forEach(el => {
+    el.setAttribute('r', '9');
+    el.style.filter = '';
+  });
 }
 
 function initPenta5() { renderPenta5(); }
@@ -5518,6 +5550,8 @@ function autocorrelate(buf, sampleRate) {
 }
 
 let _tunerFrame = 0;
+const _tunerStrLastActive = new Array(6).fill(0);
+const TUNER_HOLD_MS = 2000; // il LED rimane acceso almeno 2 secondi dopo l'ultimo segnale
 function tunerTick() {
   if (!TUNER.running) return;
   TUNER.rafId = requestAnimationFrame(tunerTick);
@@ -5546,10 +5580,12 @@ function tunerTick() {
     }
     barEl.className = 'tuner-meter-bar' + (inTune ? ' in-tune' : '');
 
-    // Evidenzia la corda più vicina
+    // Evidenzia la corda più vicina con hold per il fine tuning
+    const now = Date.now();
     document.querySelectorAll('#tuner-strings-list .tuner-str').forEach((el, i) => {
       const diff = Math.abs(TUNER.activeTuning.freqs[i] - freq);
-      el.className = 'tuner-str' + (diff < 10 ? ' active' : '');
+      if (diff < 10) _tunerStrLastActive[i] = now;
+      el.className = 'tuner-str' + ((now - _tunerStrLastActive[i]) < TUNER_HOLD_MS ? ' active' : '');
     });
   } else {
     noteEl.textContent = '–';
@@ -5569,6 +5605,8 @@ async function tunerToggle() {
     if (TUNER.stream) TUNER.stream.getTracks().forEach(t => t.stop());
     if (TUNER.ctx)    TUNER.ctx.close();
     TUNER.stream = TUNER.ctx = null;
+    _tunerStrLastActive.fill(0);
+    document.querySelectorAll('#tuner-strings-list .tuner-str').forEach(el => el.className = 'tuner-str');
     btn.textContent = '🎤 Avvia accordatore';
     document.getElementById('tuner-note').textContent = '–';
     freqEl.textContent = 'in attesa del microfono...';
