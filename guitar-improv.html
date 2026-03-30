@@ -146,7 +146,13 @@
     display: flex;
     align-items: center;
   }
-  .surli-logo svg { display: block; height: 44px; width: auto; }
+  .surli-logo img {
+    height: 44px;
+    width: auto;
+    border-radius: 6px;
+    object-fit: cover;
+    display: block;
+  }
 
   /* ── LAYOUT ── */
   .page { display: none; padding: clamp(12px, 4vw, 24px); max-width: 1200px; margin: 0 auto; }
@@ -1828,44 +1834,7 @@
   <div class="header-top">
     <div class="logo">GUITAR <span>IMPROV</span> LAB</div>
     <div class="surli-logo">
-      <!-- Paletta chitarra Surli® (Jackson-style, 3+3) -->
-      <svg viewBox="0 0 152 56" xmlns="http://www.w3.org/2000/svg" aria-label="Surli guitar headstock">
-        <defs>
-          <filter id="hs-shadow" x="-5%" y="-5%" width="115%" height="115%">
-            <feDropShadow dx="1" dy="1" stdDeviation="1.5" flood-color="rgba(0,0,0,0.6)"/>
-          </filter>
-        </defs>
-        <!-- Corpo paletta — forma angolare stile Jackson/King V, avorio -->
-        <path d="M 10,28 L 19,8 L 142,8 L 142,48 L 19,48 Z"
-              fill="#e8ddb0" stroke="#7a6535" stroke-width="1.2" filter="url(#hs-shadow)"/>
-        <!-- Nut (capotasto) sul lato sinistro -->
-        <rect x="7" y="13" width="7" height="30" rx="1.5" fill="#c8a84b"/>
-        <!-- Dettaglio grafico angolare (come nella foto) -->
-        <path d="M 19,8 L 30,8 L 10,28 L 10,38 Z" fill="#222" opacity="0.18"/>
-        <!-- Pioli accordatori — riga superiore (3 peg, sporgono verso l'alto) -->
-        <g fill="#1a1a1a" stroke="#4a4a4a" stroke-width="0.7">
-          <line x1="38" y1="8" x2="38" y2="1" stroke="#555" stroke-width="1.4"/>
-          <circle cx="38" cy="1" r="5.5"/><circle cx="38" cy="1" r="2.8" fill="#3a3a3a"/>
-          <line x1="74" y1="8" x2="74" y2="1" stroke="#555" stroke-width="1.4"/>
-          <circle cx="74" cy="1" r="5.5"/><circle cx="74" cy="1" r="2.8" fill="#3a3a3a"/>
-          <line x1="110" y1="8" x2="110" y2="1" stroke="#555" stroke-width="1.4"/>
-          <circle cx="110" cy="1" r="5.5"/><circle cx="110" cy="1" r="2.8" fill="#3a3a3a"/>
-        </g>
-        <!-- Pioli accordatori — riga inferiore -->
-        <g fill="#1a1a1a" stroke="#4a4a4a" stroke-width="0.7">
-          <line x1="38" y1="48" x2="38" y2="55" stroke="#555" stroke-width="1.4"/>
-          <circle cx="38" cy="55" r="5.5"/><circle cx="38" cy="55" r="2.8" fill="#3a3a3a"/>
-          <line x1="74" y1="48" x2="74" y2="55" stroke="#555" stroke-width="1.4"/>
-          <circle cx="74" cy="55" r="5.5"/><circle cx="74" cy="55" r="2.8" fill="#3a3a3a"/>
-          <line x1="110" y1="48" x2="110" y2="55" stroke="#555" stroke-width="1.4"/>
-          <circle cx="110" cy="55" r="5.5"/><circle cx="110" cy="55" r="2.8" fill="#3a3a3a"/>
-        </g>
-        <!-- Scritta Surli® in corsivo (stile logo sulla paletta) -->
-        <text x="80" y="34" text-anchor="middle"
-              font-family="Dancing Script, cursive" font-size="23" font-weight="700"
-              fill="#0d0d0d" letter-spacing="0.5">Surli</text>
-        <text x="113" y="26" font-family="sans-serif" font-size="8" fill="#0d0d0d">®</text>
-      </svg>
+      <img src="surli_charvel.png" alt="Surli guitar headstock">
     </div>
   </div>
   <!-- Riga 2: nav sempre sotto, scrollabile -->
