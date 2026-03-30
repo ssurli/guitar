@@ -2896,6 +2896,19 @@ function computeNpsPositions(keyIndex, scaleIntervals, fretMax) {
     positions.push({ fretsByString: positionFrets, startFret: windowStart, sig });
   }
 
+  // Rotate so position 1 = first window that contains the root note on the low E string
+  if (positions.length > 1) {
+    const rootNote = keyIndex % 12;
+    const rotIdx = positions.findIndex(p =>
+      p.fretsByString[5].some(f => (OPEN_STRINGS[5] + f) % 12 === rootNote)
+    );
+    if (rotIdx > 0) {
+      const before = positions.slice(0, rotIdx);
+      positions.splice(0, rotIdx);
+      positions.push(...before);
+    }
+  }
+
   return positions;
 }
 
@@ -2912,8 +2925,7 @@ function playNpsPattern() {
   for (let s = 5; s >= 0; s--) {
     const fretsOnStr = pos.fretsByString[s] || [];
     fretsOnStr.forEach(f => {
-      const noteIndex = (OPEN_STRINGS[s] + f) % 12;
-      playNote(noteToFreq(noteIndex, s < 3 ? 5 : 4), t, 0.35);
+      playNote(midiToFreq(OPEN_STRING_MIDI[s] + f), t, 0.35);
       t += 0.18;
     });
   }
