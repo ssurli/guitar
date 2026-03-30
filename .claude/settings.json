@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null); if echo \"$cmd\" | grep -qE 'git push.*(gh-pages|origin gh)'; then cd /home/user/guitar && branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ \"$branch\" = 'gh-pages' ]; then if ! diff -q guitar-improv.html index.html > /dev/null 2>&1; then cp guitar-improv.html index.html && git add index.html && git commit -m 'Auto-sync index.html from guitar-improv.html' && git push origin gh-pages && echo '{\"systemMessage\": \"✓ index.html sincronizzato automaticamente con guitar-improv.html\"}'; fi; fi; fi",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
