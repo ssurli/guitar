@@ -18,7 +18,7 @@
 <title>Guitar Improv Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0d0d0d;
@@ -137,6 +137,20 @@
   }
   .global-key-wrap select:focus,
   .global-key-wrap select:hover { border-color: var(--amber); }
+
+  /* ── SURLI LOGO ── */
+  .surli-logo {
+    font-family: 'Dancing Script', cursive;
+    font-size: 28px;
+    font-weight: 700;
+    color: #f0e8c8;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 12px rgba(245,158,11,0.3);
+    margin-left: auto;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    padding-left: 12px;
+  }
+  .surli-logo span { font-size: 14px; vertical-align: super; color: var(--text-dim); }
 
   /* ── LAYOUT ── */
   .page { display: none; padding: clamp(12px, 4vw, 24px); max-width: 1200px; margin: 0 auto; }
@@ -535,9 +549,8 @@
   @media(max-width:650px){ .sweep-layout { grid-template-columns:1fr; } }
   .sweep-diagram-box {
     background:var(--panel); border:1px solid var(--border); border-radius:12px;
-    padding:14px; width:140px;
+    padding:14px; overflow-x:auto; -webkit-overflow-scrolling:touch; flex-shrink:0;
   }
-  @media(max-width:650px){ .sweep-diagram-box { width:100%; max-width:180px; } }
   .sweep-info-box {
     background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px;
   }
@@ -1017,6 +1030,29 @@
     .jam-controls-row { grid-template-columns: 1fr 1fr; }
     .mix-row { grid-template-columns: 1fr; }
   }
+
+  /* ── CIRCOLO DELLE QUINTE ── */
+  .circle-layout {
+    display: grid; grid-template-columns: 1fr 280px; gap: 24px; align-items: start;
+  }
+  @media(max-width:800px){ .circle-layout { grid-template-columns:1fr; } }
+  .circle-svg-wrap { display:flex; justify-content:center; }
+  .circle-info {
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:20px; position:sticky; top:80px;
+  }
+  @media(max-width:800px){ .circle-info { position:static; } }
+  .circle-info h3 { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:1px; color:var(--amber); margin-bottom:2px; }
+  .circle-chord-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-top:10px; }
+  .circle-chord-btn {
+    text-align:center; padding:7px 3px; border-radius:6px;
+    border:1px solid var(--border); background:var(--bg3);
+    font-family:'Space Mono',monospace; font-size:10px;
+    cursor:pointer; transition:all .15s;
+  }
+  .circle-chord-btn:hover { border-color:var(--amber-dim); }
+  .circle-chord-btn .role { font-size:8px; color:var(--text-dim); }
+  .circle-near-keys { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
 
   /* ── GLOW FX ── */
   .amber-glow-text {
@@ -1795,23 +1831,7 @@
   <!-- Riga 1: logo + key selector — struttura fissa, niente flex-wrap -->
   <div class="header-top">
     <div class="logo">GUITAR <span>IMPROV</span> LAB</div>
-    <div class="global-key-wrap">
-      <span class="ctrl-label">KEY</span>
-      <select id="global-key" onchange="setGlobalKey(this.value)">
-        <option value="0">C</option>
-        <option value="1">C# / Db</option>
-        <option value="2">D</option>
-        <option value="3">D# / Eb</option>
-        <option value="4">E</option>
-        <option value="5">F</option>
-        <option value="6">F# / Gb</option>
-        <option value="7">G</option>
-        <option value="8">G# / Ab</option>
-        <option value="9" selected>A</option>
-        <option value="10">A# / Bb</option>
-        <option value="11">B</option>
-      </select>
-    </div>
+    <div class="surli-logo">Surli<span>®</span></div>
   </div>
   <!-- Riga 2: nav sempre sotto, scrollabile -->
   <nav>
@@ -1823,6 +1843,7 @@
     <button class="nav-btn" onclick="showPage('triads')">Triadi</button>
     <button class="nav-btn" onclick="showPage('caged')">CAGED</button>
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
+    <button class="nav-btn" onclick="showPage('circle');renderCircleOfFifths()">♯♭ Circolo</button>
     <button class="nav-btn" onclick="showPage('jam')">🎸 Basi</button>
     <button class="nav-btn" onclick="showPage('tuner')">🎵 Accordatore</button>
     <button class="nav-btn" onclick="showPage('technique');initTechPage()">⚡ Tecnica</button>
@@ -2146,6 +2167,22 @@
 </div>
 
 <!-- ═══════════════════════════════ PRACTICE PAGE ════════════════════════════════ -->
+<!-- ═══════════════════════════════ CIRCOLO DELLE QUINTE ═══════════════════════ -->
+<div id="page-circle" class="page">
+  <h2>Circolo delle Quinte</h2>
+  <div class="subtitle">// relazioni tra tonalità, accordi diatonici e modulazioni</div>
+  <div class="circle-layout">
+    <div class="circle-svg-wrap">
+      <svg id="circle-svg" width="380" height="380" viewBox="0 0 380 380" style="max-width:100%;height:auto"></svg>
+    </div>
+    <div class="circle-info" id="circle-info">
+      <div style="color:var(--text-dim);font-family:'Space Mono',monospace;font-size:12px;text-align:center;padding:30px 0">
+        ← Click su una<br>tonalità
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="page-practice" class="page">
   <h2>Guida alla Pratica</h2>
   <div class="subtitle">// strategie per sviluppare l'improvvisazione</div>
@@ -2161,6 +2198,7 @@ const NOTES_FLAT = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
 // Open string tuning in semitones (0=C)
 const OPEN_STRINGS = [4, 11, 7, 2, 9, 4]; // e=E4 B=B3 G=G3 D=D3 A=A2 E=E2 (semitoni da C)
+const OPEN_STRING_MIDI = [64, 59, 55, 50, 45, 40]; // MIDI: e=E4 B=B3 G=G3 D=D3 A=A2 E=E2
 const STRING_NAMES = ['e','B','G','D','A','E'];
 // We render from high to low (e at top)
 
@@ -2482,84 +2520,71 @@ function playNote(freq, time, duration = 0.8) {
   const dest = _masterOut;
   const now = time || ctx.currentTime;
 
-  // ── Pick transient (percussive click/pluck) ──
-  const transLen = Math.floor(ctx.sampleRate * 0.018);
+  // Lower notes sustain longer — scale decay naturally with pitch
+  const decay = duration * Math.max(0.7, Math.min(2.2, 80 / freq));
+
+  // ── Pick transient: sharp noise burst at attack ──
+  const transLen = Math.floor(ctx.sampleRate * 0.014);
   const transBuf = ctx.createBuffer(1, transLen, ctx.sampleRate);
   const td = transBuf.getChannelData(0);
-  for (let i = 0; i < transLen; i++) td[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / transLen, 2);
+  for (let i = 0; i < transLen; i++) td[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / transLen, 3);
   const transNoise = ctx.createBufferSource();
   transNoise.buffer = transBuf;
   const transFilter = ctx.createBiquadFilter();
   transFilter.type = 'bandpass';
-  transFilter.frequency.value = Math.min(4200, freq * 4);
-  transFilter.Q.value = 1.2;
+  transFilter.frequency.value = Math.min(5000, freq * 5);
+  transFilter.Q.value = 0.9;
   const transGain = ctx.createGain();
-  transGain.gain.setValueAtTime(0.55, now);
-  transGain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
-  transNoise.connect(transFilter);
-  transFilter.connect(transGain);
-  transGain.connect(dest);
-  transNoise.start(now);
-  transNoise.stop(now + 0.025);
-  _autoDisconnect(transNoise, now + 0.025);
+  transGain.gain.setValueAtTime(0.5, now);
+  transGain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
+  transNoise.connect(transFilter); transFilter.connect(transGain); transGain.connect(dest);
+  transNoise.start(now); transNoise.stop(now + 0.018);
+  _autoDisconnect(transNoise, now + 0.02);
 
-  // ── String body: fundamental + harmonics ──
-  const bodyGain = ctx.createGain();
-  bodyGain.gain.setValueAtTime(0, now);
-  bodyGain.gain.linearRampToValueAtTime(0.42, now + 0.004);
-  bodyGain.gain.setValueAtTime(0.38, now + 0.05);
-  bodyGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+  // ── Tone shaping chain ──
+  // LP: bright at pick → darkens as string vibration loses energy
+  const lpf = ctx.createBiquadFilter();
+  lpf.type = 'lowpass';
+  lpf.frequency.setValueAtTime(Math.min(7000, freq * 14), now);
+  lpf.frequency.exponentialRampToValueAtTime(Math.max(700, freq * 3.5), now + decay * 0.65);
+  lpf.Q.value = 0.45;
 
-  // Tone shaping: bright pick → gradually darkens (string loses highs)
-  const bodyLPF = ctx.createBiquadFilter();
-  bodyLPF.type = 'lowpass';
-  bodyLPF.frequency.setValueAtTime(Math.min(8000, freq * 18), now);
-  bodyLPF.frequency.exponentialRampToValueAtTime(Math.max(800, freq * 4), now + duration * 0.6);
-  bodyLPF.Q.value = 0.5;
+  // Body resonance: peak near note fundamental for warmth
+  const bodyRes = ctx.createBiquadFilter();
+  bodyRes.type = 'peaking';
+  bodyRes.frequency.value = Math.min(280, Math.max(80, freq * 0.9));
+  bodyRes.Q.value = 1.8;
+  bodyRes.gain.value = freq < 250 ? 6 : 3;
 
-  // Warmth notch around 300Hz (guitar body resonance)
-  const bodyPeak = ctx.createBiquadFilter();
-  bodyPeak.type = 'peaking';
-  bodyPeak.frequency.value = 300;
-  bodyPeak.Q.value = 1.5;
-  bodyPeak.gain.value = 3;
+  // Mild saturation — just enough warmth
+  const shaper = _makeWaveshaper(ctx, 18);
+  lpf.connect(bodyRes); bodyRes.connect(shaper); shaper.connect(dest);
 
-  // Soft waveshaper (amp saturation)
-  const shaper = _makeWaveshaper(ctx, 30);
-
-  bodyLPF.connect(bodyPeak);
-  bodyPeak.connect(shaper);
-  shaper.connect(bodyGain);
-  bodyGain.connect(dest);
-
-  // Harmonics: fundamental (sine-heavy) + 2nd + 3rd partial
-  const harmonics = [
-    { mul: 1,   type: 'sine',     vol: 0.55 },
-    { mul: 2,   type: 'sine',     vol: 0.22 },
-    { mul: 3,   type: 'triangle', vol: 0.12 },
-    { mul: 4,   type: 'sine',     vol: 0.06 },
-  ];
-
-  harmonics.forEach(({ mul, type, vol }) => {
+  // ── Harmonic series — each partial decays at 1/mul speed ──
+  // Slight inharmonicity: higher partials are slightly sharp (real string physics)
+  const B = 0.0003; // inharmonicity constant (low = cleaner, high = more piano-like)
+  [
+    { mul: 1, vol: 0.50 },
+    { mul: 2, vol: 0.24 },
+    { mul: 3, vol: 0.14 },
+    { mul: 4, vol: 0.07 },
+    { mul: 5, vol: 0.04 },
+  ].forEach(({ mul, vol }) => {
+    const inharmonicFreq = freq * mul * Math.sqrt(1 + B * mul * mul);
     const osc = ctx.createOscillator();
-    osc.type = type;
-    osc.frequency.value = freq * mul;
-    // Slight detuning for chorus warmth
-    osc.detune.value = (Math.random() - 0.5) * 4;
-    const hg = ctx.createGain();
-    hg.gain.value = vol;
-    // Higher harmonics decay faster
-    const hEnv = ctx.createGain();
-    hEnv.gain.setValueAtTime(1, now);
-    hEnv.gain.exponentialRampToValueAtTime(0.001, now + duration * (1 / mul));
-    osc.connect(hg);
-    hg.connect(hEnv);
-    hEnv.connect(bodyLPF);
+    osc.type = 'sine';
+    osc.frequency.value = inharmonicFreq;
+    osc.detune.value = (Math.random() - 0.5) * 3;
+    const env = ctx.createGain();
+    const partialDecay = decay / mul;
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(vol, now + 0.003);
+    env.gain.exponentialRampToValueAtTime(0.001, now + partialDecay);
+    osc.connect(env); env.connect(lpf);
     osc.start(now);
-    osc.stop(now + duration + 0.05);
-    _autoDisconnect(osc, now + duration + 0.05);
-    _autoDisconnect(hg, now + duration + 0.05);
-    _autoDisconnect(hEnv, now + duration + 0.05);
+    const stopT = now + partialDecay + 0.04;
+    osc.stop(stopT);
+    _autoDisconnect(osc, stopT); _autoDisconnect(env, stopT);
   });
 }
 
@@ -2847,7 +2872,9 @@ function computeNpsPositions(keyIndex, scaleIntervals, fretMax) {
     let valid = true;
 
     for (let s = 5; s >= 0; s--) { // low E → high e
-      const available = notesPerString[s].filter(f => f >= windowStart && f <= windowStart + 6);
+      // B string (s=1): shift window 1 fret lower — compensates G→B tuning gap (4 semitones not 5)
+      const wStart = (s === 1) ? Math.max(0, windowStart - 1) : windowStart;
+      const available = notesPerString[s].filter(f => f >= wStart && f <= windowStart + 6);
       if (available.length < 3) { valid = false; break; }
       // Take exactly 3 notes starting from the window
       positionFrets[s] = available.slice(0, 3);
@@ -2867,6 +2894,26 @@ function computeNpsPositions(keyIndex, scaleIntervals, fretMax) {
     positions.push({ fretsByString: positionFrets, startFret: windowStart, sig });
   }
 
+  // Rotate so position 1 = window where root is the FIRST note on low E
+  // (i.e., the window that STARTS on the root note of the scale)
+  if (positions.length > 1) {
+    const rootNote = keyIndex % 12;
+    let rotIdx = positions.findIndex(p =>
+      (OPEN_STRINGS[5] + p.fretsByString[5][0]) % 12 === rootNote
+    );
+    if (rotIdx < 0) {
+      // Fallback: first window that contains root anywhere on low E
+      rotIdx = positions.findIndex(p =>
+        p.fretsByString[5].some(f => (OPEN_STRINGS[5] + f) % 12 === rootNote)
+      );
+    }
+    if (rotIdx > 0) {
+      const before = positions.slice(0, rotIdx);
+      positions.splice(0, rotIdx);
+      positions.push(...before);
+    }
+  }
+
   return positions;
 }
 
@@ -2883,8 +2930,7 @@ function playNpsPattern() {
   for (let s = 5; s >= 0; s--) {
     const fretsOnStr = pos.fretsByString[s] || [];
     fretsOnStr.forEach(f => {
-      const noteIndex = (OPEN_STRINGS[s] + f) % 12;
-      playNote(noteToFreq(noteIndex, s < 3 ? 5 : 4), t, 0.35);
+      playNote(midiToFreq(OPEN_STRING_MIDI[s] + f), t, 0.35);
       t += 0.18;
     });
   }
@@ -3035,7 +3081,7 @@ function renderFretboard() {
       dot.dataset.fret = 'open';
       dot.onclick = () => {
         const ctx = getAudioCtx();
-        playNote(noteToFreq(openNoteIndex, s < 3 ? 5 : 4), ctx.currentTime, 0.6);
+        playNote(midiToFreq(OPEN_STRING_MIDI[s]), ctx.currentTime, 0.6);
         dot.classList.add('playing');
         setTimeout(() => dot.classList.remove('playing'), 550);
       };
@@ -3086,7 +3132,7 @@ function renderFretboard() {
         dot.dataset.fret = f;
         dot.onclick = () => {
           const ctx = getAudioCtx();
-          playNote(noteToFreq(noteIndex, s < 3 ? 5 : 4), ctx.currentTime, 0.6);
+          playNote(midiToFreq(OPEN_STRING_MIDI[s] + f), ctx.currentTime, 0.6);
           dot.classList.add('playing');
           setTimeout(() => dot.classList.remove('playing'), 550);
         };
@@ -4239,9 +4285,7 @@ function initTriads() {
 const CAGED_DEFS = {
   C: { color:'#f59e0b', order:0, rootString:4, rootOffset:3, muted:[5],
     major:[ {s:4,fo:3,iv:0},{s:3,fo:2,iv:4},{s:2,fo:0,iv:7},{s:1,fo:1,iv:0},{s:0,fo:0,iv:4} ],
-    minor:[ {s:4,fo:3,iv:0},{s:3,fo:2,iv:4},{s:2,fo:0,iv:7},{s:1,fo:0,iv:3},{s:0,fo:0,iv:4} ],
-    // e string minor: fo:-1 (handled below per key)
-    minorEStr: true,   // flag: e string needs fo:-1 for min3
+    minor:[ {s:4,fo:3,iv:0},{s:3,fo:1,iv:3},{s:2,fo:0,iv:7},{s:1,fo:1,iv:0},{s:0,fo:3,iv:7} ],
     desc: 'Forma C — radice sulla corda A (al 3° offset). Comoda nelle posizioni aperte e alle prime posizioni.',
     fingers: 'Indice sul barre (se > 0), medio-anulare-mignolo per gli altri frets.',
   },
@@ -4298,8 +4342,6 @@ function cagedFrets(shapeName, rootNote, quality) {
     if (!note) { result.push({s, fret:-1, iv:-1, muted:true}); continue; }
 
     let fret = capo + note.fo;
-    // Special C-shape minor: e string needs fo=-1 for min3
-    if (shapeName === 'C' && quality === 'minor' && s === 0) fret = capo - 1;
 
     if (fret < 0) { result.push({s, fret:-1, iv:note.iv, muted:true}); continue; }
     result.push({s, fret, iv: note.iv, muted: false});
@@ -4522,8 +4564,7 @@ function renderCaged() {
       if (!audioCtx) audioCtx = actx;
       const now = actx.currentTime;
       playedFrets.slice().reverse().forEach((n, j) => {
-        const noteIndex = (OPEN_STRINGS[n.s] + n.fret) % 12;
-        playNote(noteToFreq(noteIndex, n.s < 2 ? 5 : 4), now + j * 0.06, 1.2);
+        playNote(midiToFreq(OPEN_STRING_MIDI[n.s] + n.fret), now + j * 0.06, 1.2);
       });
       CAGED_STATE.selected = idx;
       renderCaged();
@@ -4593,9 +4634,7 @@ function playCagedArpeggio() {
     const frets = cagedFrets(name, CAGED_STATE.keyIdx, CAGED_STATE.quality);
     const played = frets.filter(n => !n.muted);
     played.slice().reverse().forEach((n, j) => {
-      const noteIndex = (OPEN_STRINGS[n.s] + n.fret) % 12;
-      const octave = n.s < 2 ? 5 : 4;
-      playNote(noteToFreq(noteIndex, octave), t + j * 0.055, 0.9);
+      playNote(midiToFreq(OPEN_STRING_MIDI[n.s] + n.fret), t + j * 0.055, 0.9);
     });
     t += played.length * 0.055 + 0.3;
   });
@@ -4793,9 +4832,9 @@ function drawP5Fretboard(box, keyIdx, quality) {
       const col = isRoot ? '#f59e0b' : box.color;
       const textCol = isRoot ? '#000' : '#fff';
 
-      svg += `<circle cx="${x}" cy="${y}" r="9" fill="${col}" opacity="0.95"/>`;
-      if (isRoot) svg += `<circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.5"/>`;
-      svg += `<text x="${x}" y="${y+3}" text-anchor="middle" font-size="7" fill="${textCol}" font-weight="bold" font-family="monospace">${noteName}</text>`;
+      svg += `<circle id="p5-note-${s}-${f}" data-root="${isRoot?1:0}" cx="${x}" cy="${y}" r="9" fill="${col}" opacity="0.95" style="transition:r 0.08s"/>`;
+      if (isRoot) svg += `<circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.5" style="pointer-events:none"/>`;
+      svg += `<text x="${x}" y="${y+3}" text-anchor="middle" font-size="7" fill="${textCol}" font-weight="bold" font-family="monospace" style="pointer-events:none">${noteName}</text>`;
     });
   }
 
@@ -4987,15 +5026,49 @@ function playP5Box() {
   const fretsByString = p5BoxFrets(box, P5_STATE.keyIdx);
   const now = audioCtx.currentTime;
   let t = now + 0.05;
-  // Play E→e low→high, each string low→high fret
+  const step = 0.30; // rallentato rispetto al precedente 0.14
+
+  // Build sequence: E→e (corda bassa→alta), ogni corda tasto basso→alto
+  const seq = [];
   for (let s = 5; s >= 0; s--) {
     fretsByString[s].forEach(f => {
-      const ni = (OPEN_STRINGS[s] + f) % 12;
-      const oct = s < 3 ? 5 : 4;
-      playNote(noteToFreq(ni, oct), t, 0.35);
-      t += 0.14;
+      seq.push({ s, f, t });
+      t += step;
     });
   }
+
+  // Pianifica audio con ottave corrette via MIDI
+  seq.forEach(({ s, f, t: st }) => {
+    playNote(midiToFreq(OPEN_STRING_MIDI[s] + f), st, 0.35);
+  });
+
+  // Evidenzia le note durante la riproduzione
+  clearP5Highlights();
+  seq.forEach(({ s, f, t: st }) => {
+    const delay = Math.round((st - now) * 1000);
+    setTimeout(() => highlightP5Note(s, f), delay);
+  });
+  // Rimuovi highlight al termine
+  setTimeout(() => clearP5Highlights(), Math.round((t - now + 0.4) * 1000));
+}
+
+function highlightP5Note(s, f) {
+  document.querySelectorAll('[id^="p5-note-"]').forEach(el => {
+    el.setAttribute('r', el.dataset.root === '1' ? '9' : '9');
+    el.style.filter = '';
+  });
+  const el = document.getElementById('p5-note-' + s + '-' + f);
+  if (el) {
+    el.setAttribute('r', '12');
+    el.style.filter = 'drop-shadow(0 0 6px rgba(255,255,255,0.9))';
+  }
+}
+
+function clearP5Highlights() {
+  document.querySelectorAll('[id^="p5-note-"]').forEach(el => {
+    el.setAttribute('r', '9');
+    el.style.filter = '';
+  });
 }
 
 function initPenta5() { renderPenta5(); }
@@ -5477,6 +5550,8 @@ function autocorrelate(buf, sampleRate) {
 }
 
 let _tunerFrame = 0;
+const _tunerStrLastActive = new Array(6).fill(0);
+const TUNER_HOLD_MS = 2000; // il LED rimane acceso almeno 2 secondi dopo l'ultimo segnale
 function tunerTick() {
   if (!TUNER.running) return;
   TUNER.rafId = requestAnimationFrame(tunerTick);
@@ -5505,10 +5580,12 @@ function tunerTick() {
     }
     barEl.className = 'tuner-meter-bar' + (inTune ? ' in-tune' : '');
 
-    // Evidenzia la corda più vicina
+    // Evidenzia la corda più vicina con hold per il fine tuning
+    const now = Date.now();
     document.querySelectorAll('#tuner-strings-list .tuner-str').forEach((el, i) => {
       const diff = Math.abs(TUNER.activeTuning.freqs[i] - freq);
-      el.className = 'tuner-str' + (diff < 10 ? ' active' : '');
+      if (diff < 10) _tunerStrLastActive[i] = now;
+      el.className = 'tuner-str' + ((now - _tunerStrLastActive[i]) < TUNER_HOLD_MS ? ' active' : '');
     });
   } else {
     noteEl.textContent = '–';
@@ -5521,29 +5598,55 @@ function tunerTick() {
 
 async function tunerToggle() {
   const btn = document.getElementById('tuner-toggle');
+  const freqEl = document.getElementById('tuner-freq');
   if (TUNER.running) {
     TUNER.running = false;
     cancelAnimationFrame(TUNER.rafId);
     if (TUNER.stream) TUNER.stream.getTracks().forEach(t => t.stop());
     if (TUNER.ctx)    TUNER.ctx.close();
     TUNER.stream = TUNER.ctx = null;
+    _tunerStrLastActive.fill(0);
+    document.querySelectorAll('#tuner-strings-list .tuner-str').forEach(el => el.className = 'tuner-str');
     btn.textContent = '🎤 Avvia accordatore';
     document.getElementById('tuner-note').textContent = '–';
-    document.getElementById('tuner-freq').textContent = 'in attesa del microfono...';
+    freqEl.textContent = 'in attesa del microfono...';
+    freqEl.style.color = '';
     return;
   }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    freqEl.textContent = '⚠ Microfono non supportato in questo browser';
+    freqEl.style.color = '#ef4444';
+    return;
+  }
+  btn.textContent = '⏳ Accesso microfono...';
+  btn.disabled = true;
+  freqEl.style.color = '';
   try {
-    TUNER.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    TUNER.stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      video: false
+    });
     TUNER.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (TUNER.ctx.state === 'suspended') await TUNER.ctx.resume();
     TUNER.analyser = TUNER.ctx.createAnalyser();
     TUNER.analyser.fftSize = 2048;
     TUNER.buf = new Float32Array(TUNER.analyser.fftSize);
     TUNER.ctx.createMediaStreamSource(TUNER.stream).connect(TUNER.analyser);
     TUNER.running = true;
     btn.textContent = '⏹ Ferma accordatore';
+    btn.disabled = false;
+    freqEl.textContent = 'suona una corda...';
     tunerTick();
   } catch (e) {
-    alert('Microfono non disponibile: ' + (e.message || e));
+    btn.textContent = '🎤 Avvia accordatore';
+    btn.disabled = false;
+    const msg = e.name === 'NotAllowedError'
+      ? '⚠ Permesso microfono negato — abilita il microfono nelle impostazioni del browser'
+      : e.name === 'NotFoundError'
+      ? '⚠ Microfono non trovato'
+      : '⚠ Errore microfono: ' + (e.message || e.name || e);
+    freqEl.textContent = msg;
+    freqEl.style.color = '#ef4444';
   }
 }
 
@@ -5660,7 +5763,7 @@ const TECH_EXERCISES = {
       tags:['tapping','base'] },
     { title:'Tapping su due corde', diff:3, bpmSlow:55, bpmMid:80, bpmFast:110,
       tab:'e |--T12p8h5-----------|\nB |--------T15p10h7----|\nG |--------------------|\nD |--------------------|\nA |--------------------|\nE |--------------------|',
-      tips:['Passa veloce da una corda all'altra','Usa sempre la stessa posizione del braccio'],
+      tips:['Passa veloce da una corda all\u2019altra','Usa sempre la stessa posizione del braccio'],
       tags:['tapping','due corde'] },
     { title:'Tapping 8 dita (Greg Howe style)', diff:5, bpmSlow:50, bpmMid:70, bpmFast:95,
       tab:'e |--T15-T12--7--T15-T12--5---|\nB |---------------------------|\nG |---------------------------|\nD |---------------------------|\nA |---------------------------|\nE |---------------------------|',
@@ -5750,7 +5853,6 @@ let _techInitialized = false;
 
 function initTechPage() {
   if (_techInitialized) return;
-  _techInitialized = true;
 
   // Build tabs
   const tabs = [
@@ -5815,6 +5917,7 @@ function initTechPage() {
 
   // Initial sweep render
   renderSweepPanel();
+  _techInitialized = true;
 }
 
 function showTechTab(id) {
@@ -5865,13 +5968,13 @@ function renderSweepPanel() {
   // Build mini fretboard diagram
   const minFret = Math.max(0, Math.min(...frets) - 1);
   const maxFret = Math.max(...frets) + 1;
-  const cellW = 36, cellH = 28, leftPad = 22, topPad = 18;
+  const cellW = 26, cellH = 22, leftPad = 18, topPad = 14, dotR = 8;
   const fretSpan = Math.max(maxFret - minFret, 4);
-  const W = leftPad + fretSpan * cellW + 20;
-  const H = topPad + 6 * cellH + 14;
+  const W = leftPad + fretSpan * cellW + 14;
+  const H = topPad + 6 * cellH + 10;
   const sNames = ['e','B','G','D','A','E'];
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:360px;height:auto;display:block">`;
+  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:${W}px">`;
   svg += `<rect width="${W}" height="${H}" fill="#151515" rx="8"/>`;
 
   // Nut
@@ -5898,11 +6001,11 @@ function renderSweepPanel() {
   const shapeStringsForward = [...shape.strings]; // e.g. [5,4,3,2,1] or [5,4,3,2,1,0]
   shapeStringsForward.forEach((si, ii) => {
     const f = frets[ii];
-    const dotX = leftPad + (f - minFret - 0.5) * cellW;
+    const dotX = leftPad + (f - minFret) * cellW - cellW / 2;
     const dotY = topPad + si * cellH;
     const isRoot = shape.semitones[ii] === 0;
-    svg += `<circle cx="${dotX}" cy="${dotY}" r="10" fill="${isRoot ? shape.color : '#2563eb'}" stroke="${isRoot ? '#fff' : 'none'}" stroke-width="1.5"/>`;
-    svg += `<text x="${dotX}" y="${dotY+4}" text-anchor="middle" font-size="9" fill="#fff" font-family="monospace" font-weight="bold">${f}</text>`;
+    svg += `<circle cx="${dotX}" cy="${dotY}" r="${dotR}" fill="${isRoot ? shape.color : '#2563eb'}" stroke="${isRoot ? '#fff' : 'none'}" stroke-width="1.5"/>`;
+    svg += `<text x="${dotX}" y="${dotY+3}" text-anchor="middle" font-size="7" fill="#fff" font-family="monospace" font-weight="bold">${f}</text>`;
   });
 
   svg += '</svg>';
@@ -5966,6 +6069,148 @@ function playSweepArp(direction) {
     osc.stop(t + step);
     osc.addEventListener('ended', () => { try { osc.disconnect(); gain.disconnect(); } catch(e){} });
   });
+}
+
+// ─── CIRCOLO DELLE QUINTE ────────────────────────────────────────────────────
+const CIRCLE_FIFTHS = [
+  { major:'C',   mIdx:0,  acc:'',    minor:'Am',   rIdx:9  },
+  { major:'G',   mIdx:7,  acc:'1♯',  minor:'Em',   rIdx:4  },
+  { major:'D',   mIdx:2,  acc:'2♯',  minor:'Bm',   rIdx:11 },
+  { major:'A',   mIdx:9,  acc:'3♯',  minor:'F♯m',  rIdx:6  },
+  { major:'E',   mIdx:4,  acc:'4♯',  minor:'C♯m',  rIdx:1  },
+  { major:'B',   mIdx:11, acc:'5♯',  minor:'G♯m',  rIdx:8  },
+  { major:'F♯',  mIdx:6,  acc:'6♯',  minor:'D♯m',  rIdx:3  },
+  { major:'D♭',  mIdx:1,  acc:'5♭',  minor:'B♭m',  rIdx:10 },
+  { major:'A♭',  mIdx:8,  acc:'4♭',  minor:'Fm',   rIdx:5  },
+  { major:'E♭',  mIdx:3,  acc:'3♭',  minor:'Cm',   rIdx:0  },
+  { major:'B♭',  mIdx:10, acc:'2♭',  minor:'Gm',   rIdx:7  },
+  { major:'F',   mIdx:5,  acc:'1♭',  minor:'Dm',   rIdx:2  },
+];
+
+let _circleSelected = null;
+
+function renderCircleOfFifths() {
+  const svg = document.getElementById('circle-svg');
+  if (!svg) return;
+  const cx = 190, cy = 190;
+  const r1o = 168, r1i = 126; // major outer ring
+  const r2o = 124, r2i = 96;  // accidentals ring
+  const r3o = 94,  r3i = 64;  // minor inner ring
+  const GAP = 0.03;
+
+  function arc(ro, ri, a1, a2) {
+    const ag1 = a1 + GAP, ag2 = a2 - GAP;
+    const cos1=Math.cos(ag1),sin1=Math.sin(ag1),cos2=Math.cos(ag2),sin2=Math.sin(ag2);
+    return `M${cx+ro*cos1},${cy+ro*sin1} A${ro},${ro} 0 0,1 ${cx+ro*cos2},${cy+ro*sin2} ` +
+           `L${cx+ri*cos2},${cy+ri*sin2} A${ri},${ri} 0 0,0 ${cx+ri*cos1},${cy+ri*sin1} Z`;
+  }
+
+  // Color per segment: warms (sharps) → amber tones, cools (flats) → blue tones
+  const segColors = ['#1a1400','#1a1500','#1a1600','#151800','#0f1a10','#0a1a14',
+                     '#0a1420','#0d0f20','#12101e','#18101a','#1a1015','#1a1208'];
+
+  let html = '';
+  CIRCLE_FIFTHS.forEach((k, i) => {
+    const a1 = (i * 30 - 90) * Math.PI / 180;
+    const a2 = ((i + 1) * 30 - 90) * Math.PI / 180;
+    const midA = (a1 + a2) / 2;
+    const sel = i === _circleSelected;
+
+    const majFill   = sel ? '#f59e0b' : segColors[i];
+    const majStroke = sel ? '#fde68a' : '#2e2a22';
+    const minFill   = sel ? 'rgba(245,158,11,0.18)' : '#111';
+    const minStroke = sel ? '#f59e0b88' : '#252525';
+    const accFill   = '#0e0e0e';
+
+    const ptr = ` style="cursor:pointer" onclick="selectCircleKey(${i})"`;
+
+    html += `<path d="${arc(r1o,r1i,a1,a2)}" fill="${majFill}" stroke="${majStroke}" stroke-width="1.5"${ptr}/>`;
+    html += `<path d="${arc(r2o,r2i,a1,a2)}" fill="${accFill}" stroke="#1e1e1e" stroke-width="1"/>`;
+    html += `<path d="${arc(r3o,r3i,a1,a2)}" fill="${minFill}" stroke="${minStroke}" stroke-width="1"${ptr}/>`;
+
+    // Major label
+    const r1m = (r1o+r1i)/2;
+    html += `<text x="${cx+r1m*Math.cos(midA)}" y="${cy+r1m*Math.sin(midA)+5}" text-anchor="middle" ` +
+            `font-size="15" font-weight="bold" fill="${sel?'#000':'#e5e5e5'}" ` +
+            `font-family="'Bebas Neue',sans-serif" pointer-events="none">${k.major}</text>`;
+    // Accidentals label
+    if (k.acc) {
+      const r2m = (r2o+r2i)/2;
+      html += `<text x="${cx+r2m*Math.cos(midA)}" y="${cy+r2m*Math.sin(midA)+3}" text-anchor="middle" ` +
+              `font-size="8" fill="#555" font-family="'Space Mono',monospace" pointer-events="none">${k.acc}</text>`;
+    }
+    // Minor label
+    const r3m = (r3o+r3i)/2;
+    html += `<text x="${cx+r3m*Math.cos(midA)}" y="${cy+r3m*Math.sin(midA)+3}" text-anchor="middle" ` +
+            `font-size="8" fill="${sel?'#f59e0b':'#666'}" font-family="'Space Mono',monospace" pointer-events="none">${k.minor}</text>`;
+  });
+
+  // Center
+  const selKey = _circleSelected !== null ? CIRCLE_FIFTHS[_circleSelected] : null;
+  html += `<circle cx="${cx}" cy="${cy}" r="${r3i-2}" fill="#0d0d0d" stroke="#222" stroke-width="2"/>`;
+  if (selKey) {
+    html += `<text x="${cx}" y="${cy-10}" text-anchor="middle" font-size="10" fill="#666" font-family="'Space Mono',monospace">MAGG.</text>`;
+    html += `<text x="${cx}" y="${cy+14}" text-anchor="middle" font-size="26" fill="#f59e0b" font-family="'Bebas Neue',sans-serif">${selKey.major}</text>`;
+  } else {
+    html += `<text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="11" fill="#444" font-family="'Space Mono',monospace">click</text>`;
+  }
+
+  svg.innerHTML = html;
+}
+
+function selectCircleKey(i) {
+  _circleSelected = i;
+  renderCircleOfFifths();
+
+  const k = CIRCLE_FIFTHS[i];
+  const majIntervals = [0,2,4,5,7,9,11];
+  const types  = ['maj','min','min','maj','maj','min','dim'];
+  const roles  = ['I','ii','iii','IV','V','vi','vii°'];
+  const colors = { maj:'var(--amber)', min:'var(--text)', dim:'var(--red)' };
+
+  const chords = majIntervals.map((iv, di) => ({
+    name: NOTES[(k.mIdx + iv) % 12] + (types[di]==='min'?'m':types[di]==='dim'?'°':''),
+    role: roles[di], type: types[di]
+  }));
+
+  // Neighboring keys (1 step up/down circle)
+  const prev = CIRCLE_FIFTHS[((i-1)+12)%12];
+  const next = CIRCLE_FIFTHS[(i+1)%12];
+
+  document.getElementById('circle-info').innerHTML = `
+    <h3>${k.major} maggiore</h3>
+    <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);margin-bottom:14px">
+      ${k.acc || '0 alterazioni'} · relativa minore: <span style="color:var(--amber)">${k.minor}</span>
+    </div>
+
+    <div class="ctrl-label" style="margin-bottom:8px">Accordi diatonici</div>
+    <div class="circle-chord-grid">
+      ${chords.map(c => `
+        <div class="circle-chord-btn" onclick="loadCircleKey(${k.mIdx})">
+          <div class="role">${c.role}</div>
+          <div style="color:${colors[c.type]};font-weight:bold">${c.name}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="ctrl-label" style="margin:16px 0 8px">Tonalità vicine</div>
+    <div class="circle-near-keys">
+      <button class="pos-btn" onclick="selectCircleKey(${((i-1)+12)%12})">← ${prev.major}</button>
+      <button class="pos-btn" onclick="selectCircleKey(${(i+1)%12})">${next.major} →</button>
+    </div>
+
+    <button class="play-btn" style="margin-top:16px;width:100%" onclick="loadCircleKey(${k.mIdx})">
+      → Apri nel Fretboard
+    </button>
+  `;
+}
+
+function loadCircleKey(noteIdx) {
+  document.getElementById('fb-scale').value =
+    document.getElementById('fb-scale').value || 'major';
+  document.getElementById('global-key').value = noteIdx;
+  FB_STATE.keyIndex = noteIdx;
+  showPage('fretboard');
+  renderFretboard();
 }
 </script>
 
