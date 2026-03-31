@@ -479,22 +479,30 @@
   }
   .tuner-note.in-tune { color: #4ade80; text-shadow: 0 0 30px rgba(74,222,128,0.5); }
   .tuner-freq { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--text-dim); margin-top: 4px; }
-  .tuner-meter {
-    position: relative;
-    height: 10px;
-    background: var(--bg2);
-    border-radius: 5px;
+  .tuner-led-meter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
     margin: 20px 8px 8px;
-    overflow: visible;
+    padding: 10px 12px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
   }
-  .tuner-meter-bar {
-    position: absolute;
-    top: 0; height: 100%; border-radius: 5px;
-    background: var(--amber);
-    transition: width .08s, left .08s, background .15s;
+  .tuner-led {
+    width: 16px; height: 22px;
+    border-radius: 3px;
+    background: #1a1a1a;
+    border: 1px solid #252525;
+    transition: background 0.07s, border-color 0.07s, box-shadow 0.07s;
   }
-  .tuner-meter-bar.in-tune { background: #4ade80; }
-  .tuner-center { position:absolute; left:50%; top:-3px; width:2px; height:16px; background:var(--border); transform:translateX(-50%); }
+  .tuner-led.center-mark { margin: 0 4px; width: 20px; }
+  .tuner-led.lit-flat     { background: #1d4ed8; border-color: #3b82f6; box-shadow: 0 0 6px #3b82f688; }
+  .tuner-led.lit-flat-near{ background: #f59e0b; border-color: #fde68a; box-shadow: 0 0 6px #f59e0b88; }
+  .tuner-led.lit-center   { background: #16a34a; border-color: #4ade80; box-shadow: 0 0 8px #4ade8099; }
+  .tuner-led.lit-sharp-near{ background: #f59e0b; border-color: #fde68a; box-shadow: 0 0 6px #f59e0b88; }
+  .tuner-led.lit-sharp    { background: #dc2626; border-color: #f87171; box-shadow: 0 0 6px #f8717188; }
   .tuner-cents { font-family:'Space Mono',monospace; font-size:12px; color:var(--text-dim); margin-top:6px; }
   .tuner-strings {
     display: grid;
@@ -1844,6 +1852,7 @@
     <button class="nav-btn" onclick="showPage('progressions')">Progressioni</button>
     <button class="nav-btn" onclick="showPage('practice')">Pratica</button>
     <button class="nav-btn" onclick="showPage('triads')">Triadi</button>
+    <button class="nav-btn" onclick="showPage('seventh')">Acc. 7ª</button>
     <button class="nav-btn" onclick="showPage('caged')">CAGED</button>
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
     <button class="nav-btn" onclick="showPage('circle');renderCircleOfFifths()">♯♭ Circolo</button>
@@ -2069,6 +2078,54 @@
         </div>
       </div>
       <div class="triad-shapes-grid" id="triad-shapes-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ACCORDI DI SETTIMA ═══════════════════════════ -->
+<div id="page-seventh" class="page">
+  <h2>Accordi di Settima</h2>
+  <div class="subtitle">// maj7 · dom7 · min7 · semidiminuito · dim7 — forme sul manico per ogni tonalità</div>
+
+  <div class="controls" style="margin-bottom:16px">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Tonalità</div>
+      <select id="s7-key" onchange="renderSeventh()">
+        <option value="0">C</option><option value="1">C# / Db</option>
+        <option value="2">D</option><option value="3">D# / Eb</option>
+        <option value="4">E</option><option value="5">F</option>
+        <option value="6">F# / Gb</option><option value="7">G</option>
+        <option value="8">G# / Ab</option><option value="9">A</option>
+        <option value="10">A# / Bb</option><option value="11">B</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="triad-type-tabs" id="s7-type-tabs"></div>
+
+  <div class="triad-layout">
+    <div class="triad-info-col" id="s7-info-col"></div>
+    <div class="triad-shapes-col">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+        <div>
+          <div class="ctrl-label" style="margin-bottom:6px">Inversione</div>
+          <div class="inv-tabs" id="s7-inv-tabs">
+            <button class="inv-tab active" onclick="setS7Inversion(0)">Fondamentale</button>
+            <button class="inv-tab" onclick="setS7Inversion(1)">1ª Inversione</button>
+            <button class="inv-tab" onclick="setS7Inversion(2)">2ª Inversione</button>
+            <button class="inv-tab" onclick="setS7Inversion(3)">3ª Inversione</button>
+          </div>
+        </div>
+        <div>
+          <div class="ctrl-label" style="margin-bottom:6px">Set di corde</div>
+          <div class="strset-tabs" id="s7-strset-tabs">
+            <button class="strset-tab active" onclick="setS7StringSet(0)">e B G D</button>
+            <button class="strset-tab" onclick="setS7StringSet(1)">B G D A</button>
+            <button class="strset-tab" onclick="setS7StringSet(2)">G D A E</button>
+          </div>
+        </div>
+      </div>
+      <div class="triad-shapes-grid" id="s7-shapes-grid"></div>
     </div>
   </div>
 </div>
@@ -2936,12 +2993,23 @@ function playNpsPattern() {
   const pos = positions[FB_STATE.npsPosition] || positions[0];
   const ctx = getAudioCtx();
   let t = ctx.currentTime + 0.05;
-  // Play low E → high e, each string low→high fret
+  const NOTE_DUR = 0.22;
+  // Play low E → high e, each string low→high fret, highlight dots as they play
   for (let s = 5; s >= 0; s--) {
     const fretsOnStr = pos.fretsByString[s] || [];
     fretsOnStr.forEach(f => {
       playNote(midiToFreq(OPEN_STRING_MIDI[s] + f), t, 0.35);
-      t += 0.18;
+      const delay = (t - ctx.currentTime) * 1000;
+      setTimeout(() => {
+        const dot = document.querySelector(
+          `.note-dot[data-string="${s}"][data-fret="${f}"]`
+        );
+        if (dot) {
+          dot.classList.add('playing');
+          setTimeout(() => dot.classList.remove('playing'), 450);
+        }
+      }, delay);
+      t += NOTE_DUR;
     });
   }
 }
@@ -4284,6 +4352,247 @@ function initTriads() {
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// ACCORDI DI SETTIMA ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const SEVENTH_CHORD_TYPES = {
+  maj7: {
+    name: 'Maggiore 7ª', symbol: 'maj7', intervals: [0,4,7,11], formula: '1 – 3 – 5 – 7',
+    color: '#f59e0b',
+    mood: 'Caldo, sofisticato, jazzistico. Il suono del jazz standard. Ottimo anche nel pop e R&B.',
+    usage: 'Imaj7 e IVmaj7 in tonalità maggiore. Accordo di tonica con colore aggiunto.',
+  },
+  dom7: {
+    name: 'Dominante 7ª', symbol: '7', intervals: [0,4,7,10], formula: '1 – 3 – 5 – ♭7',
+    color: '#ef4444',
+    mood: 'Tensione blues. Il V grado che chiede di risolvere. Fondamentale nel blues, rock e jazz.',
+    usage: 'V7 in maggiore e minore. I7-IV7-V7 nel blues a 12 battute.',
+  },
+  min7: {
+    name: 'Minore 7ª', symbol: 'm7', intervals: [0,3,7,10], formula: '1 – ♭3 – 5 – ♭7',
+    color: '#3b82f6',
+    mood: 'Morbido, jazzistico, soul. Più ricco della triade minore, ottimo nel funk e nel jazz.',
+    usage: 'IIm7, IIIm7, VIm7 in maggiore. Im7 e IVm7 in minore.',
+  },
+  m7b5: {
+    name: 'Semidiminuito', symbol: 'ø7', intervals: [0,3,6,10], formula: '1 – ♭3 – ♭5 – ♭7',
+    color: '#8b5cf6',
+    mood: 'Tensione jazz raffinata. Instabile ma meno aspro del dim7. Usato come accordo di passaggio.',
+    usage: 'VIIø7 in maggiore. IIø7-V7-Im nelle cadenze minori jazz (ii-V-i).',
+  },
+  dim7: {
+    name: 'Diminuito 7ª', symbol: '°7', intervals: [0,3,6,9], formula: '1 – ♭3 – ♭5 – ♭♭7',
+    color: '#22c55e',
+    mood: 'Massima tensione, simmetrico. Si ripete ogni 3 semitoni — solo 3 accordi diversi esistono.',
+    usage: 'Passaggio cromatico, sostituzione della dominante, VII°7 in minore armonica.',
+  },
+};
+
+const STRING_SETS_4 = [
+  { name: 'e B G D', strings: [0,1,2,3] },
+  { name: 'B G D A', strings: [1,2,3,4] },
+  { name: 'G D A E', strings: [2,3,4,5] },
+];
+
+const S7_STATE = { type: 'maj7', keyIdx: 0, inversion: 0, stringSet: 0 };
+
+function seventhNotes(rootMidi, typeKey, inversion) {
+  const ivs = SEVENTH_CHORD_TYPES[typeKey].intervals;
+  let notes = ivs.map(iv => rootMidi + iv);
+  for (let i = 0; i < inversion; i++) notes.push(notes.shift() + 12);
+  return notes;
+}
+
+function findSeventhShapes(rootMidi, typeKey, inversion, stringIndices) {
+  const invertedStrings = [...stringIndices].reverse(); // low→high
+  const targetNotes = seventhNotes(rootMidi, typeKey, inversion).map(n => n % 12);
+  const shapes = [];
+  for (let startFret = 0; startFret <= 15; startFret++) {
+    const fretMap = {};
+    let valid = true;
+    for (let si = 0; si < invertedStrings.length; si++) {
+      const openMidi = OPEN_MIDI[invertedStrings[si]];
+      const target = targetNotes[si];
+      let found = -1;
+      for (let f = startFret; f <= startFret + 5; f++) {
+        if ((openMidi + f) % 12 === target) { found = f; break; }
+      }
+      if (found === -1) { valid = false; break; }
+      fretMap[invertedStrings[si]] = found;
+    }
+    if (!valid) continue;
+    const fretsInOrder = stringIndices.map(si => fretMap[si]);
+    const allFrets = Object.values(fretMap);
+    const span = Math.max(...allFrets) - Math.min(...allFrets);
+    if (span <= 4) {
+      const key = fretsInOrder.join('-');
+      if (!shapes.find(s => s.frets.join('-') === key)) {
+        shapes.push({ frets: fretsInOrder, startFret: Math.min(...allFrets) });
+      }
+    }
+  }
+  return shapes;
+}
+
+function drawSeventhSVG(frets, stringIndices, rootMidi, typeKey, inversion) {
+  const ct = SEVENTH_CHORD_TYPES[typeKey];
+  const invertedStrings = [...stringIndices].reverse();
+  const targetNotes = seventhNotes(rootMidi, typeKey, inversion).map(n => n % 12);
+  const noteRoleMap = {};
+  invertedStrings.forEach((si, i) => { noteRoleMap[si] = i; });
+  const degColors = [ct.color, '#3b82f6', '#22c55e', '#a855f7'];
+
+  const nonZeroFrets = frets.filter(f => f > 0);
+  const minF = nonZeroFrets.length ? Math.min(...nonZeroFrets) : 0;
+  const maxF = Math.max(...frets);
+  const displayStart = frets.some(f => f === 0) ? 0 : Math.max(0, minF - 1);
+  const displayEnd = Math.max(maxF + 1, displayStart + 4);
+  const nFrets = displayEnd - displayStart + 1;
+
+  const W = 190, cellW = (W - 32) / nFrets;
+  const nStrings = stringIndices.length;
+  const cellH = 30;
+  const H = nStrings * cellH + 16;
+  const sNames = ['e','B','G','D','A','E'];
+
+  let svg = `<svg class="mini-fb" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<rect width="${W}" height="${H}" fill="#141414" rx="6"/>`;
+
+  for (let f = displayStart; f <= displayEnd; f++) {
+    const x = 28 + (f - displayStart) * cellW + cellW / 2;
+    svg += `<text x="${x}" y="9" text-anchor="middle" font-size="7" fill="#555" font-family="monospace">${f === 0 ? '' : f}</text>`;
+  }
+  if (displayStart === 0) {
+    const nutX = 28 + cellW;
+    svg += `<rect x="${nutX-1.5}" y="11" width="3" height="${nStrings*cellH}" fill="#d4af6a" rx="1"/>`;
+  }
+  for (let si = 0; si < stringIndices.length; si++) {
+    const strIdx = stringIndices[si];
+    const y = 11 + si * cellH + cellH / 2;
+    svg += `<line x1="28" y1="${y}" x2="${W-4}" y2="${y}" stroke="#2a2a2a" stroke-width="1.5"/>`;
+    svg += `<text x="14" y="${y+4}" text-anchor="middle" font-size="8" fill="#555" font-family="monospace">${sNames[strIdx]}</text>`;
+
+    const f = frets[si];
+    const role = noteRoleMap[strIdx];
+    const col = degColors[role];
+    const noteX = 28 + (f - displayStart) * cellW + cellW / 2;
+    svg += `<circle cx="${noteX}" cy="${y}" r="9" fill="${col}" opacity="0.9"/>`;
+    svg += `<text x="${noteX}" y="${y+4}" text-anchor="middle" font-size="8" fill="#000" font-weight="bold" font-family="monospace">${NOTES[(OPEN_MIDI[strIdx] + f) % 12]}</text>`;
+  }
+  svg += '</svg>';
+  return svg;
+}
+
+function renderSeventh() {
+  S7_STATE.keyIdx = parseInt(document.getElementById('s7-key').value);
+  const keyName = NOTES[S7_STATE.keyIdx];
+  const ct = SEVENTH_CHORD_TYPES[S7_STATE.type];
+
+  const infoCol = document.getElementById('s7-info-col');
+  const noteNames = ct.intervals.map(iv => NOTES[(S7_STATE.keyIdx + iv) % 12]);
+  const degCols = [ct.color, '#3b82f6', '#22c55e', '#a855f7'];
+  const degLabels = ['Tonica', 'Terza', 'Quinta', 'Settima'];
+  const degreesHTML = noteNames.map((n, i) =>
+    `<span class="tdeg" style="color:${degCols[i]};border-color:${degCols[i]};background:${degCols[i]}18">${degLabels[i]}: <strong>${n}</strong></span>`
+  ).join('');
+  const invNotes = seventhNotes(S7_STATE.keyIdx + 48, S7_STATE.type, S7_STATE.inversion).map(m => NOTES[m % 12]);
+  const invLabels = ['Fondamentale', '1ª Inversione', '2ª Inversione', '3ª Inversione'];
+
+  infoCol.innerHTML = `
+    <h3 style="color:${ct.color}">${keyName}${ct.symbol}</h3>
+    <div class="triad-formula">${ct.formula}</div>
+    <div class="triad-mood">${ct.mood}</div>
+    <div class="triad-degrees">${degreesHTML}</div>
+    <div class="msect-lbl">Inversione attiva</div>
+    <div class="hint-box" style="font-family:'Space Mono',monospace;font-size:12px;margin-bottom:14px">
+      <div style="color:var(--text-dim);font-size:10px;margin-bottom:6px">${invLabels[S7_STATE.inversion]}</div>
+      ${invNotes.map((n,i)=>`<span style="color:${degCols[i]};font-weight:bold;font-size:15px">${n}</span>`).join('<span style="color:var(--text-dim);margin:0 4px">–</span>')}
+    </div>
+    <div class="msect-lbl">Usato come</div>
+    <div class="hint-box" style="font-size:12px">${ct.usage}</div>
+    <div class="msect-lbl" style="margin-top:14px">Legenda colori</div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-top:6px">
+      ${degCols.map((c,i)=>`<div style="display:flex;align-items:center;gap:6px">
+        <div style="width:14px;height:14px;border-radius:50%;background:${c}"></div>
+        <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-mid)">${degLabels[i]} (${noteNames[i]})</span>
+      </div>`).join('')}
+    </div>`;
+
+  const grid = document.getElementById('s7-shapes-grid');
+  grid.innerHTML = '';
+  const ss = STRING_SETS_4[S7_STATE.stringSet];
+  const shapes = findSeventhShapes(S7_STATE.keyIdx + 48, S7_STATE.type, S7_STATE.inversion, ss.strings);
+
+  if (!shapes.length) {
+    grid.innerHTML = `<div class="triad-shape-card"><div class="shape-title">Nessuna forma trovata per ${ss.name}</div></div>`;
+    return;
+  }
+
+  const invertedStrings = [...ss.strings].reverse();
+  const noteRoleMap = {};
+  invertedStrings.forEach((si, i) => { noteRoleMap[si] = i; });
+  const degCols2 = [ct.color, '#3b82f6', '#22c55e', '#a855f7'];
+
+  shapes.forEach(shape => {
+    const card = document.createElement('div');
+    card.className = 'triad-shape-card';
+    const svgEl = drawSeventhSVG(shape.frets, ss.strings, S7_STATE.keyIdx, S7_STATE.type, S7_STATE.inversion);
+    const notePills = ss.strings.map((si, j) => {
+      const n = NOTES[(OPEN_MIDI[si] + shape.frets[j]) % 12];
+      const role = noteRoleMap[si];
+      const c = degCols2[role];
+      return `<span class="shape-note" style="color:${c};border-color:${c};background:${c}18">${n}</span>`;
+    }).join('');
+    card.innerHTML = `
+      <div class="shape-title">Corde ${ss.name} · ${shape.startFret === 0 ? 'pos. aperta' : 'pos. ' + shape.startFret}</div>
+      ${svgEl}
+      <div class="shape-notes-row">${notePills}</div>`;
+    card.onclick = () => {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const now = audioCtx.currentTime;
+      [...ss.strings].reverse().forEach((si, j) => {
+        const midi = OPEN_MIDI[si] + shape.frets[ss.strings.indexOf(si)];
+        const freq = 440 * Math.pow(2, (midi - 69) / 12);
+        playNote(freq, now + j * 0.07, 1.4);
+      });
+    };
+    grid.appendChild(card);
+  });
+}
+
+function initSeventh() {
+  const container = document.getElementById('s7-type-tabs');
+  Object.entries(SEVENTH_CHORD_TYPES).forEach(([key, ct]) => {
+    const btn = document.createElement('button');
+    btn.className = 'triad-tab' + (key === S7_STATE.type ? ' active' : '');
+    btn.innerHTML = `<span style="color:${key===S7_STATE.type?ct.color:''}">${ct.name}</span>&nbsp;<span style="font-size:9px;opacity:0.55">${ct.symbol}</span>`;
+    btn.onclick = () => {
+      S7_STATE.type = key;
+      document.querySelectorAll('#s7-type-tabs .triad-tab').forEach((b, i) => {
+        const k = Object.keys(SEVENTH_CHORD_TYPES)[i];
+        b.classList.toggle('active', k === key);
+        b.querySelector('span').style.color = k === key ? SEVENTH_CHORD_TYPES[k].color : '';
+      });
+      renderSeventh();
+    };
+    container.appendChild(btn);
+  });
+  renderSeventh();
+}
+
+function setS7Inversion(inv) {
+  S7_STATE.inversion = inv;
+  document.querySelectorAll('#s7-inv-tabs .inv-tab').forEach((b, i) => b.classList.toggle('active', i === inv));
+  renderSeventh();
+}
+
+function setS7StringSet(idx) {
+  S7_STATE.stringSet = idx;
+  document.querySelectorAll('#s7-strset-tabs .strset-tab').forEach((b, i) => b.classList.toggle('active', i === idx));
+  renderSeventh();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // CAGED ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -5175,6 +5484,8 @@ window.addEventListener('DOMContentLoaded', function() {
   initCaged();
   initPenta5();
   jamInit();
+  initSeventh();
+  initTunerLedMeter();
 });
 </script>
 <!-- ═══════════════════════════════ JAM / BASI PAGE ══════════════════════════════ -->
@@ -5353,10 +5664,7 @@ window.addEventListener('DOMContentLoaded', function() {
   <div class="tuner-display">
     <div class="tuner-note" id="tuner-note">–</div>
     <div class="tuner-freq" id="tuner-freq">in attesa del microfono...</div>
-    <div class="tuner-meter">
-      <div class="tuner-center"></div>
-      <div class="tuner-meter-bar" id="tuner-bar" style="width:0%;left:50%"></div>
-    </div>
+    <div class="tuner-led-meter" id="tuner-led-meter"></div>
     <div class="tuner-cents" id="tuner-cents">± 0 cents</div>
   </div>
 
@@ -5549,6 +5857,56 @@ function autocorrelate(buf, sampleRate) {
 let _tunerFrame = 0;
 const _tunerStrLastActive = new Array(6).fill(0);
 const TUNER_HOLD_MS = 2000; // il LED rimane acceso almeno 2 secondi dopo l'ultimo segnale
+
+// Build LED meter: 21 segments, index 10 = center (0 cents), each step = 5 cents
+// segments 0-3 = far flat (blue), 4-7 = near flat (amber), 8-9 = very close flat (amber),
+// 10 = center, 11-12 = near sharp (amber), 13-16 = far sharp (red)
+function initTunerLedMeter() {
+  const wrap = document.getElementById('tuner-led-meter');
+  if (!wrap || wrap.children.length) return;
+  for (let i = 0; i < 21; i++) {
+    const led = document.createElement('div');
+    led.className = 'tuner-led' + (i === 10 ? ' center-mark' : '');
+    wrap.appendChild(led);
+  }
+}
+
+function updateTunerLeds(cents, inTune) {
+  const leds = document.querySelectorAll('#tuner-led-meter .tuner-led');
+  if (!leds.length) return;
+  // Map cents to LED index: 0=-50, 10=0, 20=+50 (each step = 5 cents)
+  const activeLed = Math.round(Math.max(-50, Math.min(50, cents)) / 5) + 10;
+  leds.forEach((led, i) => {
+    const base = 'tuner-led' + (i === 10 ? ' center-mark' : '');
+    if (inTune) {
+      // in tune: light center green + 2 neighbors amber
+      if (i === 10) led.className = base + ' lit-center';
+      else if (i === 9 || i === 11) led.className = base + ' lit-flat-near';
+      else led.className = base;
+    } else if (cents < 0) {
+      // flat: illuminate from activeLed to center (left side)
+      if (i >= activeLed && i < 10) {
+        const dist = 10 - i;
+        led.className = base + (dist <= 2 ? ' lit-flat-near' : ' lit-flat');
+      } else if (i === 10) {
+        led.className = base; // center off
+      } else {
+        led.className = base;
+      }
+    } else {
+      // sharp: illuminate from center to activeLed (right side)
+      if (i > 10 && i <= activeLed) {
+        const dist = i - 10;
+        led.className = base + (dist <= 2 ? ' lit-sharp-near' : ' lit-sharp');
+      } else if (i === 10) {
+        led.className = base;
+      } else {
+        led.className = base;
+      }
+    }
+  });
+}
+
 function tunerTick() {
   if (!TUNER.running) return;
   TUNER.rafId = requestAnimationFrame(tunerTick);
@@ -5557,7 +5915,6 @@ function tunerTick() {
   const freq = autocorrelate(TUNER.buf, TUNER.ctx.sampleRate);
   const noteEl  = document.getElementById('tuner-note');
   const freqEl  = document.getElementById('tuner-freq');
-  const barEl   = document.getElementById('tuner-bar');
   const centsEl = document.getElementById('tuner-cents');
 
   if (freq > 0) {
@@ -5567,15 +5924,7 @@ function tunerTick() {
     noteEl.className = 'tuner-note' + (inTune ? ' in-tune' : '');
     freqEl.textContent = freq.toFixed(1) + ' Hz';
     centsEl.textContent = (info.cents >= 0 ? '+' : '') + info.cents + ' cents';
-    // Barra centrata: 50% = in tune; range ± 50 cents
-    const offset = Math.max(-50, Math.min(50, info.cents));
-    const pct = Math.abs(offset) * 0.45; // max 45% per lato
-    if (offset >= 0) {
-      barEl.style.left = '50%'; barEl.style.width = pct + '%';
-    } else {
-      barEl.style.left = (50 - pct) + '%'; barEl.style.width = pct + '%';
-    }
-    barEl.className = 'tuner-meter-bar' + (inTune ? ' in-tune' : '');
+    updateTunerLeds(info.cents, inTune);
 
     // Evidenzia la corda più vicina con hold per il fine tuning
     const now = Date.now();
@@ -5588,8 +5937,8 @@ function tunerTick() {
     noteEl.textContent = '–';
     noteEl.className = 'tuner-note';
     freqEl.textContent = 'suona una nota...';
-    barEl.style.width = '0%'; barEl.style.left = '50%';
     centsEl.textContent = '± 0 cents';
+    updateTunerLeds(0, false);
   }
 }
 
@@ -6098,8 +6447,8 @@ function renderCircleOfFifths() {
 
   let html = '';
   CIRCLE_FIFTHS.forEach((k, i) => {
-    const a1 = (i * 30 - 90) * Math.PI / 180;
-    const a2 = ((i + 1) * 30 - 90) * Math.PI / 180;
+    const a1 = (i * 30 - 105) * Math.PI / 180;
+    const a2 = ((i + 1) * 30 - 105) * Math.PI / 180;
     const midA = (a1 + a2) / 2;
     const sel = i === _circleSelected;
 
@@ -6194,7 +6543,7 @@ function selectCircleKey(i) {
 function loadCircleKey(noteIdx) {
   document.getElementById('fb-scale').value =
     document.getElementById('fb-scale').value || 'major';
-  document.getElementById('global-key').value = noteIdx;
+  document.getElementById('fb-key').value = noteIdx;
   FB_STATE.keyIndex = noteIdx;
   showPage('fretboard');
   renderFretboard();
