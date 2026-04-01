@@ -1832,147 +1832,6 @@
     padding: 2px 6px; border-radius: 3px;
     border: 1px solid; margin-right: 4px; margin-bottom: 4px;
   }
-
-  /* ══════════════════════════════════════════════════════════
-     CHORD / SCALE RELATIONSHIP PAGE
-  ══════════════════════════════════════════════════════════ */
-  .cs-mode-tabs {
-    display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap;
-  }
-  .cs-mode-tab {
-    background: var(--bg3); border: 1px solid var(--border);
-    color: var(--text-dim); padding: 8px 18px; border-radius: 8px;
-    cursor: pointer; font-family: 'Space Mono', monospace; font-size: 12px;
-    transition: all 0.18s;
-  }
-  .cs-mode-tab:hover { border-color: var(--amber-dim); color: var(--text); }
-  .cs-mode-tab.active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
-
-  .cs-key-row {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
-    font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-dim);
-  }
-  .cs-key-row select {
-    background: var(--bg3); border: 1px solid var(--border); color: var(--text);
-    padding: 5px 10px; border-radius: 6px; font-family: inherit; font-size: 12px; cursor: pointer;
-  }
-
-  .cs-layout {
-    display: grid; grid-template-columns: 230px 1fr; gap: 20px; align-items: start;
-  }
-  @media(max-width: 760px) {
-    .cs-layout { grid-template-columns: 1fr; }
-    .cs-left { max-height: 220px; }
-  }
-
-  .cs-left {
-    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
-    overflow-y: auto; max-height: 70vh; scrollbar-width: thin;
-  }
-  .cs-group-hdr {
-    padding: 8px 12px 5px; font-family: 'Space Mono', monospace; font-size: 10px;
-    color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;
-    border-bottom: 1px solid var(--border); position: sticky; top: 0;
-    background: var(--bg2); z-index: 2;
-  }
-  .cs-scale-item {
-    display: flex; align-items: center; gap: 10px; padding: 9px 14px;
-    cursor: pointer; border-bottom: 1px solid #1a1a1a; transition: background 0.15s;
-  }
-  .cs-scale-item:hover { background: var(--bg3); }
-  .cs-scale-item.active { background: var(--amber-glow); }
-  .cs-scale-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .cs-scale-item-text { display: flex; flex-direction: column; gap: 1px; }
-  .cs-scale-item-name { font-size: 13px; color: var(--text); }
-  .cs-scale-item-fn { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text-dim); }
-
-  .cs-right {
-    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
-    padding: 20px;
-  }
-  .cs-detail-title {
-    font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px;
-    margin-bottom: 2px;
-  }
-  .cs-detail-fn {
-    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim);
-    margin-bottom: 14px;
-  }
-  .cs-formula-row {
-    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px;
-  }
-  .cs-deg {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 6px 8px; border-radius: 7px; border: 1px solid; min-width: 36px;
-    font-family: 'Space Mono', monospace;
-  }
-  .cs-deg .deg-int { font-size: 13px; font-weight: bold; }
-  .cs-deg .deg-lbl { font-size: 8px; opacity: 0.75; text-transform: uppercase; }
-  /* root */
-  .cs-deg.role-root { background: rgba(245,158,11,0.18); border-color: #f59e0b; color: #f59e0b; }
-  /* chord tone */
-  .cs-deg.role-chord { background: rgba(245,158,11,0.08); border-color: #92600a; color: #fbbf24; }
-  /* good tension */
-  .cs-deg.role-tension { background: rgba(34,197,94,0.1); border-color: #166534; color: #4ade80; }
-  /* characteristic */
-  .cs-deg.role-special { background: rgba(168,139,250,0.12); border-color: #6d28d9; color: #c4b5fd; }
-  /* avoid */
-  .cs-deg.role-avoid { background: rgba(239,68,68,0.1); border-color: #7f1d1d; color: #f87171; opacity: 0.85; }
-
-  .cs-section-lbl {
-    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim);
-    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; margin-top: 16px;
-  }
-  .cs-chord-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 4px; }
-  .cs-chord-chip {
-    display: flex; flex-direction: column; align-items: center; gap: 1px;
-    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
-    padding: 8px 14px; cursor: pointer; transition: all 0.15s;
-    font-family: 'Space Mono', monospace;
-  }
-  .cs-chord-chip:hover { border-color: var(--amber-dim); }
-  .cs-chord-chip .chip-sym { font-size: 15px; font-weight: bold; }
-  .cs-chord-chip .chip-label { font-size: 9px; color: var(--text-dim); }
-
-  .cs-legend { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
-  .cs-legend-item { display: flex; align-items: center; gap: 5px; font-family: 'Space Mono', monospace; font-size: 10px; }
-  .cs-legend-dot { width: 9px; height: 9px; border-radius: 50%; }
-
-  .cs-context-box {
-    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
-    padding: 12px 14px; font-size: 13px; line-height: 1.6; color: var(--text-mid);
-    margin-bottom: 10px;
-  }
-  .cs-context-box strong { color: var(--text); }
-  .cs-artists {
-    font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim);
-    padding: 6px 14px; border-left: 2px solid var(--amber-dim); margin-top: 8px;
-  }
-  .cs-avoid-box {
-    background: rgba(239,68,68,0.07); border: 1px solid #7f1d1d; border-radius: 8px;
-    padding: 10px 14px; font-size: 12px; color: #f87171; margin-top: 12px;
-  }
-
-  /* Chord → Scale mode */
-  .cs-chord-tabs {
-    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px;
-  }
-  .cs-chord-tab {
-    background: var(--bg3); border: 1px solid var(--border); color: var(--text-dim);
-    padding: 6px 14px; border-radius: 8px; cursor: pointer;
-    font-family: 'Space Mono', monospace; font-size: 13px; transition: all 0.15s;
-  }
-  .cs-chord-tab:hover { border-color: var(--amber-dim); color: var(--text); }
-  .cs-chord-tab.active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
-  .cs-scale-cards { display: flex; flex-direction: column; gap: 12px; }
-  .cs-scale-card {
-    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
-    padding: 14px 16px; border-left: 3px solid;
-  }
-  .cs-scale-card-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
-  .cs-scale-card-name { font-size: 14px; font-weight: 500; }
-  .cs-scale-card-fn { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim); }
-  .cs-scale-card-tip { font-size: 12px; color: var(--text-mid); line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -1983,11 +1842,11 @@
   font-family:'Space Mono',monospace;font-size:12px;color:#fde68a;
   display:flex;align-items:center;gap:10px;flex-wrap:wrap">
   <span style="flex:1;min-width:200px">⚠️ Browser in-app rilevato — alcune funzioni (audio, microfono) potrebbero non funzionare.</span>
-  <button id="inapp-open-btn" onclick="openInExternalBrowser()"
+  <a id="inapp-open-link" href="" target="_blank"
      style="background:#f59e0b;color:#000;padding:5px 12px;border-radius:6px;
-            font-weight:bold;border:none;cursor:pointer;white-space:nowrap">
+            font-weight:bold;text-decoration:none;white-space:nowrap">
     Apri nel browser →
-  </button>
+  </a>
   <button onclick="document.getElementById('inapp-banner').style.display='none'"
           style="background:none;border:none;color:#f59e0b;cursor:pointer;font-size:16px;padding:0 4px">✕</button>
 </div>
@@ -1998,6 +1857,7 @@
   if (inApp) {
     var b = document.getElementById('inapp-banner');
     b.style.display = 'flex';
+    document.getElementById('inapp-open-link').href = window.location.href;
     // Push page content down so header isn't hidden behind banner
     document.addEventListener('DOMContentLoaded', function() {
       var header = document.querySelector('header');
@@ -2005,35 +1865,6 @@
     });
   }
 })();
-
-function openInExternalBrowser() {
-  var url = window.location.href;
-  var ua = navigator.userAgent || '';
-  var isAndroid = /Android/i.test(ua);
-  var isIOS = /iPhone|iPad|iPod/i.test(ua);
-  if (isAndroid) {
-    // Try Android intent to force Chrome (or default browser)
-    var encodedUrl = encodeURIComponent(url);
-    var intentUrl = 'intent://' + url.replace(/^https?:\/\//, '') +
-      '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodedUrl + ';end';
-    window.location.href = intentUrl;
-  } else if (isIOS) {
-    // iOS: copy link and instruct user
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(function() {
-        alert('Link copiato! Incollalo in Safari per aprire la pagina.');
-      }).catch(function() {
-        prompt('Copia questo link e aprilo in Safari:', url);
-      });
-    } else {
-      prompt('Copia questo link e aprilo in Safari:', url);
-    }
-  } else {
-    // Fallback: try window.open, then location
-    var w = window.open(url, '_blank');
-    if (!w) window.location.href = url;
-  }
-}
 </script>
 
 <header>
@@ -2053,7 +1884,6 @@ function openInExternalBrowser() {
     <button class="nav-btn" onclick="showPage('practice')">Pratica</button>
     <button class="nav-btn" onclick="showPage('triads')">Triadi</button>
     <button class="nav-btn" onclick="showPage('seventh')">Acc. 7ª</button>
-    <button class="nav-btn" onclick="showPage('chord-scale');renderChordScale()">Scala/Accordi</button>
     <button class="nav-btn" onclick="showPage('caged')">CAGED</button>
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
     <button class="nav-btn" onclick="showPage('circle');renderCircleOfFifths()">♯♭ Circolo</button>
@@ -2328,46 +2158,6 @@ function openInExternalBrowser() {
       </div>
       <div class="triad-shapes-grid" id="s7-shapes-grid"></div>
     </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════ CHORD / SCALE RELATIONSHIPS ═══════════════════ -->
-<div id="page-chord-scale" class="page">
-  <h2>Scala &amp; Accordi</h2>
-  <div class="subtitle">// quale scala suonare su un accordo — e quali accordi emergono da una scala</div>
-
-  <div class="cs-mode-tabs">
-    <button class="cs-mode-tab active" id="cs-tab-s2c" onclick="setCsMode('s2c')">Scala → Accordi</button>
-    <button class="cs-mode-tab" id="cs-tab-c2s" onclick="setCsMode('c2s')">Accordo → Scale</button>
-  </div>
-
-  <!-- Scala → Accordi panel -->
-  <div id="cs-panel-s2c">
-    <div class="cs-key-row">
-      Tonalità:
-      <select id="cs-key" onchange="renderCsDetail()">
-        <option value="0">C</option><option value="1">C# / D♭</option>
-        <option value="2">D</option><option value="3">D# / E♭</option>
-        <option value="4">E</option><option value="5">F</option>
-        <option value="6">F# / G♭</option><option value="7">G</option>
-        <option value="8">G# / A♭</option><option value="9">A</option>
-        <option value="10">A# / B♭</option><option value="11">B</option>
-      </select>
-    </div>
-    <div class="cs-layout">
-      <div class="cs-left" id="cs-scale-list"></div>
-      <div class="cs-right" id="cs-detail-panel">
-        <div style="color:var(--text-dim);font-family:'Space Mono',monospace;font-size:12px">
-          ← Seleziona una scala dalla lista
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Accordo → Scale panel -->
-  <div id="cs-panel-c2s" style="display:none">
-    <div class="cs-chord-tabs" id="cs-chord-tabs"></div>
-    <div class="cs-scale-cards" id="cs-scale-cards"></div>
   </div>
 </div>
 
@@ -4509,26 +4299,18 @@ function renderTriads() {
     ? STRING_SETS.map((ss, i) => ({ ...ss, idx: i }))
     : [{ ...STRING_SETS[TR_STATE.stringSet], idx: TR_STATE.stringSet }];
 
-  const seenMidiSigs = new Set();
-
   setsToShow.forEach(ss => {
     const shapes = findTriadShapes(TR_STATE.keyIdx + 48, TR_STATE.type, TR_STATE.inversion, ss.strings);
 
     if (shapes.length === 0) {
-      if (TR_STATE.stringSet !== 4) {
-        const card = document.createElement('div');
-        card.className = 'triad-shape-card';
-        card.innerHTML = `<div class="shape-title">Corde ${ss.name}</div><div style="color:var(--text-dim);font-size:12px">Nessuna forma trovata</div>`;
-        grid.appendChild(card);
-      }
+      const card = document.createElement('div');
+      card.className = 'triad-shape-card';
+      card.innerHTML = `<div class="shape-title">Corde ${ss.name}</div><div style="color:var(--text-dim);font-size:12px">Nessuna forma trovata</div>`;
+      grid.appendChild(card);
       return;
     }
 
     shapes.forEach(shape => {
-      // Deduplicate by exact MIDI notes (same voicing across string sets)
-      const midiSig = ss.strings.map((si, j) => OPEN_MIDI[si] + shape.frets[j]).sort((a, b) => a - b).join(',');
-      if (TR_STATE.stringSet === 4 && seenMidiSigs.has(midiSig)) return;
-      seenMidiSigs.add(midiSig);
       const card = document.createElement('div');
       card.className = 'triad-shape-card';
       const svg = drawTriadSVG(shape.frets, ss.strings, TR_STATE.keyIdx, TR_STATE.type, TR_STATE.inversion);
@@ -5728,312 +5510,6 @@ function setGlobalKey(idx) {
   if (typeof BT !== 'undefined') jamUpdateSettings();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// CHORD / SCALE RELATIONSHIP ENGINE
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// role: 'root' | 'chord' | 'tension' | 'special' | 'avoid'
-const CS_SCALES = [
-  { key:'major', label:'Ionia (Maggiore)', color:'#f59e0b', group:'Modi',
-    fn:'Tonica Maggiore — I grado',
-    chords:[{sym:'maj7',desc:'Base. Stabile e brillante.'},{sym:'maj9',desc:'Con 9ª naturale.'},{sym:'maj13',desc:'Pieno, jazz-pop.'},{sym:'maj7♯11',desc:'Colore Lydian opzionale.'}],
-    degs:[{n:'1',r:'root'},{n:'9',r:'tension'},{n:'3',r:'chord'},{n:'11',r:'avoid',w:'Avoid: semitono sopra la 3ª'},{n:'5',r:'chord'},{n:'13',r:'tension'},{n:'7M',r:'chord'}],
-    context:'Sul <strong>I grado</strong> della scala maggiore. La fondamenta della tonalità occidentale. Colore solare e stabile.',
-    artists:'Pop, classico, rock melodico' },
-
-  { key:'dorian', label:'Dorica (Dorian)', color:'#22c55e', group:'Modi',
-    fn:'Tonica/Sottodominante minore — II grado',
-    chords:[{sym:'m7',desc:'Base.'},{sym:'m9',desc:'Con 9ª.'},{sym:'m11',desc:'Aperta, sospesa.'},{sym:'m13',desc:'♮6 caratteristica Dorian.'}],
-    degs:[{n:'1',r:'root'},{n:'9',r:'tension'},{n:'♭3',r:'chord'},{n:'11',r:'tension'},{n:'5',r:'chord'},{n:'13',r:'special',w:'6ª naturale: firma sonora del Dorian'},{n:'♭7',r:'chord'}],
-    context:'Sul <strong>IIm7</strong> in tonalità maggiore. Il modo minore più usato nel jazz e fusion. La 13ª naturale (6ª) è la sua firma.',
-    artists:'Carlos Santana, Miles Davis, Herbie Hancock' },
-
-  { key:'phrygian', label:'Frigia (Phrygian)', color:'#ef4444', group:'Modi',
-    fn:'Tonica minore scura — III grado',
-    chords:[{sym:'m7',desc:'Base.'},{sym:'m7♭9',desc:'♭9 caratteristica.'},{sym:'sus♭2',desc:'Colore flamenco.'}],
-    degs:[{n:'1',r:'root'},{n:'♭9',r:'special',w:'♭2/♭9: la firma oscura del Phrygian'},{n:'♭3',r:'chord'},{n:'11',r:'tension'},{n:'5',r:'chord'},{n:'♭13',r:'avoid',w:'Avoid: crea attrito'},{n:'♭7',r:'chord'}],
-    context:'Sul <strong>IIIm7</strong>. Colore spagnolo, flamenco, metal oscuro. La ♭2 (♭9) è la nota che definisce il suo suono.',
-    artists:'Randy Rhoads, Metallica, flamenco classico' },
-
-  { key:'lydian', label:'Lidia (Lydian)', color:'#fbbf24', group:'Modi',
-    fn:'Tonica Maggiore sognante — IV grado',
-    chords:[{sym:'maj7♯11',desc:'♯11 firma Lydian.'},{sym:'maj9♯11',desc:'Con 9ª e ♯11.'},{sym:'maj7',desc:'Senza ♯11 standard.'}],
-    degs:[{n:'1',r:'root'},{n:'9',r:'tension'},{n:'3',r:'chord'},{n:'♯11',r:'special',w:'♯4/♯11: nota caratteristica, crea tensione aerea'},{n:'5',r:'chord'},{n:'13',r:'tension'},{n:'7M',r:'chord'}],
-    context:'Sul <strong>IVmaj7</strong>. Il ♯4 crea una tensione epica e sognante. Frequente in film scores e guitar fusion.',
-    artists:'Joe Satriani, Steve Vai, John Williams' },
-
-  { key:'mixolydian', label:'Misolidia (Mixolydian)', color:'#fb923c', group:'Modi',
-    fn:'Dominante — V grado',
-    chords:[{sym:'7',desc:'Dominante base.'},{sym:'9',desc:'Dominante con 9ª.'},{sym:'13',desc:'Dominante piena.'},{sym:'7sus4',desc:'Sus prima della risoluzione.'}],
-    degs:[{n:'1',r:'root'},{n:'9',r:'tension'},{n:'3',r:'chord'},{n:'11',r:'avoid',w:'Avoid: usare solo come sus4 (breve)'},{n:'5',r:'chord'},{n:'13',r:'tension'},{n:'♭7',r:'chord'}],
-    context:'Sul <strong>V7</strong> che risolve sulla tonica. Il suono del rock-blues e del boogie. La ♭7 crea la tensione dominante.',
-    artists:'Slash, AC/DC, Stevie Ray Vaughan, blues-rock' },
-
-  { key:'natural_minor', label:'Eolia (Minore Naturale)', color:'#3b82f6', group:'Modi',
-    fn:'Tonica minore — VI grado',
-    chords:[{sym:'m7',desc:'Base.'},{sym:'m9',desc:'Con 9ª.'},{sym:'m7♭13',desc:'Colore scuro con ♭13.'}],
-    degs:[{n:'1',r:'root'},{n:'9',r:'tension'},{n:'♭3',r:'chord'},{n:'11',r:'tension'},{n:'5',r:'chord'},{n:'♭13',r:'special',w:'♭6: colore malinconico, usare con cura'},{n:'♭7',r:'chord'}],
-    context:'Sul <strong>VIm7</strong>. Il modo minore standard del pop, rock e metal melodico. Malinconico e profondo.',
-    artists:'Pop, rock, metal melodico — praticamente ovunque' },
-
-  { key:'locrian', label:'Locria (Locrian)', color:'#6b7280', group:'Modi',
-    fn:'Semi-diminuito — VII grado',
-    chords:[{sym:'m7♭5',desc:'Base semi-dim.'},{sym:'ø7',desc:'Con 7ª dim.'}],
-    degs:[{n:'1',r:'root'},{n:'♭9',r:'avoid',w:'♭2: instabile, evitare'},{n:'♭3',r:'chord'},{n:'11',r:'tension'},{n:'♭5',r:'chord'},{n:'♭13',r:'avoid',w:'♭6: avoid'},{n:'♭7',r:'chord'}],
-    context:'Sul <strong>VIIm7♭5</strong>. Quasi mai come tonica. Usato sul IIø in progressioni minori (IIø–V7–Im).',
-    artists:'Jazz (cadenza minore), raramente nel rock' },
-
-  { key:'harmonic_minor', label:'Minore Armonica', color:'#8b5cf6', group:'Scale Speciali',
-    fn:'Tonica minore drammatica — con sensibile',
-    chords:[{sym:'m(maj7)',desc:'Caratteristica principale.'},{sym:'m9(maj7)',desc:'Con 9ª jazzistica.'}],
-    degs:[{n:'1',r:'root'},{n:'9',r:'tension'},{n:'♭3',r:'chord'},{n:'11',r:'tension'},{n:'5',r:'chord'},{n:'♭13',r:'avoid',w:'♭6: salta di aumento 2 verso 7M, evitare come tensione'},{n:'7M',r:'chord'}],
-    context:'Minore con <strong>sensibile naturale</strong> (7M). Il suono neoclassico e drammatico per eccellenza. Yngwie Malmsteen.',
-    artists:'Yngwie Malmsteen, metal neoclassico, musica classica' },
-
-  { key:'melodic_minor', label:'Minore Melodica', color:'#06b6d4', group:'Scale Speciali',
-    fn:'Tonica minore jazz — moderna',
-    chords:[{sym:'m(maj7)',desc:'Con 7M e ♭3.'},{sym:'m6',desc:'Con 6ª naturale.'},{sym:'m9',desc:'Con 9ª.'},{sym:'m6/9',desc:'Completo jazz.'}],
-    degs:[{n:'1',r:'root'},{n:'9',r:'tension'},{n:'♭3',r:'chord'},{n:'11',r:'tension'},{n:'5',r:'chord'},{n:'13',r:'special',w:'6ª naturale: differenzia dalla armonica, suono moderno'},{n:'7M',r:'chord'}],
-    context:'Minore jazz con <strong>6ª e 7ª naturali</strong>. Suono sofisticato e moderno. Usata anche come "parent scale" di molti modi jazz.',
-    artists:'Bill Evans, Pat Metheny, jazz fusion' },
-
-  { key:'penta_major', label:'Pentatonica Maggiore', color:'#f59e0b', group:'Pentatoniche',
-    fn:'Tonica brillante — nessuna avoid note',
-    chords:[{sym:'maj7',desc:'Sicura.'},{sym:'6/9',desc:'Leggera, brillante.'},{sym:'maj9',desc:'Con 9ª.'}],
-    degs:[{n:'1',r:'root'},{n:'9',r:'tension'},{n:'3',r:'chord'},{n:'5',r:'chord'},{n:'13',r:'tension'}],
-    context:'5 note, <strong>nessun semitono, nessuna avoid note</strong>. Funziona su qualsiasi accordo maggiore o dominante. Sicura sempre.',
-    artists:'Country, rock classico, Randy Rhoads (parti pulite)' },
-
-  { key:'penta_minor', label:'Pentatonica Minore', color:'#ef4444', group:'Pentatoniche',
-    fn:'Tonica minore e dominante blues',
-    chords:[{sym:'m7',desc:'Minore naturale.'},{sym:'7',desc:'Su dominante (blues).'},{sym:'9',desc:'Estesa sul dom.'}],
-    degs:[{n:'1',r:'root'},{n:'♭3',r:'chord'},{n:'4',r:'tension'},{n:'5',r:'chord'},{n:'♭7',r:'chord'}],
-    context:'La scala più usata nel rock. Funziona su <strong>m7 e su 7 (dom)</strong> nel blues. 5 note sicure, nessun attrito.',
-    artists:'Page, Clapton, Hendrix, praticamente tutto il rock' },
-
-  { key:'blues', label:'Blues', color:'#06b6d4', group:'Pentatoniche',
-    fn:'Dominante / Espressiva — la blue note',
-    chords:[{sym:'7',desc:'Dominante blues.'},{sym:'9',desc:'Blues aperta.'},{sym:'7♯9',desc:'Hendrix chord.'},{sym:'7♭5',desc:'Con blue note.'}],
-    degs:[{n:'1',r:'root'},{n:'♭3',r:'chord'},{n:'4',r:'tension'},{n:'♭5',r:'special',w:'Blue note: la fonte della tensione blues'},{n:'5',r:'chord'},{n:'♭7',r:'chord'}],
-    context:'Pentatonica minore + <strong>blue note (♭5)</strong>. La tensione ♭5→5 è la firma del blues. Funziona su tutti i gradi del blues.',
-    artists:'BB King, Albert King, SRV, tutto il blues tradizionale' },
-
-  { key:'phrygian_dom', label:'Frigia Dominante', color:'#ef4444', group:'Scale Speciali',
-    fn:'Dominante ♭9 / Flamenco',
-    chords:[{sym:'7♭9',desc:'V7 in minore.'},{sym:'7♭9♭13',desc:'Piena scurezza.'},{sym:'7♯9♭13',desc:'Espressivo, metal.'}],
-    degs:[{n:'1',r:'root'},{n:'♭9',r:'special',w:'♭9: la firma flamenco/metal'},{n:'3',r:'chord'},{n:'11',r:'tension'},{n:'5',r:'chord'},{n:'♭13',r:'special',w:'♭13: colore scuro dominante'},{n:'♭7',r:'chord'}],
-    context:'V7 in tonalità <strong>minore</strong>. La ♭2 del Phrygian diventa ♭9 sul dominante. Suono spagnolo, flamenco, metal orientale.',
-    artists:'Ozzy Osbourne, Megadeth, flamenco, metal estremo' },
-
-  { key:'lydian_dom', label:'Lidia Dominante', color:'#a78bfa', group:'Scale Speciali',
-    fn:'Dominante ♯11 — SubV7 / Fusion',
-    chords:[{sym:'7♯11',desc:'SubV7 jazz.'},{sym:'9♯11',desc:'Con 9ª.'},{sym:'13♯11',desc:'Piena fusion.'}],
-    degs:[{n:'1',r:'root'},{n:'9',r:'tension'},{n:'3',r:'chord'},{n:'♯11',r:'special',w:'♯11: tritono nella scala, tensione fusion'},{n:'5',r:'chord'},{n:'13',r:'tension'},{n:'♭7',r:'chord'}],
-    context:'Il <strong>SubV7</strong> del jazz fusion. La ♯11 crea tensione senza instabilità del Locrian. Joe Satriani "Flying in a Blue Dream".',
-    artists:'Joe Satriani, Herbie Hancock, jazz fusion moderno' },
-
-  { key:'bebop_dom', label:'Bebop Dominante', color:'#22c55e', group:'Scale Speciali',
-    fn:'Dominante Bebop — 8 note',
-    chords:[{sym:'7',desc:'V7 bebop.'},{sym:'9',desc:'Dom9 bebop.'},{sym:'13',desc:'Dom13 jazz.'}],
-    degs:[{n:'1',r:'root'},{n:'9',r:'tension'},{n:'3',r:'chord'},{n:'4',r:'avoid',w:'Avoid sul beat forte'},{n:'5',r:'chord'},{n:'13',r:'tension'},{n:'♭7',r:'chord'},{n:'7M',r:'special',w:'Passing tone: cade sul beat debole'}],
-    context:'8 note: una per ogni <strong>ottavo del beat</strong>. Il 7M è un passing tone che garantisce chord tones sui beat forti. Bebop puro.',
-    artists:'Charlie Parker, Dizzy Gillespie, John Coltrane' },
-];
-
-const CS_CHORDS = [
-  { sym:'maj7',    label:'maj7',   color:'#f59e0b',
-    scales:['major','lydian','melodic_minor'],
-    tip:'<b>Ionian</b> = suono classico brillante. <b>Lydian</b> = colore aereo con ♯11. <b>Melodic minor</b> = m(maj7) jazzistico.' },
-  { sym:'7',       label:'dom 7',  color:'#ef4444',
-    scales:['mixolydian','blues','penta_minor','bebop_dom','phrygian_dom','lydian_dom'],
-    tip:'<b>Mixolydian</b> = standard rock-blues. <b>Blues/Penta min</b> = feeling espressivo. <b>Bebop dom</b> = fraseggio jazz. <b>Phrygian dom</b> = ♭9 in minore. <b>Lydian dom</b> = ♯11 fusion.' },
-  { sym:'m7',      label:'min 7',  color:'#3b82f6',
-    scales:['dorian','natural_minor','phrygian','penta_minor'],
-    tip:'<b>Dorian</b> = più luminoso (13ª nat.). <b>Aeolian</b> = malinconico standard. <b>Phrygian</b> = oscuro e flamenco. <b>Penta min</b> = sicuro ovunque.' },
-  { sym:'9',       label:'dom 9',  color:'#fb923c',
-    scales:['mixolydian','blues','bebop_dom','lydian_dom'],
-    tip:'<b>Mixolydian</b> = dom9 rock standard. <b>Blues</b> = 9 espressiva. <b>Bebop dom</b> = jazz. <b>Lydian dom</b> = 9♯11 fusion.' },
-  { sym:'m9',      label:'min 9',  color:'#3b82f6',
-    scales:['dorian','natural_minor','melodic_minor'],
-    tip:'<b>Dorian</b> = m9 con 13ª disp. <b>Aeolian</b> = m9 malinconico. <b>Melodic minor</b> = m9(maj7) jazzistico.' },
-  { sym:'13',      label:'dom 13', color:'#fb923c',
-    scales:['mixolydian','bebop_dom','lydian_dom'],
-    tip:'<b>Mixolydian</b> = V13 classico (evita 11ª). <b>Bebop dom</b> = linee cromatiche. <b>Lydian dom</b> = 13♯11 fusion.' },
-  { sym:'maj7♯11', label:'maj7♯11',color:'#fbbf24',
-    scales:['lydian','major'],
-    tip:'<b>Lydian</b> = la scala naturale per il ♯11. <b>Ionian</b> = aggiungi ♯11 come colore opzionale.' },
-  { sym:'m7♭5',   label:'ø / m7♭5',color:'#8b5cf6',
-    scales:['locrian'],
-    tip:'<b>Locrian</b> è l\'unico modo che produce m7♭5 naturalmente. Usato sul IIø nelle cadenze minori (IIø–V7–Im).' },
-  { sym:'7♭9',    label:'dom ♭9', color:'#ef4444',
-    scales:['phrygian_dom','harmonic_minor'],
-    tip:'<b>Phrygian dom</b> = V7♭9 in minore, con ♭13 scuro. <b>Harmonic minor</b> sul V produce 7♭9 dalla scala tonica.' },
-  { sym:'7♯11',   label:'dom ♯11',color:'#a78bfa',
-    scales:['lydian_dom'],
-    tip:'<b>Lydian dom</b> è la fonte naturale del ♯11 su un accordo dominante. SubV7 nel jazz (es. D♭7 su G).' },
-  { sym:'m(maj7)', label:'m(maj7)',color:'#8b5cf6',
-    scales:['harmonic_minor','melodic_minor'],
-    tip:'<b>Harmonic minor</b> = drammatico, neoclassico. <b>Melodic minor</b> = moderno, jazz. Entrambe hanno la sensibile (7M).' },
-  { sym:'m13',    label:'min 13', color:'#22c55e',
-    scales:['dorian'],
-    tip:'<b>Dorian</b> è l\'unico modo minore con 13ª naturale disponibile. La 13ª è la nota che definisce il suono Dorian.' },
-];
-
-let CS_STATE = { mode: 's2c', scaleKey: null, chordIdx: 0 };
-
-function renderChordScale() {
-  if (CS_STATE.scaleKey === null) {
-    buildCsScaleList();
-    buildCsChordTabs();
-  }
-}
-
-function setCsMode(m) {
-  CS_STATE.mode = m;
-  document.getElementById('cs-panel-s2c').style.display = m === 's2c' ? '' : 'none';
-  document.getElementById('cs-panel-c2s').style.display = m === 'c2s' ? '' : 'none';
-  document.getElementById('cs-tab-s2c').classList.toggle('active', m === 's2c');
-  document.getElementById('cs-tab-c2s').classList.toggle('active', m === 'c2s');
-  if (m === 'c2s') renderCsChordDetail();
-}
-
-function buildCsScaleList() {
-  const list = document.getElementById('cs-scale-list');
-  if (list.children.length) return;
-  let lastGroup = null;
-  CS_SCALES.forEach(sc => {
-    if (sc.group !== lastGroup) {
-      const hdr = document.createElement('div');
-      hdr.className = 'cs-group-hdr';
-      hdr.textContent = sc.group;
-      list.appendChild(hdr);
-      lastGroup = sc.group;
-    }
-    const item = document.createElement('div');
-    item.className = 'cs-scale-item';
-    item.dataset.key = sc.key;
-    item.innerHTML = `<div class="cs-scale-dot" style="background:${sc.color}"></div>
-      <div class="cs-scale-item-text">
-        <span class="cs-scale-item-name">${sc.label}</span>
-        <span class="cs-scale-item-fn">${sc.fn}</span>
-      </div>`;
-    item.onclick = () => {
-      document.querySelectorAll('.cs-scale-item').forEach(el => el.classList.remove('active'));
-      item.classList.add('active');
-      CS_STATE.scaleKey = sc.key;
-      renderCsDetail();
-    };
-    list.appendChild(item);
-  });
-}
-
-function buildCsChordTabs() {
-  const wrap = document.getElementById('cs-chord-tabs');
-  if (wrap.children.length) return;
-  CS_CHORDS.forEach((ch, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'cs-chord-tab' + (i === 0 ? ' active' : '');
-    btn.style.borderColor = i === 0 ? ch.color : '';
-    btn.style.color = i === 0 ? ch.color : '';
-    btn.textContent = ch.sym;
-    btn.onclick = () => {
-      document.querySelectorAll('.cs-chord-tab').forEach((b, j) => {
-        b.classList.toggle('active', j === i);
-        b.style.borderColor = j === i ? CS_CHORDS[j].color : '';
-        b.style.color = j === i ? CS_CHORDS[j].color : '';
-        b.style.background = j === i ? CS_CHORDS[j].color + '18' : '';
-      });
-      CS_STATE.chordIdx = i;
-      renderCsChordDetail();
-    };
-    wrap.appendChild(btn);
-  });
-}
-
-function renderCsDetail() {
-  const sc = CS_SCALES.find(s => s.key === CS_STATE.scaleKey);
-  if (!sc) return;
-  const keyIdx = parseInt(document.getElementById('cs-key').value || '0');
-  const scaleIntervals = SCALES[sc.key] ? SCALES[sc.key].intervals : [];
-  const panel = document.getElementById('cs-detail-panel');
-
-  // Build degree formula row
-  const formulaPills = sc.degs.map(d => {
-    const tip = d.w ? ` title="${d.w}"` : '';
-    return `<div class="cs-deg role-${d.r}"${tip}>
-      <span class="deg-int">${d.n}</span>
-      <span class="deg-lbl">${d.r === 'root' ? 'Tonica' : d.r === 'chord' ? 'Nota' : d.r === 'tension' ? 'Tens.' : d.r === 'special' ? 'Caratt.' : 'Avoid'}</span>
-    </div>`;
-  }).join('');
-
-  // Build chord chips with key transposition
-  const chordChips = sc.chords.map(ch => {
-    const keyName = NOTES[keyIdx];
-    return `<div class="cs-chord-chip" title="${ch.desc}">
-      <span class="chip-sym" style="color:${sc.color}">${keyName}${ch.sym}</span>
-      <span class="chip-label">${ch.desc}</span>
-    </div>`;
-  }).join('');
-
-  // Avoid notes
-  const avoidDegs = sc.degs.filter(d => d.r === 'avoid');
-  const avoidHtml = avoidDegs.length
-    ? `<div class="cs-avoid-box">⚠ <strong>Avoid:</strong> ${avoidDegs.map(d => `<strong>${d.n}</strong> — ${d.w || ''}`).join(' · ')}</div>`
-    : '';
-
-  // Scale notes in chosen key
-  let scaleNotesStr = '';
-  if (scaleIntervals.length) {
-    scaleNotesStr = scaleIntervals.map(i => NOTES[(keyIdx + i) % 12]).join('  ');
-  }
-
-  panel.innerHTML = `
-    <div class="cs-detail-title" style="color:${sc.color}">${NOTES[keyIdx]} ${sc.label}</div>
-    <div class="cs-detail-fn">${sc.fn}</div>
-    ${scaleNotesStr ? `<div style="font-family:'Space Mono',monospace;font-size:13px;color:var(--text-mid);margin-bottom:14px;letter-spacing:2px">${scaleNotesStr}</div>` : ''}
-
-    <div class="cs-legend">
-      <div class="cs-legend-item"><div class="cs-legend-dot" style="background:#f59e0b"></div>Tonica</div>
-      <div class="cs-legend-item"><div class="cs-legend-dot" style="background:#fbbf24"></div>Nota accordo</div>
-      <div class="cs-legend-item"><div class="cs-legend-dot" style="background:#4ade80"></div>Tensione disponibile</div>
-      <div class="cs-legend-item"><div class="cs-legend-dot" style="background:#c4b5fd"></div>Caratteristica</div>
-      <div class="cs-legend-item"><div class="cs-legend-dot" style="background:#f87171"></div>Avoid</div>
-    </div>
-    <div class="cs-formula-row">${formulaPills}</div>
-
-    <div class="cs-section-lbl">Accordi compatibili</div>
-    <div class="cs-chord-chips">${chordChips}</div>
-
-    ${avoidHtml}
-
-    <div class="cs-section-lbl">Contesto e uso</div>
-    <div class="cs-context-box">${sc.context}</div>
-    <div class="cs-artists">🎸 ${sc.artists}</div>`;
-}
-
-function renderCsChordDetail() {
-  const ch = CS_CHORDS[CS_STATE.chordIdx];
-  if (!ch) return;
-  const cards = document.getElementById('cs-scale-cards');
-  cards.innerHTML = `
-    <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:6px">
-      Scale compatibili con <span style="color:${ch.color};font-weight:bold">${ch.sym}</span>
-    </div>
-    <div class="cs-context-box" style="margin-bottom:12px">${ch.tip}</div>` +
-    ch.scales.map(skey => {
-      const sc = CS_SCALES.find(s => s.key === skey);
-      if (!sc) return '';
-      return `<div class="cs-scale-card" style="border-left-color:${sc.color}">
-        <div class="cs-scale-card-header">
-          <span class="cs-scale-card-name" style="color:${sc.color}">${sc.label}</span>
-          <span class="cs-scale-card-fn">${sc.fn}</span>
-        </div>
-        <div class="cs-scale-card-tip">${sc.context}</div>
-        <div class="cs-artists" style="margin-top:6px">🎸 ${sc.artists}</div>
-      </div>`;
-    }).join('');
-}
-
 // ─── INIT ────────────────────────────────────────────────────────────────────
 
 window.addEventListener('DOMContentLoaded', function() {
@@ -6048,8 +5524,6 @@ window.addEventListener('DOMContentLoaded', function() {
   jamInit();
   initSeventh();
   initTunerLedMeter();
-  buildCsScaleList();
-  buildCsChordTabs();
 });
 </script>
 <!-- ═══════════════════════════════ JAM / BASI PAGE ══════════════════════════════ -->
