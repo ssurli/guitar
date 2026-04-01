@@ -4406,31 +4406,42 @@ function seventhNotes(rootMidi, typeKey, inversion) {
 function findSeventhShapes(rootMidi, typeKey, inversion, stringIndices) {
   const invertedStrings = [...stringIndices].reverse(); // low→high
   const targetNotes = seventhNotes(rootMidi, typeKey, inversion).map(n => n % 12);
-  const shapes = [];
-  for (let startFret = 0; startFret <= 15; startFret++) {
-    const fretMap = {};
-    let valid = true;
-    for (let si = 0; si < invertedStrings.length; si++) {
-      const openMidi = OPEN_MIDI[invertedStrings[si]];
-      const target = targetNotes[si];
-      let found = -1;
-      for (let f = startFret; f <= startFret + 5; f++) {
-        if ((openMidi + f) % 12 === target) { found = f; break; }
-      }
-      if (found === -1) { valid = false; break; }
-      fretMap[invertedStrings[si]] = found;
+
+  // For each string (low→high), collect all frets 0..17 that match the target note.
+  // Each target pitch class appears at most twice in that range (every 12 frets),
+  // so combinations = 2^4 = 16 max — fast enough.
+  const optsByPos = invertedStrings.map((si, i) => {
+    const open = OPEN_MIDI[si];
+    const target = targetNotes[i];
+    const frets = [];
+    for (let f = 0; f <= 17; f++) {
+      if ((open + f) % 12 === target) frets.push(f);
     }
-    if (!valid) continue;
-    const fretsInOrder = stringIndices.map(si => fretMap[si]);
-    const allFrets = Object.values(fretMap);
-    const span = Math.max(...allFrets) - Math.min(...allFrets);
-    if (span <= 4) {
+    return frets;
+  });
+
+  const shapes = [];
+  const seen = new Set();
+
+  function pick(pos, chosen) {
+    if (pos === optsByPos.length) {
+      const span = Math.max(...chosen) - Math.min(...chosen);
+      if (span > 5) return;
+      const fretsInOrder = stringIndices.map(si => chosen[invertedStrings.indexOf(si)]);
       const key = fretsInOrder.join('-');
-      if (!shapes.find(s => s.frets.join('-') === key)) {
-        shapes.push({ frets: fretsInOrder, startFret: Math.min(...allFrets) });
+      if (!seen.has(key)) {
+        seen.add(key);
+        shapes.push({ frets: fretsInOrder, startFret: Math.min(...chosen) });
       }
+      return;
+    }
+    for (const f of optsByPos[pos]) {
+      pick(pos + 1, [...chosen, f]);
     }
   }
+
+  pick(0, []);
+  shapes.sort((a, b) => a.startFret - b.startFret);
   return shapes;
 }
 
@@ -4548,12 +4559,11 @@ function renderSeventh() {
       ${svgEl}
       <div class="shape-notes-row">${notePills}</div>`;
     card.onclick = () => {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const now = audioCtx.currentTime;
+      const ctx = getAudioCtx();
+      const now = ctx.currentTime;
       [...ss.strings].reverse().forEach((si, j) => {
         const midi = OPEN_MIDI[si] + shape.frets[ss.strings.indexOf(si)];
-        const freq = 440 * Math.pow(2, (midi - 69) / 12);
-        playNote(freq, now + j * 0.07, 1.4);
+        playNote(midiToFreq(midi), now + j * 0.07, 1.4);
       });
     };
     grid.appendChild(card);
