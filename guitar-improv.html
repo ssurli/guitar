@@ -2073,7 +2073,7 @@
             <button class="strset-tab" onclick="setStringSet(1)">B G D</button>
             <button class="strset-tab" onclick="setStringSet(2)">G D A</button>
             <button class="strset-tab" onclick="setStringSet(3)">D A E</button>
-            <button class="strset-tab" onclick="setStringSet(4)">All</button>
+            <button class="strset-tab" onclick="setStringSet(4)">Tutte</button>
           </div>
         </div>
       </div>
@@ -4299,13 +4299,10 @@ function renderTriads() {
         <div class="shape-notes-row">${notePills}</div>`;
 
       card.onclick = () => {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const now = audioCtx.currentTime;
-        // play low→high
+        const ctx = getAudioCtx();
+        const now = ctx.currentTime;
         [...ss.strings].reverse().forEach((si, j) => {
-          const midi = OPEN_MIDI[si] + shape.frets[ss.strings.indexOf(si)];
-          const freq = 440 * Math.pow(2, (midi - 69) / 12);
-          playNote(freq, now + j * 0.07, 1.4);
+          playNote(midiToFreq(OPEN_MIDI[si] + shape.frets[ss.strings.indexOf(si)]), now + j * 0.07, 1.4);
         });
       };
 
@@ -6482,7 +6479,7 @@ function renderCircleOfFifths() {
     const minStroke = sel ? '#f59e0b88' : '#252525';
     const accFill   = '#0e0e0e';
 
-    const ptr = ` style="cursor:pointer" onclick="selectCircleKey(${i})"`;
+    const ptr = ` style="cursor:pointer"`;
 
     html += `<path d="${arc(r1o,r1i,a1,a2)}" fill="${majFill}" stroke="${majStroke}" stroke-width="1.5"${ptr}/>`;
     html += `<path d="${arc(r2o,r2i,a1,a2)}" fill="${accFill}" stroke="#1e1e1e" stroke-width="1"/>`;
@@ -6516,6 +6513,21 @@ function renderCircleOfFifths() {
   }
 
   svg.innerHTML = html;
+
+  // Single SVG-level hit handler — correctly accounts for CSS scaling via getBoundingClientRect
+  const _hit = (e) => {
+    e.preventDefault();
+    const pt = e.changedTouches ? e.changedTouches[0] : e;
+    const rect = svg.getBoundingClientRect();
+    const x = (pt.clientX - rect.left) * (380 / rect.width) - cx;
+    const y = (pt.clientY - rect.top)  * (380 / rect.height) - cy;
+    const r = Math.sqrt(x * x + y * y);
+    if (r < r3i - 4 || r > r1o + 4) return; // outside ring area
+    const seg = Math.floor(((Math.atan2(y, x) * 180 / Math.PI + 105) % 360 + 360) % 360 / 30) % 12;
+    selectCircleKey(seg);
+  };
+  svg.onclick = _hit;
+  svg.ontouchend = _hit;
 }
 
 function selectCircleKey(i) {
