@@ -5867,6 +5867,9 @@ function autocorrelate(buf, sampleRate) {
 let _tunerFrame = 0;
 const _tunerStrLastActive = new Array(6).fill(0);
 const TUNER_HOLD_MS = 2000; // il LED rimane acceso almeno 2 secondi dopo l'ultimo segnale
+let _tunerLedLastActive = 0;  // timestamp ultimo pitch valido
+let _tunerLedLastCents = 0;   // ultimi cents validi da mostrare durante hold
+let _tunerLedLastInTune = false;
 
 // Build LED meter: 21 segments, index 10 = center (0 cents), each step = 5 cents
 // segments 0-3 = far flat (blue), 4-7 = near flat (amber), 8-9 = very close flat (amber),
@@ -5931,24 +5934,35 @@ function tunerTick() {
     const info = freqToNote(freq);
     const inTune = Math.abs(info.cents) <= 5;
     noteEl.textContent = info.name;
+    const now = Date.now();
     noteEl.className = 'tuner-note' + (inTune ? ' in-tune' : '');
     freqEl.textContent = freq.toFixed(1) + ' Hz';
     centsEl.textContent = (info.cents >= 0 ? '+' : '') + info.cents + ' cents';
     updateTunerLeds(info.cents, inTune);
+    // Aggiorna hold LED meter
+    _tunerLedLastActive = now;
+    _tunerLedLastCents = info.cents;
+    _tunerLedLastInTune = inTune;
 
     // Evidenzia la corda più vicina con hold per il fine tuning
-    const now = Date.now();
     document.querySelectorAll('#tuner-strings-list .tuner-str').forEach((el, i) => {
       const diff = Math.abs(TUNER.activeTuning.freqs[i] - freq);
       if (diff < 10) _tunerStrLastActive[i] = now;
       el.className = 'tuner-str' + ((now - _tunerStrLastActive[i]) < TUNER_HOLD_MS ? ' active' : '');
     });
   } else {
-    noteEl.textContent = '–';
-    noteEl.className = 'tuner-note';
-    freqEl.textContent = 'suona una nota...';
-    centsEl.textContent = '± 0 cents';
-    updateTunerLeds(0, false);
+    const now = Date.now();
+    if (now - _tunerLedLastActive < TUNER_HOLD_MS) {
+      // Hold: mantieni l'ultima lettura visibile durante il decay della nota
+      updateTunerLeds(_tunerLedLastCents, _tunerLedLastInTune);
+    } else {
+      // Hold scaduto: torna a stato neutro
+      noteEl.textContent = '–';
+      noteEl.className = 'tuner-note';
+      freqEl.textContent = 'suona una nota...';
+      centsEl.textContent = '± 0 cents';
+      updateTunerLeds(0, false);
+    }
   }
 }
 
