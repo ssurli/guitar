@@ -1836,6 +1836,37 @@
 </head>
 <body>
 
+<!-- Banner browser in-app (WhatsApp / Instagram / Facebook / Telegram) -->
+<div id="inapp-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;
+  background:#1a1200;border-bottom:2px solid #f59e0b;padding:10px 16px;
+  font-family:'Space Mono',monospace;font-size:12px;color:#fde68a;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+  <span style="flex:1;min-width:200px">⚠️ Browser in-app rilevato — alcune funzioni (audio, microfono) potrebbero non funzionare.</span>
+  <a id="inapp-open-link" href="" target="_blank"
+     style="background:#f59e0b;color:#000;padding:5px 12px;border-radius:6px;
+            font-weight:bold;text-decoration:none;white-space:nowrap">
+    Apri nel browser →
+  </a>
+  <button onclick="document.getElementById('inapp-banner').style.display='none'"
+          style="background:none;border:none;color:#f59e0b;cursor:pointer;font-size:16px;padding:0 4px">✕</button>
+</div>
+<script>
+(function(){
+  var ua = navigator.userAgent || '';
+  var inApp = /WhatsApp|FBAN|FBAV|Instagram|Snapchat|Line\/|MicroMessenger|Telegram/i.test(ua);
+  if (inApp) {
+    var b = document.getElementById('inapp-banner');
+    b.style.display = 'flex';
+    document.getElementById('inapp-open-link').href = window.location.href;
+    // Push page content down so header isn't hidden behind banner
+    document.addEventListener('DOMContentLoaded', function() {
+      var header = document.querySelector('header');
+      if (header) header.style.top = (b.offsetHeight) + 'px';
+    });
+  }
+})();
+</script>
+
 <header>
   <!-- Riga 1: logo + key selector — struttura fissa, niente flex-wrap -->
   <div class="header-top">
