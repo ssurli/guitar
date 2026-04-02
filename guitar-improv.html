@@ -1973,6 +1973,15 @@
   .cs-scale-card-name { font-size: 14px; font-weight: 500; }
   .cs-scale-card-fn { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim); }
   .cs-scale-card-tip { font-size: 12px; color: var(--text-mid); line-height: 1.5; }
+
+  /* Scale position fretboards */
+  .cs-pos-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+  .cs-pos-block { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .cs-pos-lbl {
+    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim);
+    text-align: center;
+  }
+  .cs-pos-block .mini-fb { width: 190px; height: auto; border-radius: 6px; }
 </style>
 </head>
 <body>
@@ -5950,6 +5959,101 @@ function buildCsChordTabs() {
   });
 }
 
+// Returns up to 3 fretboard positions to show for a given root key.
+// Each position is a { start, label } where start is the lowest fret of a 5-fret window.
+function getCsPositions(keyIdx) {
+  const root = keyIdx % 12;
+  // Root fret on low E (OPEN_MIDI[5]=40, class 4)
+  const rootFretLowE = ((root - 4) % 12 + 12) % 12;
+  // Root fret on A string (OPEN_MIDI[4]=45, class 9)
+  const rootFretA = ((root - 9) % 12 + 12) % 12;
+
+  // "Main" fret: prefer non-zero (avoid open E=0 → use 12th instead)
+  const mainLowE = rootFretLowE === 0 ? 12 : rootFretLowE;
+  const mainA    = rootFretA    === 0 ? 12 : rootFretA;
+
+  // Start window 1 fret before root so root isn't at the very edge
+  const pos2Start = Math.max(1, mainLowE - 1);
+  const pos3Start = Math.max(1, mainA - 1);
+
+  const positions = [{ start: 0, label: 'Posizione aperta' }];
+
+  if (pos2Start >= 3) {
+    positions.push({ start: pos2Start, label: `Pos. principale (${mainLowE}° tasto)` });
+  }
+  if (Math.abs(pos3Start - pos2Start) >= 3 && pos3Start >= 3 && pos3Start !== pos2Start) {
+    positions.push({ start: pos3Start, label: `Pos. corda A (${mainA}° tasto)` });
+  }
+
+  return positions.slice(0, 3);
+}
+
+// Draws a 6-string mini fretboard showing the scale notes in a 5-fret window.
+// Root = amber, other scale notes = green, same visual style as drawTriadSVG.
+function drawScalePos(keyIdx, scaleIntervals, startFret) {
+  const scaleNotes = new Set(scaleIntervals.map(i => (keyIdx + i) % 12));
+  const root = keyIdx % 12;
+  const sNames = ['e','B','G','D','A','E'];
+  const N = 5; // columns (frets) to show
+
+  // Column 0 = fret startFret, column 4 = fret startFret+4
+  // When startFret=0, column 0 holds open strings, nut drawn after it (same as drawTriadSVG)
+  const W = 190, cellW = (W - 32) / N;
+  const cellH = 22;
+  const H = 6 * cellH + 16;
+
+  let s = `<svg class="mini-fb" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  s += `<rect width="${W}" height="${H}" fill="#141414" rx="6"/>`;
+
+  // Nut (thick line one column in, only when startFret=0)
+  if (startFret === 0) {
+    const nutX = 28 + cellW;
+    s += `<rect x="${nutX-1.5}" y="11" width="3" height="${6*cellH}" fill="#d4af6a" rx="1"/>`;
+  } else {
+    // Position marker
+    s += `<text x="14" y="${H/2+3.5}" text-anchor="middle" font-size="7" fill="#f59e0b" font-family="monospace">${startFret}fr</text>`;
+  }
+
+  // Fret numbers (skip "0" for open column)
+  for (let col = 0; col < N; col++) {
+    const fNum = startFret + col;
+    const x = 28 + col * cellW + cellW / 2;
+    s += `<text x="${x}" y="9" text-anchor="middle" font-size="7" fill="#555" font-family="monospace">${fNum === 0 ? '' : fNum}</text>`;
+  }
+
+  // Fret lines
+  for (let col = 0; col <= N; col++) {
+    const x = 28 + col * cellW;
+    s += `<line x1="${x}" y1="11" x2="${x}" y2="${11+6*cellH}" stroke="#3d3020" stroke-width="1"/>`;
+  }
+
+  // String lines + names
+  for (let si = 0; si < 6; si++) {
+    const y = 11 + si * cellH + cellH / 2;
+    s += `<line x1="26" y1="${y}" x2="${W-4}" y2="${y}" stroke="#c8a84b" stroke-width="0.8" opacity="0.4"/>`;
+    s += `<text x="20" y="${y+3.5}" text-anchor="middle" font-size="8" fill="#6b5b2e" font-family="monospace">${sNames[si]}</text>`;
+  }
+
+  // Scale note dots: for each string × each column
+  for (let si = 0; si < 6; si++) {
+    for (let col = 0; col < N; col++) {
+      const fret = startFret + col;
+      const noteClass = (OPEN_MIDI[si] + fret) % 12;
+      if (!scaleNotes.has(noteClass)) continue;
+      const x = 28 + col * cellW + cellW / 2;
+      const y = 11 + si * cellH + cellH / 2;
+      const isRoot = noteClass === root;
+      const fill = isRoot ? '#f59e0b' : '#4ade80';
+      const r = cellH / 2 - 3;
+      s += `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" opacity="${isRoot ? 0.92 : 0.72}"/>`;
+      s += `<text x="${x}" y="${y+3}" text-anchor="middle" font-size="6.5" fill="${isRoot ? '#000' : '#052e16'}" font-weight="bold" font-family="monospace">${NOTES[noteClass]}</text>`;
+    }
+  }
+
+  s += '</svg>';
+  return s;
+}
+
 function renderCsDetail() {
   const sc = CS_SCALES.find(s => s.key === CS_STATE.scaleKey);
   if (!sc) return;
@@ -5957,7 +6061,7 @@ function renderCsDetail() {
   const scaleIntervals = SCALES[sc.key] ? SCALES[sc.key].intervals : [];
   const panel = document.getElementById('cs-detail-panel');
 
-  // Build degree formula row
+  // Degree formula pills
   const formulaPills = sc.degs.map(d => {
     const tip = d.w ? ` title="${d.w}"` : '';
     return `<div class="cs-deg role-${d.r}"${tip}>
@@ -5966,26 +6070,36 @@ function renderCsDetail() {
     </div>`;
   }).join('');
 
-  // Build chord chips with key transposition
+  // Chord chips
   const chordChips = sc.chords.map(ch => {
-    const keyName = NOTES[keyIdx];
     return `<div class="cs-chord-chip" title="${ch.desc}">
-      <span class="chip-sym" style="color:${sc.color}">${keyName}${ch.sym}</span>
+      <span class="chip-sym" style="color:${sc.color}">${NOTES[keyIdx]}${ch.sym}</span>
       <span class="chip-label">${ch.desc}</span>
     </div>`;
   }).join('');
 
-  // Avoid notes
+  // Avoid notes warning
   const avoidDegs = sc.degs.filter(d => d.r === 'avoid');
   const avoidHtml = avoidDegs.length
     ? `<div class="cs-avoid-box">⚠ <strong>Avoid:</strong> ${avoidDegs.map(d => `<strong>${d.n}</strong> — ${d.w || ''}`).join(' · ')}</div>`
     : '';
 
-  // Scale notes in chosen key
-  let scaleNotesStr = '';
-  if (scaleIntervals.length) {
-    scaleNotesStr = scaleIntervals.map(i => NOTES[(keyIdx + i) % 12]).join('  ');
-  }
+  // Scale notes string
+  const scaleNotesStr = scaleIntervals.length
+    ? scaleIntervals.map(i => NOTES[(keyIdx + i) % 12]).join('  ')
+    : '';
+
+  // Fretboard positions
+  const positions = getCsPositions(keyIdx);
+  const posHtml = scaleIntervals.length ? `
+    <div class="cs-section-lbl">Posizioni sul manico</div>
+    <div class="cs-pos-row">
+      ${positions.map(p => `
+        <div class="cs-pos-block">
+          <div class="cs-pos-lbl">${p.label}</div>
+          ${drawScalePos(keyIdx, scaleIntervals, p.start)}
+        </div>`).join('')}
+    </div>` : '';
 
   panel.innerHTML = `
     <div class="cs-detail-title" style="color:${sc.color}">${NOTES[keyIdx]} ${sc.label}</div>
@@ -6005,6 +6119,8 @@ function renderCsDetail() {
     <div class="cs-chord-chips">${chordChips}</div>
 
     ${avoidHtml}
+
+    ${posHtml}
 
     <div class="cs-section-lbl">Contesto e uso</div>
     <div class="cs-context-box">${sc.context}</div>
