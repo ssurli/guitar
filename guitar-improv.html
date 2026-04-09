@@ -6436,6 +6436,14 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="ex-grid" id="ex-skipping-grid"></div>
   </div>
 
+  <!-- DOWNWARD PICKSLANTING (DWPS) -->
+  <div id="tp-dwps" class="tech-panel">
+    <div class="notice">
+      <strong>Downward Pickslanting (DWPS):</strong> Una tecnica rivoluzionaria sviluppata da Eric Johnson. Inclina il plettro verso il basso (inclinato verso la 6ª corda) per permettere il cambio corda in salita più fluido. Riduce la necessità di movimenti inefficienti della mano, creando un flusso di note più veloce e preciso.
+    </div>
+    <div class="ex-grid" id="ex-dwps-grid"></div>
+  </div>
+
   <!-- I MAESTRI -->
   <div id="tp-masters" class="tech-panel">
     <div class="masters-grid" id="masters-grid"></div>
@@ -6827,6 +6835,24 @@ const TECH_EXERCISES = {
       tab:'e |--5-----------8---|\nB |------------------|\nG |------------------|\nD |------7-----------|\nA |------------------|\nE |------------------|\n(e+D skip 2 corde)',
       tips:['Intervalli di 10a = ottava + terza','Stira le dita gradualmente'],
       tags:['10e','avanzato'] },
+  ],
+  dwps: [
+    { title:'DWPS base - Scala cromatica singola corda', diff:2, bpmSlow:60, bpmMid:90, bpmFast:120,
+      tab:'e |--5-6-7-8-9-10-11--|\nB |-------------------|\nG |-------------------|\nD |-------------------|\nA |-------------------|\nE |-------------------|',
+      tips:['Inclina il plettro verso il basso (verso la 6ª corda)','Movimento leggero, non forzato','Mantieni il polso rilassato'],
+      tags:['dwps','base','Eric Johnson'] },
+    { title:'DWPS cambio corda in salita', diff:3, bpmSlow:60, bpmMid:85, bpmFast:110,
+      tab:'e |--5-6-7--|--8-9-10--|\nB |---------|----------|\nG |---------|----------|\nD |---------|----------|\nA |---------|----------|\nE |---------|----------|',
+      tips:['Cambio da mi (e) a si (B): il plettro è già inclinato per salire','Senza cambio di direzione della mano','Movimento fluido e continuo'],
+      tags:['dwps','cambio corda','fluidità'] },
+    { title:'DWPS scala pentatonica Am', diff:3, bpmSlow:65, bpmMid:90, bpmFast:120,
+      tab:'e |--5-8--|--8-5--|\nB |--5-8--|--8-5--|\nG |--5-7--|--7-5--|\nD |--5-7--|--7-5--|\nA |--5-7--|--7-5--|\nE |--5-8--|--8-5--|',
+      tips:['Applica DWPS sui salti in su fra corde','Perfeziona il cambio corda in salita','Ascolta il suono fluido e continuo'],
+      tags:['dwps','pentatonica','scale'] },
+    { title:'DWPS lick stile Eric Johnson', diff:4, bpmSlow:50, bpmMid:75, bpmFast:100,
+      tab:'e |--7-8-9-----|--9-8-7-----|\nB |--7-8-9-----|--9-8-7-----|\nG |--6-7-8-----|--8-7-6-----|\nD |--5-6-7-----|--7-6-5-----|\nA |--5-6-7-----|--7-6-5-----|\nE |--5-6-7-----|--7-6-5-----|',
+      tips:['La base della tecnica di Johnson','Cambio corda con inclinazione','Velocità crescente ma controllo sempre'],
+      tags:['dwps','lick','Eric Johnson','avanzato'] },
   ]
 };
 
@@ -6901,6 +6927,7 @@ function initTechPage() {
     { id:'legato',    label:'Legato' },
     { id:'tapping',   label:'Tapping' },
     { id:'skipping',  label:'String Skipping' },
+    { id:'dwps',      label:'Downward Pickslanting' },
     { id:'masters',   label:'I Maestri' },
   ];
   const tabsEl = document.getElementById('tech-tabs');
@@ -6915,7 +6942,7 @@ function initTechPage() {
   ).join('');
 
   // Render exercise grids
-  ['alternate','legato','tapping','skipping'].forEach(key => {
+  ['alternate','legato','tapping','skipping','dwps'].forEach(key => {
     const grid = document.getElementById('ex-' + key + '-grid');
     if (!grid) return;
     grid.innerHTML = (TECH_EXERCISES[key] || []).map(ex => `
