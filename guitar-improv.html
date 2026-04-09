@@ -2001,22 +2001,15 @@
           style="background:none;border:none;color:#f59e0b;cursor:pointer;font-size:16px;padding:0 4px">✕</button>
 </div>
 <script>
+// Banner completamente disabilitato - rimuovere dal DOM
 (function(){
-  var ua = navigator.userAgent || '';
-  var inApp = /WhatsApp|FBAN|FBAV|Instagram|Snapchat|Line\/|MicroMessenger|Telegram/i.test(ua);
-  // Banner disabilitato: non mostrare avviso browser in-app ad ogni apertura
-  // if (inApp) {
-  //   var b = document.getElementById('inapp-banner');
-  //   b.style.display = 'flex';
-  //   // Push page content down so header isn't hidden behind banner
-  //   document.addEventListener('DOMContentLoaded', function() {
-  //     var header = document.querySelector('header');
-  //     if (header) header.style.top = (b.offsetHeight) + 'px';
-  //   });
-  // }
+  var banner = document.getElementById('inapp-banner');
+  if (banner) {
+    banner.remove();
+  }
 })();
-
-function openInExternalBrowser() {
+</script>
+<script>
   var url = window.location.href;
   var ua = navigator.userAgent || '';
   var isAndroid = /Android/i.test(ua);
