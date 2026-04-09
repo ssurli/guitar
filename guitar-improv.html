@@ -6444,6 +6444,14 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="ex-grid" id="ex-dwps-grid"></div>
   </div>
 
+  <!-- LEGATO PHRASING - UNPREPARED HAMMER-ONS (PAT METHENY STYLE) -->
+  <div id="tp-legato-phrasing" class="tech-panel">
+    <div class="notice">
+      <strong>Legato Phrasing - Unprepared Hammer-ons (Pat Metheny):</strong> Il marchio di fabbrica di Pat Metheny: hammer-ons "non preparati" combinati con slides continui per creare una fluidità quasi vocale, come uno strumento a fiato. Ogni nota suona legato alla precedente con slides espressivi e uso intelligente della cromatica. La tecnica crea frasi melodiche lunghe e senza interruzioni.
+    </div>
+    <div class="ex-grid" id="ex-legato-phrasing-grid"></div>
+  </div>
+
   <!-- I MAESTRI -->
   <div id="tp-masters" class="tech-panel">
     <div class="masters-grid" id="masters-grid"></div>
@@ -6853,6 +6861,24 @@ const TECH_EXERCISES = {
       tab:'e |--7-8-9-----|--9-8-7-----|\nB |--7-8-9-----|--9-8-7-----|\nG |--6-7-8-----|--8-7-6-----|\nD |--5-6-7-----|--7-6-5-----|\nA |--5-6-7-----|--7-6-5-----|\nE |--5-6-7-----|--7-6-5-----|',
       tips:['La base della tecnica di Johnson','Cambio corda con inclinazione','Velocità crescente ma controllo sempre'],
       tags:['dwps','lick','Eric Johnson','avanzato'] },
+  ],
+  'legato-phrasing': [
+    { title:'Unprepared hammer-on base', diff:2, bpmSlow:70, bpmMid:100, bpmFast:130,
+      tab:'e |--5h6h7h8-----|--7h6h5p3-----|\nB |--------- ------|----------------|\nG |--------- ------|----------------|\nD |--------- ------|----------------|\nA |--------- ------|----------------|\nE |--------- ------|--------- ------|',
+      tips:['Colpisci la prima nota con il plettro','Tutti gli altri: hammer-on senza pizzico','Non sollevare le dita, scivola fra le note'],
+      tags:['legato','hammer-on','Pat Metheny'] },
+    { title:'Slides espressivi con cromatica', diff:3, bpmSlow:60, bpmMid:85, bpmFast:110,
+      tab:'e |--5/7-8\\6-5/8-9\\7-----|\nB |------------------------|\nG |------------------------|\nD |------------------------|\nA |------------------------|\nE |------------------------|',
+      tips:['Slide "into" e "out of" ogni nota','Suona come una voce cantante','Controlla il vibrato durante i slides'],
+      tags:['slide','legato','espressione'] },
+    { title:'Frase legato lunga - stile Metheny', diff:3, bpmSlow:55, bpmMid:75, bpmFast:100,
+      tab:'e |--7h8h9-10\\8-6h7h8\\7-5h6h7-8\\6--|\nB |----------------------------------|\nG |----------------------------------|\nD |----------------------------------|\nA |----------------------------------|\nE |----------------------------------|',
+      tips:['Una sola pennata all\'inizio, tutto legato','Usa vibrato alla fine di ogni phrase','Ascolta il suono quasi vocale'],
+      tags:['legato','frase','vocale'] },
+    { title:'Chromatic legato run (Metheny lick)', diff:4, bpmSlow:50, bpmMid:70, bpmFast:95,
+      tab:'e |--8h9h10h11-12\\10-9h10h11\\9-8h9--|\nB |----------------------------------|\nG |----------------------------------|\nD |----------------------------------|\nA |----------------------------------|\nE |----------------------------------|',
+      tips:['Prima nota: pick, resto: hammer-ons','Movimento fluido come uno strumento a fiato','Velocità crescente, espressione sempre alta'],
+      tags:['legato','chromatic','avanzato','Pat Metheny'] },
   ]
 };
 
@@ -6928,6 +6954,7 @@ function initTechPage() {
     { id:'tapping',   label:'Tapping' },
     { id:'skipping',  label:'String Skipping' },
     { id:'dwps',      label:'Downward Pickslanting' },
+    { id:'legato-phrasing', label:'Legato Phrasing' },
     { id:'masters',   label:'I Maestri' },
   ];
   const tabsEl = document.getElementById('tech-tabs');
@@ -6942,7 +6969,7 @@ function initTechPage() {
   ).join('');
 
   // Render exercise grids
-  ['alternate','legato','tapping','skipping','dwps'].forEach(key => {
+  ['alternate','legato','tapping','skipping','dwps','legato-phrasing'].forEach(key => {
     const grid = document.getElementById('ex-' + key + '-grid');
     if (!grid) return;
     grid.innerHTML = (TECH_EXERCISES[key] || []).map(ex => `
