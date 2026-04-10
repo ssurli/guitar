@@ -7007,11 +7007,11 @@ function initTechPage() {
   ['alternate','legato','tapping','skipping','dwps','legato-phrasing'].forEach(key => {
     const grid = document.getElementById('ex-' + key + '-grid');
     if (!grid) return;
-    grid.innerHTML = (TECH_EXERCISES[key] || []).map(ex => `
+    grid.innerHTML = (TECH_EXERCISES[key] || []).map((ex, exIdx) => `
       <div class="ex-card">
         <div class="ex-card-header">
           <span class="ex-card-title">${ex.title}</span>
-          <span class="ex-diff">${'⬤'.repeat(ex.diff)}<span style="color:var(--text-dim)">${'⬤'.repeat(5-ex.diff)}</span></span>
+          <span class="ex-diff">${'⬅'.repeat(ex.diff)}<span style="color:var(--text-dim)">${'⬅'.repeat(5-ex.diff)}</span></span>
         </div>
         <pre class="ex-tab">${ex.tab}</pre>
         <div class="ex-bpm-row">
@@ -7021,6 +7021,10 @@ function initTechPage() {
         </div>
         <div class="ex-chips">${ex.tags.map(t=>`<span class="ex-chip">${t}</span>`).join('')}</div>
         <div class="ex-tips">${ex.tips.map(t=>`<div>• ${t}</div>`).join('')}</div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="play-btn" onclick="playTechExercise('${key}', ${exIdx}, false)" style="padding:6px 12px;font-size:12px">▶ Play</button>
+          <button class="play-btn" onclick="playTechExercise('${key}', ${exIdx}, true)" style="padding:6px 12px;font-size:12px;background:rgba(245,158,11,0.15)">🔄 Slow</button>
+        </div>
       </div>
     `).join('');
   });
@@ -7187,6 +7191,81 @@ function playSweepArp(direction) {
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
     const t = now + i * step;
     playNote(freq, t, 0.7);
+  });
+}
+
+// ─── PLAY TECH EXERCISE (Alternate, Legato, Tapping, etc.) ──────────────────
+function playTechExercise(techKey, exIndex, slowMode) {
+  const exercises = TECH_EXERCISES[techKey];
+  if (!exercises || !exercises[exIndex]) return;
+
+  const ex = exercises[exIndex];
+  const tab = ex.tab;
+
+  // Parse tab to extract frets in sequential order
+  const lines = tab.split('\n').filter(l => l.trim());
+  if (lines.length === 0) return;
+
+  // Extract string names and their fret data
+  const stringData = {};
+  const stringOrder = [];
+  lines.forEach(line => {
+    const match = line.match(/^([eEBGDAasdf])\s*\|\s*(.+)/);
+    if (!match) return;
+    const strChar = match[1].toLowerCase();
+    const fretLine = match[2];
+
+    // Map string character to index
+    const strIdx = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4, 'e': 5 }[strChar];
+    if (strIdx === undefined) return;
+
+    if (!stringOrder.includes(strIdx)) stringOrder.push(strIdx);
+    stringData[strIdx] = fretLine;
+  });
+
+  // Extract frets sequentially
+  const frets = [];
+  let maxLen = 0;
+
+  Object.values(stringData).forEach(line => {
+    maxLen = Math.max(maxLen, line.length);
+  });
+
+  // Scan left to right, collect frets from all strings
+  for (let pos = 0; pos < maxLen; pos++) {
+    stringOrder.forEach(strIdx => {
+      const line = stringData[strIdx] || '';
+      if (pos >= line.length) return;
+
+      const char = line[pos];
+      const nextChar = pos + 1 < line.length ? line[pos + 1] : '';
+
+      // Check for 2-digit frets (10-22)
+      if (/\d/.test(char)) {
+        if (/\d/.test(nextChar) && pos + 1 < line.length) {
+          const fret = parseInt(char + nextChar);
+          frets.push({ string: strIdx, fret });
+          pos++; // skip next char
+        } else {
+          const fret = parseInt(char);
+          frets.push({ string: strIdx, fret });
+        }
+      }
+    });
+  }
+
+  if (frets.length === 0) return;
+
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+  const baseStep = slowMode ? 0.15 : 0.08; // slower for learning
+
+  // Play frets
+  frets.forEach((f, i) => {
+    const midi = TECH_OPEN_MIDI[f.string] + f.fret;
+    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+    const t = now + i * baseStep;
+    playNote(freq, t, 0.6);
   });
 }
 
