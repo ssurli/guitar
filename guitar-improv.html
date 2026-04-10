@@ -7391,7 +7391,6 @@ function playTechExercise(techKey, exIndex, slowMode) {
   const tab = ex.tab;
   const strIdx = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4 };
 
-  // Parse tablature lines
   const lines = tab.split('\n').filter(l => l.trim());
   const stringLines = {};
 
@@ -7405,17 +7404,13 @@ function playTechExercise(techKey, exIndex, slowMode) {
 
   if (Object.keys(stringLines).length === 0) return;
 
-  // Build fret sequence by reading position-by-position
-  // Parse each string's data left-to-right, extracting only digit sequences
   const stringFrets = {};
   Object.entries(stringLines).forEach(([idx, data]) => {
     const fretsInStr = [];
     let i = 0;
     while (i < data.length) {
       const c = data[i];
-      // Check if digit
       if (/\d/.test(c)) {
-        // Check for 2-digit fret
         if (i + 1 < data.length && /\d/.test(data[i + 1])) {
           fretsInStr.push(parseInt(c + data[i + 1]));
           i += 2;
@@ -7430,21 +7425,11 @@ function playTechExercise(techKey, exIndex, slowMode) {
     stringFrets[idx] = fretsInStr;
   });
 
-  // Combine all frets in order (assuming same number of frets per string)
   const frets = [];
-  const fretArrays = Object.values(stringFrets).map(f => f.length);
+  const fretLengths = Object.values(stringFrets).map(f => f.length);
+  const numFrets = fretLengths.length > 0 ? Math.max(...fretLengths) : 0;
 
-  if (fretArrays.length === 0) {
-    console.warn('No frets found in any string');
-    return;
-  }
-
-  const numFrets = Math.max(...fretArrays, 0);
-
-  if (numFrets === 0) {
-    console.warn('All fret arrays are empty');
-    return;
-  }
+  if (numFrets === 0) return;
 
   for (let fretIdx = 0; fretIdx < numFrets; fretIdx++) {
     Object.keys(stringFrets).sort((a, b) => parseInt(a) - parseInt(b)).forEach(idx => {
@@ -7454,20 +7439,16 @@ function playTechExercise(techKey, exIndex, slowMode) {
     });
   }
 
-  console.log(`[playTechExercise] Extracted ${frets.length} total frets`);
-
   const ctx = getAudioCtx();
   const now = ctx.currentTime;
   const baseStep = slowMode ? 0.15 : 0.08;
 
-  console.log(`[playTechExercise] Playing ${frets.length} notes starting at ${now.toFixed(3)}s`);
-
   frets.forEach((f, i) => {
     const midi = TECH_OPEN_MIDI[f.string] + f.fret;
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
-    const t = now + i * baseStep;
-    playNote(freq, t, 0.6);
+    playNote(freq, now + i * baseStep, 0.6);
   });
+}
 }
 
 // ─── CIRCOLO DELLE QUINTE ────────────────────────────────────────────────────
