@@ -2062,6 +2062,7 @@
     <button class="nav-btn" onclick="showPage('circle');renderCircleOfFifths()">♯♭ Circolo</button>
     <button class="nav-btn" onclick="showPage('jam')">🎸 Basi</button>
     <button class="nav-btn" onclick="showPage('tuner')">🎵 Accordatore</button>
+    <button class="nav-btn" onclick="showPage('audio')">🎛 Audio</button>
     <button class="nav-btn" onclick="showPage('technique');initTechPage()">⚡ Tecnica</button>
   </nav>
 </header>
@@ -2811,6 +2812,64 @@ function _makeWaveshaper(ctx, amount = 60) {
   return ws;
 }
 
+// ── AUDIO ENHANCEMENT CONTROLS ───────────────────────────────────────────────
+let _audioParams = {
+  reverbWet: 0.18,      // 0-0.5
+  reverbDuration: 1.4,  // seconds
+  reverbDecay: 0.22,    // decay factor
+  distortion: 0         // 0-100
+};
+
+function setReverbWet(val) {
+  const v = parseFloat(val) / 100;
+  _audioParams.reverbWet = v;
+  document.getElementById('reverb-wet-val').textContent = val;
+  // Ricostruisci la chain se il reverb è attivo
+  if (_reverbNode) _rebuildReverbChain();
+}
+
+function setReverbDuration(val) {
+  const v = parseFloat(val);
+  _audioParams.reverbDuration = v;
+  document.getElementById('reverb-dur-val').textContent = v.toFixed(1);
+  // Ricostruisci la chain
+  if (_reverbNode) _rebuildReverbChain();
+}
+
+function setReverbDecay(val) {
+  const v = parseFloat(val);
+  _audioParams.reverbDecay = v;
+  document.getElementById('reverb-decay-val').textContent = v.toFixed(2);
+  if (_reverbNode) _rebuildReverbChain();
+}
+
+function setDistortion(val) {
+  const v = parseFloat(val);
+  _audioParams.distortion = v;
+  document.getElementById('distort-val').textContent = val;
+  // Distorsione modificata al prossimo playNote()
+}
+
+function _rebuildReverbChain() {
+  const ctx = getAudioCtx();
+  // Ricrea il reverb con i nuovi parametri
+  try {
+    _reverbNode.buffer = _makeReverb(ctx, _audioParams.reverbDuration, _audioParams.reverbDecay);
+  } catch(e) {
+    console.error('Errore rebuild reverb:', e);
+  }
+}
+
+function testAudioSettings() {
+  // Suona una sequenza di test per ascoltare i parametri
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+  const notes = [164.81, 196, 246.94]; // E3, G3, B3 (Em triade)
+  notes.forEach((freq, i) => {
+    playNote(freq, now + i * 0.3, 0.8);
+  });
+}
+
 // ── CLEANUP HELPER — disconnette i nodi audio dopo lo stop per evitare memory leak ──
 function _autoDisconnect(node, stopTime) {
   const delay = Math.max(0, (stopTime - getAudioCtx().currentTime) + 0.08) * 1000;
@@ -2857,7 +2916,9 @@ function playNote(freq, time, duration = 0.8) {
   bodyRes.Q.value = 1.8;
   bodyRes.gain.value = freq < 250 ? 6 : 3;
 
-  const shaper = _makeWaveshaper(ctx, 18);
+  // Dynamic distortion based on user setting (0-100%)
+  const shaperAmount = Math.max(5, (_audioParams.distortion / 100) * 60);
+  const shaper = _makeWaveshaper(ctx, shaperAmount);
   lpf.connect(bodyRes); bodyRes.connect(shaper); shaper.connect(dest);
 
   // Harmonic series with natural inharmonicity
@@ -3037,8 +3098,9 @@ function playChordSynth(ctx, dest, rootMidi, chordType, startTime, endTime) {
   const mid = ctx.createBiquadFilter();
   mid.type = 'peaking'; mid.frequency.value = 700; mid.gain.value = 2; mid.Q.value = 1;
 
-  // Softer saturation (was 45 → now 18)
-  const shaper = _makeWaveshaper(ctx, 18);
+  // Dynamic saturation based on user distortion setting
+  const shaperAmount = Math.max(5, (_audioParams.distortion / 100) * 60);
+  const shaper = _makeWaveshaper(ctx, shaperAmount);
 
   hp.connect(lp); lp.connect(mid); mid.connect(shaper);
   shaper.connect(masterG); masterG.connect(dest);
@@ -3193,10 +3255,10 @@ function computeNpsPositions(keyIndex, scaleIntervals, fretMax) {
 
     if (!valid) continue;
 
-    // Check overall span is playable (≤ 6 frets)
+    // Check overall span is playable (≤ 7 frets for 7-note scales)
     const allFrets = positionFrets.flat().filter(f => f > 0);
     const span = allFrets.length ? Math.max(...allFrets) - Math.min(...allFrets) : 0;
-    if (span > 6) continue;
+    if (span > 7) continue;
 
     // Deduplicate: skip if same as last position
     const sig = positionFrets.map(a => a.join(',')).join('|');
@@ -6349,6 +6411,58 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="tuner-str" onclick="tunerPlayRef(3)" title="Tocca per sentire il tono di riferimento"><div class="str-name">G</div><div class="str-freq">196 Hz</div><div class="ctrl-label">3ª</div><div class="str-hint">▶ tono</div></div>
     <div class="tuner-str" onclick="tunerPlayRef(4)" title="Tocca per sentire il tono di riferimento"><div class="str-name">B</div><div class="str-freq">246.9 Hz</div><div class="ctrl-label">2ª</div><div class="str-hint">▶ tono</div></div>
     <div class="tuner-str" onclick="tunerPlayRef(5)" title="Tocca per sentire il tono di riferimento"><div class="str-name">E</div><div class="str-freq">329.6 Hz</div><div class="ctrl-label">1ª</div><div class="str-hint">▶ tono</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ AUDIO ENHANCEMENT ═══════════════════════════ -->
+<div id="page-audio" class="page" style="display:none">
+  <h2>🎛 Audio Enhancement</h2>
+  <div class="subtitle">// sintetizzatore, reverb, EQ, distorsione — personalizza il suono</div>
+
+  <div class="controls" style="margin-bottom:20px;background:rgba(245,158,11,0.05);border-left:3px solid var(--amber);padding:16px;border-radius:4px">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Reverb Wet (spazialità) — <span id="reverb-wet-val">18</span>%</div>
+      <input type="range" id="reverb-wet" min="0" max="50" value="18" step="1"
+             oninput="setReverbWet(this.value)"
+             style="width:100%;margin-top:6px;accent-color:var(--amber)">
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Aumenta per suono più spazioso (0=dry, 50=molto bagnato)</div>
+    </div>
+
+    <div class="ctrl-group" style="margin-top:16px">
+      <div class="ctrl-label">Reverb Duration — <span id="reverb-dur-val">1.4</span>s</div>
+      <input type="range" id="reverb-dur" min="0.5" max="3" value="1.4" step="0.1"
+             oninput="setReverbDuration(this.value)"
+             style="width:100%;margin-top:6px;accent-color:var(--amber)">
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Tempo di coda del reverb (piccolo=stanza, grande=cattedrale)</div>
+    </div>
+
+    <div class="ctrl-group" style="margin-top:16px">
+      <div class="ctrl-label">Reverb Decay — <span id="reverb-decay-val">0.22</span></div>
+      <input type="range" id="reverb-decay" min="0.1" max="0.5" value="0.22" step="0.02"
+             oninput="setReverbDecay(this.value)"
+             style="width:100%;margin-top:6px;accent-color:var(--amber)">
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Velocità di dissolvenza (piccolo=rapido, grande=lento)</div>
+    </div>
+
+    <div class="ctrl-group" style="margin-top:16px">
+      <div class="ctrl-label">Distorsione/Overdrive — <span id="distort-val">0</span>%</div>
+      <input type="range" id="distort" min="0" max="100" value="0" step="5"
+             oninput="setDistortion(this.value)"
+             style="width:100%;margin-top:6px;accent-color:var(--amber)">
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Aggiunge warmth e grit (0=clean, 100=heavy distortion)</div>
+    </div>
+
+    <div class="ctrl-group" style="margin-top:16px">
+      <button class="play-btn" onclick="testAudioSettings()" style="width:100%;padding:10px;font-size:13px">▶ Test Sound</button>
+    </div>
+  </div>
+
+  <div style="background:rgba(245,158,11,0.1);padding:16px;border-radius:4px;margin-bottom:16px;font-size:12px;line-height:1.6;color:var(--text-dim)">
+    <strong style="color:var(--text)">💡 Suggerimento:</strong> Modifica i parametri audio mentre suoni gli esercizi per trovare il suono che preferisci. Il sintetizzatore usa oscillatori puri con waveshaper soft per realismo analogico.<br><br>
+    • <strong>Reverb piccolo (0.8-1.2s)</strong> = stanza intima, perfetto per pratica<br>
+    • <strong>Reverb grande (2-3s)</strong> = cattedrale/hall, più spazioso<br>
+    • <strong>Distorsione bassa (10-20%)</strong> = warmth naturale<br>
+    • <strong>Distorsione alta (50%+)</strong> = rock/metal tone
   </div>
 </div>
 
