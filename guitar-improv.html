@@ -7138,7 +7138,7 @@ function initTechPage() {
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="play-btn" onclick="playTechExercise('${key}', ${exIdx}, false)" style="padding:6px 12px;font-size:12px">▶ Play</button>
           <button class="play-btn" onclick="playTechExercise('${key}', ${exIdx}, true)" style="padding:6px 12px;font-size:12px;background:rgba(245,158,11,0.15)">🔄 Slow</button>
-          <button class="play-btn" onclick="debugTechExercise('${key}', ${exIdx}); console.log('Check browser console')" style="padding:6px 12px;font-size:12px;background:rgba(59,130,246,0.15);color:#3b82f6">🐛 Debug</button>
+          <button class="play-btn" onclick="debugTechExercise('${key}', ${exIdx})" style="padding:6px 12px;font-size:12px;background:rgba(59,130,246,0.15);color:#3b82f6">🐛 Debug</button>
         </div>
       </div>
     `).join('');
@@ -7311,58 +7311,76 @@ function playSweepArp(direction) {
 
 // ─── PLAY TECH EXERCISE (Alternate, Legato, Tapping, etc.) ──────────────────
 function debugTechExercise(techKey, exIndex) {
-  // Debug function to trace extracted notes
   const exercises = TECH_EXERCISES[techKey];
   if (!exercises || !exercises[exIndex]) return;
 
   const ex = exercises[exIndex];
   const tab = ex.tab;
+  console.log(`\n📋 DEBUG: ${techKey} #${exIndex} - "${ex.title}"`);
+  console.log('Tab:', tab);
 
-  console.log(`\n=== DEBUG: ${techKey} - ${ex.title} ===`);
-  console.log('TAB:\n', tab);
-
-  const lines = tab.split('\n').map(l => l.trim()).filter(l => l);
+  const strIdx = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4 };
+  const lines = tab.split('\n').filter(l => l.trim());
   const stringLines = {};
-  const stringOrder = [];
-  const strNames = { 0: 'e', 1: 'B', 2: 'G', 3: 'D', 4: 'A', 5: 'E' };
 
   lines.forEach(line => {
-    const match = line.match(/^([a-zA-Z])\s*\|(.*)$/);
-    if (!match) return;
-    const strChar = match[1].toLowerCase();
-    const strIdx = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4 }[strChar];
-    if (strIdx === undefined) return;
-    if (!stringOrder.includes(strIdx)) stringOrder.push(strIdx);
-    stringLines[strIdx] = match[2];
+    const m = line.match(/^([a-zA-Z])\s*\|(.*)$/);
+    if (!m) {
+      console.log('  ❌ Skipped line (no match):', line);
+      return;
+    }
+    const s = m[1].toLowerCase();
+    const idx = strIdx[s];
+    if (idx !== undefined) {
+      stringLines[idx] = m[2];
+      console.log(`  String ${s} (idx ${idx}): "${m[2]}"`);
+    }
+  });
+
+  const stringFrets = {};
+  Object.entries(stringLines).forEach(([idx, data]) => {
+    const fretsInStr = [];
+    let i = 0;
+    while (i < data.length) {
+      const c = data[i];
+      if (/\d/.test(c)) {
+        if (i + 1 < data.length && /\d/.test(data[i + 1])) {
+          fretsInStr.push(parseInt(c + data[i + 1]));
+          i += 2;
+        } else {
+          fretsInStr.push(parseInt(c));
+          i += 1;
+        }
+      } else {
+        i++;
+      }
+    }
+    stringFrets[idx] = fretsInStr;
+    console.log(`  Frets in string ${idx}: [${fretsInStr.join(', ')}]`);
   });
 
   const frets = [];
-  const maxLen = Math.max(...Object.values(stringLines).map(s => s.length));
+  const numFrets = Math.max(...Object.values(stringFrets).map(f => f.length));
+  const strNames = { 0: 'e', 1: 'B', 2: 'G', 3: 'D', 4: 'A' };
 
-  for (let i = 0; i < maxLen; i++) {
-    stringOrder.forEach(strIdx => {
-      const data = stringLines[strIdx] || '';
-      if (i >= data.length) return;
-      const char = data[i];
-      const nextChar = i + 1 < data.length ? data[i + 1] : '';
-      if (/\d/.test(char)) {
-        if (/\d/.test(nextChar)) {
-          frets.push({ string: strIdx, fret: parseInt(char + nextChar) });
-        } else {
-          frets.push({ string: strIdx, fret: parseInt(char) });
-        }
+  for (let fretIdx = 0; fretIdx < numFrets; fretIdx++) {
+    Object.keys(stringFrets).sort((a, b) => parseInt(a) - parseInt(b)).forEach(idx => {
+      if (fretIdx < stringFrets[idx].length) {
+        frets.push({ string: parseInt(idx), fret: stringFrets[idx][fretIdx] });
       }
     });
   }
 
-  console.log('Extracted frets:', frets.map(f => `${strNames[f.string]}${f.fret}`).join(' '));
   const notes = frets.map(f => {
     const midi = TECH_OPEN_MIDI[f.string] + f.fret;
     const noteIdx = ((midi - 12) % 12);
     return NOTES_TECH[noteIdx] + Math.floor(midi / 12);
   });
-  console.log('Notes:', notes.join(' '));
-  console.log('MIDI:', frets.map(f => TECH_OPEN_MIDI[f.string] + f.fret).join(' '));
+
+  console.log(`📝 Extracted sequence (${frets.length} notes):`);
+  console.log('  Positions:', frets.map(f => `${strNames[f.string]}${f.fret}`).join(' → '));
+  console.log('  Notes:', notes.join(' → '));
+  console.log('  MIDI:', frets.map(f => TECH_OPEN_MIDI[f.string] + f.fret).join(', '));
 }
 
 function playTechExercise(techKey, exIndex, slowMode) {
