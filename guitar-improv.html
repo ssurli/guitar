@@ -7393,7 +7393,8 @@ function playTechExercise(techKey, exIndex, slowMode) {
 
   const ex = exercises[exIndex];
   const tab = ex.tab;
-  const strIdx = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4 };
+  // Map string labels to MIDI indices: high e, B, G, D, A, low E
+  const stringMap = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4, 'E': 5 };
 
   const lines = tab.split('\n').filter(l => l.trim());
   const stringLines = {};
@@ -7401,8 +7402,8 @@ function playTechExercise(techKey, exIndex, slowMode) {
   lines.forEach(line => {
     const m = line.match(/^([a-zA-Z])\s*\|(.*)$/);
     if (!m) return;
-    const s = m[1].toLowerCase();
-    const idx = strIdx[s];
+    const s = m[1];
+    const idx = stringMap[s] !== undefined ? stringMap[s] : stringMap[s.toLowerCase()];
     if (idx !== undefined) stringLines[idx] = m[2];
   });
 
