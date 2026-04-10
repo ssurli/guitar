@@ -7133,8 +7133,8 @@ function initTechPage() {
           <span class="ex-bpm-mid">Mid ${ex.bpmMid}</span>
           <span class="ex-bpm-fast">Fast ${ex.bpmFast}</span>
         </div>
-        <div class="ex-chips">${ex.tags.map(t=>`<span class="ex-chip">${t}</span>`).join('')}</div>
-        <div class="ex-tips">${ex.tips.map(t=>`<div>• ${t}</div>`).join('')}</div>
+        <div class="ex-chips">${ex.tags.map(t=>'<span class="ex-chip">'+t+'</span>').join('')}</div>
+        <div class="ex-tips">${ex.tips.map(t=>'<div>• '+t+'</div>').join('')}</div>
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="play-btn" onclick="playTechExercise('${key}', ${exIdx}, false)" style="padding:6px 12px;font-size:12px">▶ Play</button>
           <button class="play-btn" onclick="playTechExercise('${key}', ${exIdx}, true)" style="padding:6px 12px;font-size:12px;background:rgba(245,158,11,0.15)">🔄 Slow</button>
