@@ -7371,69 +7371,61 @@ function playTechExercise(techKey, exIndex, slowMode) {
 
   const ex = exercises[exIndex];
   const tab = ex.tab;
+  const strIdx = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4 };
 
-  // Parse tab to extract frets in sequential order (more robust parsing)
-  const lines = tab.split('\n').map(l => l.trim()).filter(l => l);
-  if (lines.length === 0) return;
-
-  // Parse each line to get string index and fret positions
+  // Parse tablature lines
+  const lines = tab.split('\n').filter(l => l.trim());
   const stringLines = {};
-  const stringOrder = [];
 
   lines.forEach(line => {
-    // Match pattern: "e |--5-8--|" or "B |--5-8--|"
-    const match = line.match(/^([a-zA-Z])\s*\|(.*)$/);
-    if (!match) return;
-
-    const strChar = match[1].toLowerCase();
-    const fretData = match[2];
-
-    // Map string char to MIDI index (e=0, B=1, G=2, D=3, A=4, E=5)
-    const strIdx = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4 }[strChar];
-    if (strIdx === undefined) return;
-
-    if (!stringOrder.includes(strIdx)) stringOrder.push(strIdx);
-    stringLines[strIdx] = fretData;
+    const m = line.match(/^([a-zA-Z])\s*\|(.*)$/);
+    if (!m) return;
+    const s = m[1].toLowerCase();
+    const idx = strIdx[s];
+    if (idx !== undefined) stringLines[idx] = m[2];
   });
 
-  if (stringOrder.length === 0) return;
+  if (Object.keys(stringLines).length === 0) return;
 
-  // Extract all fret numbers with their string positions
-  // Scan character by character to find fret numbers
-  const frets = [];
-  const maxLen = Math.max(...Object.values(stringLines).map(s => s.length));
-
-  let i = 0;
-  while (i < maxLen) {
-    // For each position, check each string for a digit
-    let foundInThisPos = false;
-
-    stringOrder.forEach(strIdx => {
-      const data = stringLines[strIdx] || '';
-      if (i >= data.length) return;
-
-      const char = data[i];
-      const nextChar = i + 1 < data.length ? data[i + 1] : '';
-
-      // Check if this is a fret number
-      if (/\d/.test(char)) {
-        // Check for 2-digit frets (10-22)
-        if (/\d/.test(nextChar)) {
-          const fret = parseInt(char + nextChar);
-          frets.push({ string: strIdx, fret });
+  // Build fret sequence by reading position-by-position
+  // Parse each string's data left-to-right, extracting only digit sequences
+  const stringFrets = {};
+  Object.entries(stringLines).forEach(([idx, data]) => {
+    const fretsInStr = [];
+    let i = 0;
+    while (i < data.length) {
+      const c = data[i];
+      // Check if digit
+      if (/\d/.test(c)) {
+        // Check for 2-digit fret
+        if (i + 1 < data.length && /\d/.test(data[i + 1])) {
+          fretsInStr.push(parseInt(c + data[i + 1]));
+          i += 2;
         } else {
-          const fret = parseInt(char);
-          frets.push({ string: strIdx, fret });
+          fretsInStr.push(parseInt(c));
+          i += 1;
         }
-        foundInThisPos = true;
+      } else {
+        i++;
+      }
+    }
+    stringFrets[idx] = fretsInStr;
+  });
+
+  // Combine all frets in order (assuming same number of frets per string)
+  const frets = [];
+  const numFrets = Math.max(...Object.values(stringFrets).map(f => f.length));
+
+  for (let fretIdx = 0; fretIdx < numFrets; fretIdx++) {
+    Object.keys(stringFrets).sort().forEach(idx => {
+      if (fretIdx < stringFrets[idx].length) {
+        frets.push({ string: parseInt(idx), fret: stringFrets[idx][fretIdx] });
       }
     });
-
-    i++;
   }
 
   if (frets.length === 0) {
-    console.warn('playTechExercise: no frets found in tab');
+    console.warn('No frets extracted');
     return;
   }
 
@@ -7441,12 +7433,10 @@ function playTechExercise(techKey, exIndex, slowMode) {
   const now = ctx.currentTime;
   const baseStep = slowMode ? 0.15 : 0.08;
 
-  // Play frets sequentially
-  frets.forEach((f, idx) => {
+  frets.forEach((f, i) => {
     const midi = TECH_OPEN_MIDI[f.string] + f.fret;
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
-    const t = now + idx * baseStep;
-    playNote(freq, t, 0.6);
+    playNote(freq, now + i * baseStep, 0.6);
   });
 }
 
