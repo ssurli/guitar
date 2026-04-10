@@ -7432,29 +7432,41 @@ function playTechExercise(techKey, exIndex, slowMode) {
 
   // Combine all frets in order (assuming same number of frets per string)
   const frets = [];
-  const numFrets = Math.max(...Object.values(stringFrets).map(f => f.length));
+  const fretArrays = Object.values(stringFrets).map(f => f.length);
+
+  if (fretArrays.length === 0) {
+    console.warn('No frets found in any string');
+    return;
+  }
+
+  const numFrets = Math.max(...fretArrays, 0);
+
+  if (numFrets === 0) {
+    console.warn('All fret arrays are empty');
+    return;
+  }
 
   for (let fretIdx = 0; fretIdx < numFrets; fretIdx++) {
-    Object.keys(stringFrets).sort().forEach(idx => {
+    Object.keys(stringFrets).sort((a, b) => parseInt(a) - parseInt(b)).forEach(idx => {
       if (fretIdx < stringFrets[idx].length) {
         frets.push({ string: parseInt(idx), fret: stringFrets[idx][fretIdx] });
       }
     });
   }
 
-  if (frets.length === 0) {
-    console.warn('No frets extracted');
-    return;
-  }
+  console.log(`[playTechExercise] Extracted ${frets.length} total frets`);
 
   const ctx = getAudioCtx();
   const now = ctx.currentTime;
   const baseStep = slowMode ? 0.15 : 0.08;
 
+  console.log(`[playTechExercise] Playing ${frets.length} notes starting at ${now.toFixed(3)}s`);
+
   frets.forEach((f, i) => {
     const midi = TECH_OPEN_MIDI[f.string] + f.fret;
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
-    playNote(freq, now + i * baseStep, 0.6);
+    const t = now + i * baseStep;
+    playNote(freq, t, 0.6);
   });
 }
 
