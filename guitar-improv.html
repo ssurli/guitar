@@ -2009,34 +2009,6 @@
   }
 })();
 </script>
-<script>
-  var url = window.location.href;
-  var ua = navigator.userAgent || '';
-  var isAndroid = /Android/i.test(ua);
-  var isIOS = /iPhone|iPad|iPod/i.test(ua);
-  if (isAndroid) {
-    // Try Android intent to force Chrome (or default browser)
-    var encodedUrl = encodeURIComponent(url);
-    var intentUrl = 'intent://' + url.replace(/^https?:\/\//, '') +
-      '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodedUrl + ';end';
-    window.location.href = intentUrl;
-  } else if (isIOS) {
-    // iOS: copy link and instruct user
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(function() {
-        alert('Link copiato! Incollalo in Safari per aprire la pagina.');
-      }).catch(function() {
-        prompt('Copia questo link e aprilo in Safari:', url);
-      });
-    } else {
-      prompt('Copia questo link e aprilo in Safari:', url);
-    }
-  } else {
-    // Fallback: try window.open, then location
-    var w = window.open(url, '_blank');
-    if (!w) window.location.href = url;
-  }
-</script>
 
 <header>
   <!-- Riga 1: logo + key selector — struttura fissa, niente flex-wrap -->
