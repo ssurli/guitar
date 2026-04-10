@@ -7108,7 +7108,7 @@ function initTechPage() {
   ];
   const tabsEl = document.getElementById('tech-tabs');
   tabsEl.innerHTML = tabs.map(t =>
-    `<button class="tech-tab${t.id==='sweep'?' active':''}" data-tab-id="${t.id}" onclick="showTechTab(this.getAttribute('data-tab-id'))">${t.label}</button>`
+    `<button class="tech-tab${t.id==='sweep'?' active':''}" data-tab-id="${t.id}" onclick="showTechTab('${t.id}')">${t.label}</button>`
   ).join('');
 
   // Sweep shape buttons
