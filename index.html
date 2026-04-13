@@ -2078,10 +2078,6 @@
   <nav>
     <button class="nav-btn active" onclick="showPage('fretboard')">Fretboard</button>
     <button class="nav-btn" onclick="showPage('scales')">Scale Library</button>
-    <button class="nav-btn" onclick="showPage('modes')">Modi</button>
-    <button class="nav-btn" onclick="showPage('progressions')">Progressioni</button>
-    <button class="nav-btn" onclick="showPage('triads')">Triadi</button>
-    <button class="nav-btn" onclick="showPage('seventh')">Acc. 7ª</button>
     <button class="nav-btn" onclick="showPage('chord-scale');renderChordScale()">Scala/Accordi</button>
     <button class="nav-btn" onclick="showPage('caged')">CAGED</button>
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
@@ -2222,181 +2218,170 @@
 
 <!-- ═══════════════════════════════ SCALE LIBRARY ═════════════════════════════════ -->
 <div id="page-scales" class="page">
-  <h2>Scale Library</h2>
-  <div class="subtitle">// tutte le scale per improvvisazione — formule e carattere</div>
-
-  <div class="info-grid" id="scales-grid"></div>
-</div>
-
-<!-- ═══════════════════════════════ MODES PAGE ════════════════════════════════════ -->
-<div id="page-modes" class="page">
-  <h2>I Sette Modi</h2>
-  <div class="subtitle">// la stessa scala di Do maggiore, sette caratteri diversi</div>
-
-  <div class="notice">
-    <strong>Come funziona:</strong> Ogni modo usa le stesse note della scala maggiore, ma parte da un grado diverso.
-    Risultato: 7 "colori" emotivi distinti. Clicca un modo per visualizzarlo sul manico.
+  <div class="cpage-tabs">
+    <button class="cpage-tab-btn active" data-tab="scales" onclick="showScalesSubpage('scales')">Scale Library</button>
+    <button class="cpage-tab-btn" data-tab="modi" onclick="showScalesSubpage('modi')">Modi</button>
+    <button class="cpage-tab-btn" data-tab="progressioni" onclick="showScalesSubpage('progressioni')">Progressioni</button>
   </div>
-
-  <div class="modes-grid" id="modes-grid"></div>
-</div>
-
-<!-- ═══════════════════════════════ PROGRESSIONS ══════════════════════════════════ -->
-<div id="page-progressions" class="page">
-  <h2>Progressioni & Scale</h2>
-  <div class="subtitle">// quali scale usare su ogni progressione accordi</div>
-
-  <div class="controls">
-    <div class="ctrl-group">
-      <div class="ctrl-label">Tonalità base</div>
-      <select id="prog-key" onchange="renderProgressions()">
-        <option value="A">A</option>
-        <option value="B">B</option>
-        <option value="C" selected>C</option>
-        <option value="D">D</option>
-        <option value="E">E</option>
-        <option value="G">G</option>
-      </select>
+  <div id="spage-scales" class="cpage-view active">
+    <h2>Scale Library</h2>
+    <div class="subtitle">// tutte le scale per improvvisazione — formule e carattere</div>
+    <div class="info-grid" id="scales-grid"></div>
+  </div>
+  <div id="spage-modi" class="cpage-view">
+    <h2>I Sette Modi</h2>
+    <div class="subtitle">// la stessa scala di Do maggiore, sette caratteri diversi</div>
+    <div class="notice">
+      <strong>Come funziona:</strong> Ogni modo usa le stesse note della scala maggiore, ma parte da un grado diverso.
+      Risultato: 7 "colori" emotivi distinti. Clicca un modo per visualizzarlo sul manico.
     </div>
+    <div class="modes-grid" id="modes-grid"></div>
   </div>
-
-  <div class="prog-grid" id="prog-grid"></div>
-</div>
-
-<!-- ═══════════════════════════════ TRIADI PAGE ══════════════════════════════ -->
-<div id="page-triads" class="page">
-  <h2>Triadi</h2>
-  <div class="subtitle">// forme, inversioni e posizioni sul manico per tutti i tipi di triade</div>
-
-  <div class="controls" style="margin-bottom:16px">
-    <div class="ctrl-group">
-      <div class="ctrl-label">Tonalità</div>
-      <select id="tr-key" onchange="renderTriads()">
-        <option value="0">C</option><option value="1">C# / Db</option>
-        <option value="2">D</option><option value="3">D# / Eb</option>
-        <option value="4">E</option><option value="5">F</option>
-        <option value="6">F# / Gb</option><option value="7">G</option>
-        <option value="8">G# / Ab</option><option value="9">A</option>
-        <option value="10">A# / Bb</option><option value="11">B</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="triad-type-tabs" id="triad-type-tabs"></div>
-
-  <div class="triad-layout">
-    <div class="triad-info-col" id="triad-info-col"></div>
-    <div class="triad-shapes-col">
-      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-        <div>
-          <div class="ctrl-label" style="margin-bottom:6px">Inversione</div>
-          <div class="inv-tabs" id="inv-tabs">
-            <button class="inv-tab active" onclick="setInversion(0)">Fondamentale</button>
-            <button class="inv-tab" onclick="setInversion(1)">1ª Inversione</button>
-            <button class="inv-tab" onclick="setInversion(2)">2ª Inversione</button>
-          </div>
-        </div>
-        <div>
-          <div class="ctrl-label" style="margin-bottom:6px">Set di corde</div>
-          <div class="strset-tabs" id="strset-tabs">
-            <button class="strset-tab active" onclick="setStringSet(0)">e B G</button>
-            <button class="strset-tab" onclick="setStringSet(1)">B G D</button>
-            <button class="strset-tab" onclick="setStringSet(2)">G D A</button>
-            <button class="strset-tab" onclick="setStringSet(3)">D A E</button>
-            <button class="strset-tab" onclick="setStringSet(4)">Tutte</button>
-          </div>
-        </div>
+  <div id="spage-progressioni" class="cpage-view">
+    <h2>Progressioni & Scale</h2>
+    <div class="subtitle">// quali scale usare su ogni progressione accordi</div>
+    <div class="controls">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Tonalità base</div>
+        <select id="prog-key" onchange="renderProgressions()">
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C" selected>C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="G">G</option>
+        </select>
       </div>
-      <div class="triad-shapes-grid" id="triad-shapes-grid"></div>
     </div>
+    <div class="prog-grid" id="prog-grid"></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════ ACCORDI DI SETTIMA ═══════════════════════════ -->
-<div id="page-seventh" class="page">
-  <h2>Accordi di Settima</h2>
-  <div class="subtitle">// maj7 · dom7 · min7 · semidiminuito · dim7 — forme sul manico per ogni tonalità</div>
-
-  <div class="controls" style="margin-bottom:16px">
-    <div class="ctrl-group">
-      <div class="ctrl-label">Tonalità</div>
-      <select id="s7-key" onchange="renderSeventh()">
-        <option value="0">C</option><option value="1">C# / Db</option>
-        <option value="2">D</option><option value="3">D# / Eb</option>
-        <option value="4">E</option><option value="5">F</option>
-        <option value="6">F# / Gb</option><option value="7">G</option>
-        <option value="8">G# / Ab</option><option value="9">A</option>
-        <option value="10">A# / Bb</option><option value="11">B</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="triad-type-tabs" id="s7-type-tabs"></div>
-
-  <div class="triad-layout">
-    <div class="triad-info-col" id="s7-info-col"></div>
-    <div class="triad-shapes-col">
-      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-        <div>
-          <div class="ctrl-label" style="margin-bottom:6px">Inversione</div>
-          <div class="inv-tabs" id="s7-inv-tabs">
-            <button class="inv-tab active" onclick="setS7Inversion(0)">Fondamentale</button>
-            <button class="inv-tab" onclick="setS7Inversion(1)">1ª Inversione</button>
-            <button class="inv-tab" onclick="setS7Inversion(2)">2ª Inversione</button>
-            <button class="inv-tab" onclick="setS7Inversion(3)">3ª Inversione</button>
-          </div>
-        </div>
-        <div>
-          <div class="ctrl-label" style="margin-bottom:6px">Set di corde</div>
-          <div class="strset-tabs" id="s7-strset-tabs">
-            <button class="strset-tab active" onclick="setS7StringSet(0)">e B G D</button>
-            <button class="strset-tab" onclick="setS7StringSet(1)">B G D A</button>
-            <button class="strset-tab" onclick="setS7StringSet(2)">G D A E</button>
-          </div>
-        </div>
-      </div>
-      <div class="triad-shapes-grid" id="s7-shapes-grid"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════ CHORD / SCALE RELATIONSHIPS ═══════════════════ -->
 <div id="page-chord-scale" class="page">
-  <h2>Scala &amp; Accordi</h2>
-  <div class="subtitle">// quale scala suonare su un accordo — e quali accordi emergono da una scala</div>
-
-  <div class="cs-mode-tabs">
-    <button class="cs-mode-tab active" id="cs-tab-s2c" onclick="setCsMode('s2c')">Scala → Accordi</button>
-    <button class="cs-mode-tab" id="cs-tab-c2s" onclick="setCsMode('c2s')">Accordo → Scale</button>
+  <div class="cpage-tabs">
+    <button class="cpage-tab-btn active" data-tab="chordscale" onclick="showChordScaleSubpage('chordscale');renderChordScale()">Scala/Accordi</button>
+    <button class="cpage-tab-btn" data-tab="triadi" onclick="showChordScaleSubpage('triadi')">Triadi</button>
+    <button class="cpage-tab-btn" data-tab="seventh" onclick="showChordScaleSubpage('seventh')">Acc. 7ª</button>
   </div>
-
-  <!-- Scala → Accordi panel -->
-  <div id="cs-panel-s2c">
-    <div class="cs-key-row">
-      Tonalità:
-      <select id="cs-key" onchange="renderCsDetail()">
-        <option value="0">C</option><option value="1">C# / D♭</option>
-        <option value="2">D</option><option value="3">D# / E♭</option>
-        <option value="4">E</option><option value="5">F</option>
-        <option value="6">F# / G♭</option><option value="7">G</option>
-        <option value="8">G# / A♭</option><option value="9">A</option>
-        <option value="10">A# / B♭</option><option value="11">B</option>
-      </select>
+  <div id="cspage-chordscale" class="cpage-view active">
+    <h2>Scala &amp; Accordi</h2>
+    <div class="subtitle">// quale scala suonare su un accordo — e quali accordi emergono da una scala</div>
+    <div class="cs-mode-tabs">
+      <button class="cs-mode-tab active" id="cs-tab-s2c" onclick="setCsMode('s2c')">Scala → Accordi</button>
+      <button class="cs-mode-tab" id="cs-tab-c2s" onclick="setCsMode('c2s')">Accordo → Scale</button>
     </div>
-    <div class="cs-layout">
-      <div class="cs-left" id="cs-scale-list"></div>
-      <div class="cs-right" id="cs-detail-panel">
-        <div style="color:var(--text-dim);font-family:'Space Mono',monospace;font-size:12px">
-          ← Seleziona una scala dalla lista
+    <div id="cs-panel-s2c">
+      <div class="cs-key-row">
+        Tonalità:
+        <select id="cs-key" onchange="renderCsDetail()">
+          <option value="0">C</option><option value="1">C# / D♭</option>
+          <option value="2">D</option><option value="3">D# / E♭</option>
+          <option value="4">E</option><option value="5">F</option>
+          <option value="6">F# / G♭</option><option value="7">G</option>
+          <option value="8">G# / A♭</option><option value="9">A</option>
+          <option value="10">A# / B♭</option><option value="11">B</option>
+        </select>
+      </div>
+      <div class="cs-layout">
+        <div class="cs-left" id="cs-scale-list"></div>
+        <div class="cs-right" id="cs-detail-panel">
+          <div style="color:var(--text-dim);font-family:'Space Mono',monospace;font-size:12px">
+            ← Seleziona una scala dalla lista
+          </div>
         </div>
       </div>
     </div>
+    <div id="cs-panel-c2s" style="display:none">
+      <div class="cs-chord-tabs" id="cs-chord-tabs"></div>
+      <div class="cs-scale-cards" id="cs-scale-cards"></div>
+    </div>
   </div>
-
-  <!-- Accordo → Scale panel -->
-  <div id="cs-panel-c2s" style="display:none">
-    <div class="cs-chord-tabs" id="cs-chord-tabs"></div>
-    <div class="cs-scale-cards" id="cs-scale-cards"></div>
+  <div id="cspage-triadi" class="cpage-view">
+    <h2>Triadi</h2>
+    <div class="subtitle">// forme, inversioni e posizioni sul manico per tutti i tipi di triade</div>
+    <div class="controls" style="margin-bottom:16px">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Tonalità</div>
+        <select id="tr-key" onchange="renderTriads()">
+          <option value="0">C</option><option value="1">C# / Db</option>
+          <option value="2">D</option><option value="3">D# / Eb</option>
+          <option value="4">E</option><option value="5">F</option>
+          <option value="6">F# / Gb</option><option value="7">G</option>
+          <option value="8">G# / Ab</option><option value="9">A</option>
+          <option value="10">A# / Bb</option><option value="11">B</option>
+        </select>
+      </div>
+    </div>
+    <div class="triad-type-tabs" id="triad-type-tabs"></div>
+    <div class="triad-layout">
+      <div class="triad-info-col" id="triad-info-col"></div>
+      <div class="triad-shapes-col">
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+          <div>
+            <div class="ctrl-label" style="margin-bottom:6px">Inversione</div>
+            <div class="inv-tabs" id="inv-tabs">
+              <button class="inv-tab active" onclick="setInversion(0)">Fondamentale</button>
+              <button class="inv-tab" onclick="setInversion(1)">1ª Inversione</button>
+              <button class="inv-tab" onclick="setInversion(2)">2ª Inversione</button>
+            </div>
+          </div>
+          <div>
+            <div class="ctrl-label" style="margin-bottom:6px">Set di corde</div>
+            <div class="strset-tabs" id="strset-tabs">
+              <button class="strset-tab active" onclick="setStringSet(0)">e B G</button>
+              <button class="strset-tab" onclick="setStringSet(1)">B G D</button>
+              <button class="strset-tab" onclick="setStringSet(2)">G D A</button>
+              <button class="strset-tab" onclick="setStringSet(3)">D A E</button>
+              <button class="strset-tab" onclick="setStringSet(4)">Tutte</button>
+            </div>
+          </div>
+        </div>
+        <div class="triad-shapes-grid" id="triad-shapes-grid"></div>
+      </div>
+    </div>
+  </div>
+  <div id="cspage-seventh" class="cpage-view">
+    <h2>Accordi di Settima</h2>
+    <div class="subtitle">// maj7 · dom7 · min7 · semidiminuito · dim7 — forme sul manico per ogni tonalità</div>
+    <div class="controls" style="margin-bottom:16px">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Tonalità</div>
+        <select id="s7-key" onchange="renderSeventh()">
+          <option value="0">C</option><option value="1">C# / Db</option>
+          <option value="2">D</option><option value="3">D# / Eb</option>
+          <option value="4">E</option><option value="5">F</option>
+          <option value="6">F# / Gb</option><option value="7">G</option>
+          <option value="8">G# / Ab</option><option value="9">A</option>
+          <option value="10">A# / Bb</option><option value="11">B</option>
+        </select>
+      </div>
+    </div>
+    <div class="triad-type-tabs" id="s7-type-tabs"></div>
+    <div class="triad-layout">
+      <div class="triad-info-col" id="s7-info-col"></div>
+      <div class="triad-shapes-col">
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+          <div>
+            <div class="ctrl-label" style="margin-bottom:6px">Inversione</div>
+            <div class="inv-tabs" id="s7-inv-tabs">
+              <button class="inv-tab active" onclick="setS7Inversion(0)">Fondamentale</button>
+              <button class="inv-tab" onclick="setS7Inversion(1)">1ª Inversione</button>
+              <button class="inv-tab" onclick="setS7Inversion(2)">2ª Inversione</button>
+              <button class="inv-tab" onclick="setS7Inversion(3)">3ª Inversione</button>
+            </div>
+          </div>
+          <div>
+            <div class="ctrl-label" style="margin-bottom:6px">Set di corde</div>
+            <div class="strset-tabs" id="s7-strset-tabs">
+              <button class="strset-tab active" onclick="setS7StringSet(0)">e B G D</button>
+              <button class="strset-tab" onclick="setS7StringSet(1)">B G D A</button>
+              <button class="strset-tab" onclick="setS7StringSet(2)">G D A E</button>
+            </div>
+          </div>
+        </div>
+        <div class="triad-shapes-grid" id="s7-shapes-grid"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -7760,6 +7745,18 @@ function showTechSubpage(tab) {
     b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('#page-technique .cpage-view').forEach(v=>
     v.classList.toggle('active', v.id==='tpage-'+tab));
+}
+function showScalesSubpage(tab) {
+  document.querySelectorAll('#page-scales .cpage-tab-btn').forEach(b=>
+    b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('#page-scales .cpage-view').forEach(v=>
+    v.classList.toggle('active', v.id==='spage-'+tab));
+}
+function showChordScaleSubpage(tab) {
+  document.querySelectorAll('#page-chord-scale .cpage-tab-btn').forEach(b=>
+    b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('#page-chord-scale .cpage-view').forEach(v=>
+    v.classList.toggle('active', v.id==='cspage-'+tab));
 }
 
 /* ── circolo delle quinte ── */
