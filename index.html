@@ -2030,6 +2030,14 @@
   #trans-circle-svg{max-width:min(100%,680px);height:auto;display:block;}
   .trans-intro{font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);
     letter-spacing:1px;line-height:1.8;margin-bottom:22px;max-width:640px;}
+  .cpage-tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:4px;}
+  .cpage-tab-btn{background:none;border:none;color:var(--text-mid);
+    font-family:'Space Mono',monospace;font-size:12px;letter-spacing:1px;
+    padding:8px 14px;cursor:pointer;border-radius:4px 4px 0 0;transition:all .2s;
+    white-space:nowrap;border-bottom:2px solid transparent;}
+  .cpage-tab-btn:hover{color:var(--text);}
+  .cpage-tab-btn.active{color:var(--amber);border-bottom-color:var(--amber);background:var(--amber-glow);}
+  .cpage-view{display:none;}.cpage-view.active{display:block;}
 </style>
 </head>
 <body>
@@ -2072,18 +2080,15 @@
     <button class="nav-btn" onclick="showPage('scales')">Scale Library</button>
     <button class="nav-btn" onclick="showPage('modes')">Modi</button>
     <button class="nav-btn" onclick="showPage('progressions')">Progressioni</button>
-    <button class="nav-btn" onclick="showPage('practice')">Pratica</button>
     <button class="nav-btn" onclick="showPage('triads')">Triadi</button>
     <button class="nav-btn" onclick="showPage('seventh')">Acc. 7ª</button>
     <button class="nav-btn" onclick="showPage('chord-scale');renderChordScale()">Scala/Accordi</button>
     <button class="nav-btn" onclick="showPage('caged')">CAGED</button>
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
     <button class="nav-btn" onclick="showPage('circle');renderCircleOfFifths()">♯♭ Circolo</button>
-    <button class="nav-btn" onclick="showPage('transition');initTransition()">Transizione</button>
     <button class="nav-btn" onclick="showPage('jam')">🎸 Basi</button>
-    <button class="nav-btn" onclick="showPage('tuner')">🎵 Accordatore</button>
     <button class="nav-btn" onclick="showPage('audio')">🎛 Audio</button>
-    <button class="nav-btn" onclick="showPage('technique');initTechPage()">⚡ Tecnica</button>
+    <button class="nav-btn" onclick="showPage('technique');showTechSubpage('pratica')">⚡ Tecnica</button>
   </nav>
 </header>
 
@@ -2494,57 +2499,54 @@
 <!-- ═══════════════════════════════ PRACTICE PAGE ════════════════════════════════ -->
 <!-- ═══════════════════════════════ CIRCOLO DELLE QUINTE ═══════════════════════ -->
 <div id="page-circle" class="page">
-  <h2>Circolo delle Quinte</h2>
-  <div class="subtitle">// relazioni tra tonalità, accordi diatonici e modulazioni</div>
-  <div class="circle-layout">
-    <div class="circle-svg-wrap">
-      <svg id="circle-svg" width="380" height="380" viewBox="0 0 380 380" style="max-width:100%;height:auto"></svg>
-    </div>
-    <div class="circle-info" id="circle-info">
-      <div style="color:var(--text-dim);font-family:'Space Mono',monospace;font-size:12px;text-align:center;padding:30px 0">
-        ← Click su una<br>tonalità
+  <div class="cpage-tabs">
+    <button class="cpage-tab-btn active" data-tab="circolo" onclick="showCircleSubpage('circolo')">♯♭ Circolo delle Quinte</button>
+    <button class="cpage-tab-btn" data-tab="transizione" onclick="showCircleSubpage('transizione');initTransition()">Transizione Modale</button>
+  </div>
+  <div id="cpage-circolo" class="cpage-view active">
+    <h2>Circolo delle Quinte</h2>
+    <div class="subtitle">// relazioni tra tonalità, accordi diatonici e modulazioni</div>
+    <div class="circle-layout">
+      <div class="circle-svg-wrap">
+        <svg id="circle-svg" width="380" height="380" viewBox="0 0 380 380" style="max-width:100%;height:auto"></svg>
+      </div>
+      <div class="circle-info" id="circle-info">
+        <div style="color:var(--text-dim);font-family:'Space Mono',monospace;font-size:12px;text-align:center;padding:30px 0">
+          ← Click su una<br>tonalità
+        </div>
       </div>
     </div>
   </div>
-</div>
-
-<!-- ═══════════════════════════════ TRANSIZIONE MODALE ══════════════════════ -->
-<div id="page-transition" class="page">
-  <h2>Transizione Modale</h2>
-  <div class="subtitle">// da Lidia a Locria: una nota alla volta si abbassa di un semitono</div>
-  <div class="trans-tabs">
-    <button class="trans-tab-btn active" data-tv="griglia">Griglia Cromatica</button>
-    <button class="trans-tab-btn" data-tv="circolo5">Circolo delle Quinte</button>
-  </div>
-  <div id="trans-griglia" class="trans-view active">
-    <p class="trans-intro">
-      Ad ogni passo una sola nota si abbassa di un semitono, spostandosi di una colonna verso sinistra.
-    </p>
-    <div class="trans-legend">
-      <div class="trans-legend-item"><div class="trans-swatch ts-root"></div><span>tonica (1)</span></div>
-      <div class="trans-legend-item"><div class="trans-swatch ts-normal"></div><span>nota stabile</span></div>
-      <div class="trans-legend-item"><div class="trans-swatch ts-changed"></div><span>nota abbassata ←</span></div>
+  <div id="cpage-transizione" class="cpage-view">
+    <h2>Transizione Modale</h2>
+    <div class="subtitle">// da Lidia a Locria: una nota alla volta si abbassa di un semitono</div>
+    <div class="trans-tabs">
+      <button class="trans-tab-btn active" data-tv="griglia">Griglia Cromatica</button>
+      <button class="trans-tab-btn" data-tv="circolo5">Circolo delle Quinte</button>
     </div>
-    <div class="trans-schema-wrap">
-      <div id="trans-schema"></div>
+    <div id="trans-griglia" class="trans-view active">
+      <p class="trans-intro">
+        Ad ogni passo una sola nota si abbassa di un semitono, spostandosi di una colonna verso sinistra.
+      </p>
+      <div class="trans-legend">
+        <div class="trans-legend-item"><div class="trans-swatch ts-root"></div><span>tonica (1)</span></div>
+        <div class="trans-legend-item"><div class="trans-swatch ts-normal"></div><span>nota stabile</span></div>
+        <div class="trans-legend-item"><div class="trans-swatch ts-changed"></div><span>nota abbassata ←</span></div>
+      </div>
+      <div class="trans-schema-wrap">
+        <div id="trans-schema"></div>
+      </div>
     </div>
-  </div>
-  <div id="trans-circolo5" class="trans-view">
-    <p class="trans-intro">
-      Le 7 scale modali di Do occupano 7 posizioni consecutive sul circolo delle quinte.<br>
-      Ogni passo in senso antiorario abbassa di un semitono il grado indicato.
-    </p>
-    <div class="trans-circle-wrap">
-      <svg id="trans-circle-svg" viewBox="0 0 760 760" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="trans-circolo5" class="trans-view">
+      <p class="trans-intro">
+        Le 7 scale modali di Do occupano 7 posizioni consecutive sul circolo delle quinte.<br>
+        Ogni passo in senso antiorario abbassa di un semitono il grado indicato.
+      </p>
+      <div class="trans-circle-wrap">
+        <svg id="trans-circle-svg" viewBox="0 0 760 760" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
     </div>
   </div>
-</div>
-
-<div id="page-practice" class="page">
-  <h2>Guida alla Pratica</h2>
-  <div class="subtitle">// strategie per sviluppare l'improvvisazione</div>
-
-  <div class="practice-grid" id="practice-grid"></div>
 </div>
 
 <script>
@@ -4770,24 +4772,26 @@ function findSeventhShapes(rootMidi, typeKey, inversion, stringIndices) {
   const invertedStrings = [...stringIndices].reverse(); // low→high
   const targetNotes = seventhNotes(rootMidi, typeKey, inversion).map(n => n % 12);
 
-  // For each string (low→high), collect all frets 0..17 that match the target note.
-  // Each target pitch class appears at most twice in that range (every 12 frets),
-  // so combinations = 2^4 = 16 max — fast enough.
-  const optsByPos = invertedStrings.map((si, i) => {
+  // For each string (low→high), list every fret 0..17 that plays ANY of the 4 target notes,
+  // recording which note index it corresponds to.
+  const optsByString = invertedStrings.map(si => {
     const open = OPEN_MIDI[si];
-    const target = targetNotes[i];
-    const frets = [];
+    const opts = [];
     for (let f = 0; f <= 17; f++) {
-      if ((open + f) % 12 === target) frets.push(f);
+      const pc = (open + f) % 12;
+      const ni = targetNotes.indexOf(pc);
+      if (ni !== -1) opts.push({ fret: f, noteIdx: ni });
     }
-    return frets;
+    return opts;
   });
 
   const shapes = [];
   const seen = new Set();
 
-  function pick(pos, chosen) {
-    if (pos === optsByPos.length) {
+  // Backtrack: assign one note per string, each of the 4 notes used exactly once.
+  function pick(pos, chosen, usedNotes) {
+    if (pos === optsByString.length) {
+      if (usedNotes.size < targetNotes.length) return;
       const span = Math.max(...chosen) - Math.min(...chosen);
       if (span > 5) return;
       const fretsInOrder = stringIndices.map(si => chosen[invertedStrings.indexOf(si)]);
@@ -4798,22 +4802,28 @@ function findSeventhShapes(rootMidi, typeKey, inversion, stringIndices) {
       }
       return;
     }
-    for (const f of optsByPos[pos]) {
-      pick(pos + 1, [...chosen, f]);
+    for (const { fret, noteIdx } of optsByString[pos]) {
+      if (!usedNotes.has(noteIdx)) {
+        usedNotes.add(noteIdx);
+        pick(pos + 1, [...chosen, fret], usedNotes);
+        usedNotes.delete(noteIdx);
+      }
     }
   }
 
-  pick(0, []);
+  pick(0, [], new Set());
   shapes.sort((a, b) => a.startFret - b.startFret);
   return shapes;
 }
 
 function drawSeventhSVG(frets, stringIndices, rootMidi, typeKey, inversion) {
   const ct = SEVENTH_CHORD_TYPES[typeKey];
-  const invertedStrings = [...stringIndices].reverse();
-  const targetNotes = seventhNotes(rootMidi, typeKey, inversion).map(n => n % 12);
+  const baseNotes = ct.intervals.map(iv => (rootMidi + iv) % 12);
   const noteRoleMap = {};
-  invertedStrings.forEach((si, i) => { noteRoleMap[si] = i; });
+  stringIndices.forEach((si, j) => {
+    const pc = (OPEN_MIDI[si] + frets[j]) % 12;
+    noteRoleMap[si] = baseNotes.indexOf(pc);
+  });
   const degColors = [ct.color, '#3b82f6', '#22c55e', '#a855f7'];
 
   const nonZeroFrets = frets.filter(f => f > 0);
@@ -4902,19 +4912,18 @@ function renderSeventh() {
     return;
   }
 
-  const invertedStrings = [...ss.strings].reverse();
-  const noteRoleMap = {};
-  invertedStrings.forEach((si, i) => { noteRoleMap[si] = i; });
   const degCols2 = [ct.color, '#3b82f6', '#22c55e', '#a855f7'];
+  const baseNotes2 = ct.intervals.map(iv => (S7_STATE.keyIdx + iv) % 12);
 
   shapes.forEach(shape => {
     const card = document.createElement('div');
     card.className = 'triad-shape-card';
     const svgEl = drawSeventhSVG(shape.frets, ss.strings, S7_STATE.keyIdx, S7_STATE.type, S7_STATE.inversion);
     const notePills = ss.strings.map((si, j) => {
-      const n = NOTES[(OPEN_MIDI[si] + shape.frets[j]) % 12];
-      const role = noteRoleMap[si];
-      const c = degCols2[role];
+      const pc = (OPEN_MIDI[si] + shape.frets[j]) % 12;
+      const n = NOTES[pc];
+      const role = baseNotes2.indexOf(pc);
+      const c = degCols2[role >= 0 ? role : 0];
       return `<span class="shape-note" style="color:${c};border-color:${c};background:${c}18">${n}</span>`;
     }).join('');
     card.innerHTML = `
@@ -6278,6 +6287,11 @@ window.addEventListener('DOMContentLoaded', function() {
 </script>
 <!-- ═══════════════════════════════ JAM / BASI PAGE ══════════════════════════════ -->
 <div id="page-jam" class="page">
+  <div class="cpage-tabs">
+    <button class="cpage-tab-btn active" data-tab="basi" onclick="showBasiSubpage('basi')">🎸 Basi</button>
+    <button class="cpage-tab-btn" data-tab="accordatore" onclick="showBasiSubpage('accordatore')">🎵 Accordatore</button>
+  </div>
+  <div id="bpage-basi" class="cpage-view active">
   <h2>Basi di Accompagnamento</h2>
   <div class="subtitle">// suona improvvisazioni live su basi generate in tempo reale — drums, basso e accordi</div>
 
@@ -6416,54 +6430,53 @@ window.addEventListener('DOMContentLoaded', function() {
       <!-- populated by JS -->
     </div>
   </div>
-</div>
+  </div><!-- /bpage-basi -->
+  <div id="bpage-accordatore" class="cpage-view">
+    <h2>Accordatore</h2>
+    <div class="subtitle">// usa il microfono per accordare la chitarra · A = 440 Hz</div>
 
-<!-- ═══════════════════════════════ ACCORDATORE ════════════════════════════════ -->
-<div id="page-tuner" class="page">
-  <h2>Accordatore</h2>
-  <div class="subtitle">// usa il microfono per accordare la chitarra · A = 440 Hz</div>
-
-  <div class="controls" style="margin-bottom:16px">
-    <div class="ctrl-group">
-      <div class="ctrl-label">Accordatura</div>
-      <select id="tuner-preset" onchange="tunerSetPreset(this.value)">
-        <option value="standard">Standard (E A D G B E)</option>
-        <option value="drop_d">Drop D (D A D G B E)</option>
-        <option value="dadgad">DADGAD</option>
-        <option value="open_g">Open G (D G D G B D)</option>
-        <option value="open_d">Open D (D A D F# A D)</option>
-        <option value="open_e">Open E (E B E G# B E)</option>
-        <option value="open_a">Open A (E A E A C# E)</option>
-        <option value="drop_c">Drop C (C G C F A D)</option>
-      </select>
+    <div class="controls" style="margin-bottom:16px">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Accordatura</div>
+        <select id="tuner-preset" onchange="tunerSetPreset(this.value)">
+          <option value="standard">Standard (E A D G B E)</option>
+          <option value="drop_d">Drop D (D A D G B E)</option>
+          <option value="dadgad">DADGAD</option>
+          <option value="open_g">Open G (D G D G B D)</option>
+          <option value="open_d">Open D (D A D F# A D)</option>
+          <option value="open_e">Open E (E B E G# B E)</option>
+          <option value="open_a">Open A (E A E A C# E)</option>
+          <option value="drop_c">Drop C (C G C F A D)</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">La di riferimento: <span id="tuner-aref-val">440</span> Hz</div>
+        <input type="range" id="tuner-aref" min="432" max="446" value="440" step="1"
+               oninput="tunerSetRef(this.value)"
+               style="width:100%;margin-top:6px;accent-color:var(--amber)">
+      </div>
     </div>
-    <div class="ctrl-group">
-      <div class="ctrl-label">La di riferimento: <span id="tuner-aref-val">440</span> Hz</div>
-      <input type="range" id="tuner-aref" min="432" max="446" value="440" step="1"
-             oninput="tunerSetRef(this.value)"
-             style="width:100%;margin-top:6px;accent-color:var(--amber)">
+
+    <div class="tuner-btn">
+      <button class="play-btn" id="tuner-toggle" onclick="tunerToggle()">🎤 Avvia accordatore</button>
     </div>
-  </div>
 
-  <div class="tuner-btn">
-    <button class="play-btn" id="tuner-toggle" onclick="tunerToggle()">🎤 Avvia accordatore</button>
-  </div>
+    <div class="tuner-display">
+      <div class="tuner-note" id="tuner-note">–</div>
+      <div class="tuner-freq" id="tuner-freq">in attesa del microfono...</div>
+      <div class="tuner-led-meter" id="tuner-led-meter"></div>
+      <div class="tuner-cents" id="tuner-cents">± 0 cents</div>
+    </div>
 
-  <div class="tuner-display">
-    <div class="tuner-note" id="tuner-note">–</div>
-    <div class="tuner-freq" id="tuner-freq">in attesa del microfono...</div>
-    <div class="tuner-led-meter" id="tuner-led-meter"></div>
-    <div class="tuner-cents" id="tuner-cents">± 0 cents</div>
-  </div>
-
-  <div class="tuner-strings" id="tuner-strings-list">
-    <div class="tuner-str" onclick="tunerPlayRef(0)" title="Tocca per sentire il tono di riferimento"><div class="str-name">E</div><div class="str-freq">82.4 Hz</div><div class="ctrl-label">6ª</div><div class="str-hint">▶ tono</div></div>
-    <div class="tuner-str" onclick="tunerPlayRef(1)" title="Tocca per sentire il tono di riferimento"><div class="str-name">A</div><div class="str-freq">110 Hz</div><div class="ctrl-label">5ª</div><div class="str-hint">▶ tono</div></div>
-    <div class="tuner-str" onclick="tunerPlayRef(2)" title="Tocca per sentire il tono di riferimento"><div class="str-name">D</div><div class="str-freq">146.8 Hz</div><div class="ctrl-label">4ª</div><div class="str-hint">▶ tono</div></div>
-    <div class="tuner-str" onclick="tunerPlayRef(3)" title="Tocca per sentire il tono di riferimento"><div class="str-name">G</div><div class="str-freq">196 Hz</div><div class="ctrl-label">3ª</div><div class="str-hint">▶ tono</div></div>
-    <div class="tuner-str" onclick="tunerPlayRef(4)" title="Tocca per sentire il tono di riferimento"><div class="str-name">B</div><div class="str-freq">246.9 Hz</div><div class="ctrl-label">2ª</div><div class="str-hint">▶ tono</div></div>
-    <div class="tuner-str" onclick="tunerPlayRef(5)" title="Tocca per sentire il tono di riferimento"><div class="str-name">E</div><div class="str-freq">329.6 Hz</div><div class="ctrl-label">1ª</div><div class="str-hint">▶ tono</div></div>
-  </div>
+    <div class="tuner-strings" id="tuner-strings-list">
+      <div class="tuner-str" onclick="tunerPlayRef(0)" title="Tocca per sentire il tono di riferimento"><div class="str-name">E</div><div class="str-freq">82.4 Hz</div><div class="ctrl-label">6ª</div><div class="str-hint">▶ tono</div></div>
+      <div class="tuner-str" onclick="tunerPlayRef(1)" title="Tocca per sentire il tono di riferimento"><div class="str-name">A</div><div class="str-freq">110 Hz</div><div class="ctrl-label">5ª</div><div class="str-hint">▶ tono</div></div>
+      <div class="tuner-str" onclick="tunerPlayRef(2)" title="Tocca per sentire il tono di riferimento"><div class="str-name">D</div><div class="str-freq">146.8 Hz</div><div class="ctrl-label">4ª</div><div class="str-hint">▶ tono</div></div>
+      <div class="tuner-str" onclick="tunerPlayRef(3)" title="Tocca per sentire il tono di riferimento"><div class="str-name">G</div><div class="str-freq">196 Hz</div><div class="ctrl-label">3ª</div><div class="str-hint">▶ tono</div></div>
+      <div class="tuner-str" onclick="tunerPlayRef(4)" title="Tocca per sentire il tono di riferimento"><div class="str-name">B</div><div class="str-freq">246.9 Hz</div><div class="ctrl-label">2ª</div><div class="str-hint">▶ tono</div></div>
+      <div class="tuner-str" onclick="tunerPlayRef(5)" title="Tocca per sentire il tono di riferimento"><div class="str-name">E</div><div class="str-freq">329.6 Hz</div><div class="ctrl-label">1ª</div><div class="str-hint">▶ tono</div></div>
+    </div>
+  </div><!-- /bpage-accordatore -->
 </div>
 
 <!-- ═══════════════════════════ AUDIO ENHANCEMENT ═══════════════════════════ -->
@@ -6520,6 +6533,16 @@ window.addEventListener('DOMContentLoaded', function() {
 
 <!-- ═══════════════════════════ TECNICA AVANZATA ═══════════════════════════ -->
 <div id="page-technique" class="page">
+  <div class="cpage-tabs">
+    <button class="cpage-tab-btn active" data-tab="pratica" onclick="showTechSubpage('pratica')">Pratica</button>
+    <button class="cpage-tab-btn" data-tab="tecnica" onclick="showTechSubpage('tecnica');initTechPage()">⚡ Tecnica</button>
+  </div>
+  <div id="tpage-pratica" class="cpage-view active">
+    <h2>Guida alla Pratica</h2>
+    <div class="subtitle">// strategie per sviluppare l'improvvisazione</div>
+    <div class="practice-grid" id="practice-grid"></div>
+  </div>
+  <div id="tpage-tecnica" class="cpage-view">
   <h2>⚡ Tecnica Avanzata</h2>
   <div class="subtitle">// sweep picking, alternate, legato, tapping — studia i virtuosi del rock</div>
 
@@ -6657,6 +6680,7 @@ window.addEventListener('DOMContentLoaded', function() {
   <div id="tp-masters" class="tech-panel">
     <div class="masters-grid" id="masters-grid"></div>
   </div>
+  </div><!-- /tpage-tecnica -->
 </div>
 
 <script>
@@ -7365,80 +7389,6 @@ function playSweepArp(direction) {
   });
 }
 
-// ─── PLAY TECH EXERCISE (Alternate, Legato, Tapping, etc.) ──────────────────
-function debugTechExercise(techKey, exIndex) {
-  const exercises = TECH_EXERCISES[techKey];
-  if (!exercises || !exercises[exIndex]) return;
-
-  const ex = exercises[exIndex];
-  const tab = ex.tab;
-  console.log(`\n📋 DEBUG: ${techKey} #${exIndex} - "${ex.title}"`);
-  console.log('Tab:', tab);
-
-  const strIdx = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4 };
-  const lines = tab.split('\n').filter(l => l.trim());
-  const stringLines = {};
-
-  lines.forEach(line => {
-    const m = line.match(/^([a-zA-Z])\s*\|(.*)$/);
-    if (!m) {
-      console.log('  ❌ Skipped line (no match):', line);
-      return;
-    }
-    const s = m[1].toLowerCase();
-    const idx = strIdx[s];
-    if (idx !== undefined) {
-      stringLines[idx] = m[2];
-      console.log(`  String ${s} (idx ${idx}): "${m[2]}"`);
-    }
-  });
-
-  const stringFrets = {};
-  Object.entries(stringLines).forEach(([idx, data]) => {
-    const fretsInStr = [];
-    let i = 0;
-    while (i < data.length) {
-      const c = data[i];
-      if (/\d/.test(c)) {
-        if (i + 1 < data.length && /\d/.test(data[i + 1])) {
-          fretsInStr.push(parseInt(c + data[i + 1]));
-          i += 2;
-        } else {
-          fretsInStr.push(parseInt(c));
-          i += 1;
-        }
-      } else {
-        i++;
-      }
-    }
-    stringFrets[idx] = fretsInStr;
-    console.log(`  Frets in string ${idx}: [${fretsInStr.join(', ')}]`);
-  });
-
-  const frets = [];
-  const numFrets = Math.max(...Object.values(stringFrets).map(f => f.length));
-  const strNames = { 0: 'e', 1: 'B', 2: 'G', 3: 'D', 4: 'A' };
-
-  for (let fretIdx = 0; fretIdx < numFrets; fretIdx++) {
-    Object.keys(stringFrets).sort((a, b) => parseInt(a) - parseInt(b)).forEach(idx => {
-      if (fretIdx < stringFrets[idx].length) {
-        frets.push({ string: parseInt(idx), fret: stringFrets[idx][fretIdx] });
-      }
-    });
-  }
-
-  const notes = frets.map(f => {
-    const midi = TECH_OPEN_MIDI[f.string] + f.fret;
-    const noteIdx = ((midi - 12) % 12);
-    return NOTES_TECH[noteIdx] + Math.floor(midi / 12);
-  });
-
-  console.log(`📝 Extracted sequence (${frets.length} notes):`);
-  console.log('  Positions:', frets.map(f => `${strNames[f.string]}${f.fret}`).join(' → '));
-  console.log('  Notes:', notes.join(' → '));
-  console.log('  MIDI:', frets.map(f => TECH_OPEN_MIDI[f.string] + f.fret).join(', '));
-}
-
 function playTechExercise(techKey, exIndex, slowMode) {
   const exercises = TECH_EXERCISES[techKey];
   if (!exercises || !exercises[exIndex]) return;
@@ -7787,10 +7737,30 @@ function drawTransArrows(){
 }
 
 window.addEventListener('resize',()=>{
-  if(document.getElementById('page-transition').classList.contains('active')
+  if(document.getElementById('page-circle').classList.contains('active')
+     && document.getElementById('cpage-transizione').classList.contains('active')
      && document.getElementById('trans-griglia').classList.contains('active'))
     drawTransArrows();
 });
+
+function showCircleSubpage(tab) {
+  document.querySelectorAll('#page-circle .cpage-tab-btn').forEach(b=>
+    b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('#page-circle .cpage-view').forEach(v=>
+    v.classList.toggle('active', v.id==='cpage-'+tab));
+}
+function showBasiSubpage(tab) {
+  document.querySelectorAll('#page-jam .cpage-tab-btn').forEach(b=>
+    b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('#page-jam .cpage-view').forEach(v=>
+    v.classList.toggle('active', v.id==='bpage-'+tab));
+}
+function showTechSubpage(tab) {
+  document.querySelectorAll('#page-technique .cpage-tab-btn').forEach(b=>
+    b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('#page-technique .cpage-view').forEach(v=>
+    v.classList.toggle('active', v.id==='tpage-'+tab));
+}
 
 /* ── circolo delle quinte ── */
 const TC_CX=380,TC_CY=380,TC_R=240,TC_RA=48,TC_RI=24,TC_D2R=Math.PI/180;
