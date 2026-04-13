@@ -7360,10 +7360,15 @@ function debugTechExercise(techKey, exIndex) {
 
 function playTechExercise(techKey, exIndex, slowMode) {
   const exercises = TECH_EXERCISES[techKey];
-  if (!exercises || !exercises[exIndex]) return;
+  if (!exercises || !exercises[exIndex]) {
+    console.log('playTechExercise: exercise not found', techKey, exIndex);
+    return;
+  }
 
   const ex = exercises[exIndex];
   const tab = ex.tab;
+  console.log('Playing exercise:', techKey, exIndex, 'slowMode:', slowMode);
+
   // Map string labels to MIDI indices: high e, B, G, D, A, low E
   const stringMap = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4, 'E': 5 };
 
@@ -7377,6 +7382,8 @@ function playTechExercise(techKey, exIndex, slowMode) {
     const idx = stringMap[s] !== undefined ? stringMap[s] : stringMap[s.toLowerCase()];
     if (idx !== undefined) stringLines[idx] = m[2];
   });
+
+  console.log('Parsed string lines:', stringLines);
 
   if (Object.keys(stringLines).length === 0) return;
 
@@ -7415,13 +7422,18 @@ function playTechExercise(techKey, exIndex, slowMode) {
     });
   }
 
+  console.log('Extracted frets:', frets);
+
   const ctx = getAudioCtx();
   const now = ctx.currentTime;
   const baseStep = slowMode ? 0.15 : 0.08;
 
+  console.log('Audio context ready, playing', frets.length, 'notes');
+
   frets.forEach((f, i) => {
     const midi = TECH_OPEN_MIDI[f.string] + f.fret;
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
+    console.log('Playing note:', i, 'string:', f.string, 'fret:', f.fret, 'MIDI:', midi, 'freq:', freq.toFixed(2));
     playNote(freq, now + i * baseStep, 0.6);
   });
 }
