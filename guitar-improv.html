@@ -4781,24 +4781,26 @@ function findSeventhShapes(rootMidi, typeKey, inversion, stringIndices) {
   const invertedStrings = [...stringIndices].reverse(); // low→high
   const targetNotes = seventhNotes(rootMidi, typeKey, inversion).map(n => n % 12);
 
-  // For each string (low→high), collect all frets 0..17 that match the target note.
-  // Each target pitch class appears at most twice in that range (every 12 frets),
-  // so combinations = 2^4 = 16 max — fast enough.
-  const optsByPos = invertedStrings.map((si, i) => {
+  // For each string (low→high), list every fret 0..17 that plays ANY of the 4 target notes,
+  // recording which note index it corresponds to.
+  const optsByString = invertedStrings.map(si => {
     const open = OPEN_MIDI[si];
-    const target = targetNotes[i];
-    const frets = [];
+    const opts = [];
     for (let f = 0; f <= 17; f++) {
-      if ((open + f) % 12 === target) frets.push(f);
+      const pc = (open + f) % 12;
+      const ni = targetNotes.indexOf(pc);
+      if (ni !== -1) opts.push({ fret: f, noteIdx: ni });
     }
-    return frets;
+    return opts;
   });
 
   const shapes = [];
   const seen = new Set();
 
-  function pick(pos, chosen) {
-    if (pos === optsByPos.length) {
+  // Backtrack: assign one note per string, each of the 4 notes used exactly once.
+  function pick(pos, chosen, usedNotes) {
+    if (pos === optsByString.length) {
+      if (usedNotes.size < targetNotes.length) return;
       const span = Math.max(...chosen) - Math.min(...chosen);
       if (span > 5) return;
       const fretsInOrder = stringIndices.map(si => chosen[invertedStrings.indexOf(si)]);
@@ -4809,22 +4811,28 @@ function findSeventhShapes(rootMidi, typeKey, inversion, stringIndices) {
       }
       return;
     }
-    for (const f of optsByPos[pos]) {
-      pick(pos + 1, [...chosen, f]);
+    for (const { fret, noteIdx } of optsByString[pos]) {
+      if (!usedNotes.has(noteIdx)) {
+        usedNotes.add(noteIdx);
+        pick(pos + 1, [...chosen, fret], usedNotes);
+        usedNotes.delete(noteIdx);
+      }
     }
   }
 
-  pick(0, []);
+  pick(0, [], new Set());
   shapes.sort((a, b) => a.startFret - b.startFret);
   return shapes;
 }
 
 function drawSeventhSVG(frets, stringIndices, rootMidi, typeKey, inversion) {
   const ct = SEVENTH_CHORD_TYPES[typeKey];
-  const invertedStrings = [...stringIndices].reverse();
-  const targetNotes = seventhNotes(rootMidi, typeKey, inversion).map(n => n % 12);
+  const baseNotes = ct.intervals.map(iv => (rootMidi + iv) % 12);
   const noteRoleMap = {};
-  invertedStrings.forEach((si, i) => { noteRoleMap[si] = i; });
+  stringIndices.forEach((si, j) => {
+    const pc = (OPEN_MIDI[si] + frets[j]) % 12;
+    noteRoleMap[si] = baseNotes.indexOf(pc);
+  });
   const degColors = [ct.color, '#3b82f6', '#22c55e', '#a855f7'];
 
   const nonZeroFrets = frets.filter(f => f > 0);
@@ -4913,19 +4921,18 @@ function renderSeventh() {
     return;
   }
 
-  const invertedStrings = [...ss.strings].reverse();
-  const noteRoleMap = {};
-  invertedStrings.forEach((si, i) => { noteRoleMap[si] = i; });
   const degCols2 = [ct.color, '#3b82f6', '#22c55e', '#a855f7'];
+  const baseNotes2 = ct.intervals.map(iv => (S7_STATE.keyIdx + iv) % 12);
 
   shapes.forEach(shape => {
     const card = document.createElement('div');
     card.className = 'triad-shape-card';
     const svgEl = drawSeventhSVG(shape.frets, ss.strings, S7_STATE.keyIdx, S7_STATE.type, S7_STATE.inversion);
     const notePills = ss.strings.map((si, j) => {
-      const n = NOTES[(OPEN_MIDI[si] + shape.frets[j]) % 12];
-      const role = noteRoleMap[si];
-      const c = degCols2[role];
+      const pc = (OPEN_MIDI[si] + shape.frets[j]) % 12;
+      const n = NOTES[pc];
+      const role = baseNotes2.indexOf(pc);
+      const c = degCols2[role >= 0 ? role : 0];
       return `<span class="shape-note" style="color:${c};border-color:${c};background:${c}18">${n}</span>`;
     }).join('');
     card.innerHTML = `
@@ -7391,92 +7398,12 @@ function playSweepArp(direction) {
   });
 }
 
-// ─── PLAY TECH EXERCISE (Alternate, Legato, Tapping, etc.) ──────────────────
-function debugTechExercise(techKey, exIndex) {
+function playTechExercise(techKey, exIndex, slowMode) {
   const exercises = TECH_EXERCISES[techKey];
   if (!exercises || !exercises[exIndex]) return;
 
   const ex = exercises[exIndex];
   const tab = ex.tab;
-  console.log(`\n📋 DEBUG: ${techKey} #${exIndex} - "${ex.title}"`);
-  console.log('Tab:', tab);
-
-  const strIdx = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4 };
-  const lines = tab.split('\n').filter(l => l.trim());
-  const stringLines = {};
-
-  lines.forEach(line => {
-    const m = line.match(/^([a-zA-Z])\s*\|(.*)$/);
-    if (!m) {
-      console.log('  ❌ Skipped line (no match):', line);
-      return;
-    }
-    const s = m[1].toLowerCase();
-    const idx = strIdx[s];
-    if (idx !== undefined) {
-      stringLines[idx] = m[2];
-      console.log(`  String ${s} (idx ${idx}): "${m[2]}"`);
-    }
-  });
-
-  const stringFrets = {};
-  Object.entries(stringLines).forEach(([idx, data]) => {
-    const fretsInStr = [];
-    let i = 0;
-    while (i < data.length) {
-      const c = data[i];
-      if (/\d/.test(c)) {
-        if (i + 1 < data.length && /\d/.test(data[i + 1])) {
-          fretsInStr.push(parseInt(c + data[i + 1]));
-          i += 2;
-        } else {
-          fretsInStr.push(parseInt(c));
-          i += 1;
-        }
-      } else {
-        i++;
-      }
-    }
-    stringFrets[idx] = fretsInStr;
-    console.log(`  Frets in string ${idx}: [${fretsInStr.join(', ')}]`);
-  });
-
-  const frets = [];
-  const numFrets = Math.max(...Object.values(stringFrets).map(f => f.length));
-  const strNames = { 0: 'e', 1: 'B', 2: 'G', 3: 'D', 4: 'A' };
-
-  for (let fretIdx = 0; fretIdx < numFrets; fretIdx++) {
-    Object.keys(stringFrets).sort((a, b) => parseInt(a) - parseInt(b)).forEach(idx => {
-      if (fretIdx < stringFrets[idx].length) {
-        frets.push({ string: parseInt(idx), fret: stringFrets[idx][fretIdx] });
-      }
-    });
-  }
-
-  const notes = frets.map(f => {
-    const midi = TECH_OPEN_MIDI[f.string] + f.fret;
-    const noteIdx = ((midi - 12) % 12);
-    return NOTES_TECH[noteIdx] + Math.floor(midi / 12);
-  });
-
-  console.log(`📝 Extracted sequence (${frets.length} notes):`);
-  console.log('  Positions:', frets.map(f => `${strNames[f.string]}${f.fret}`).join(' → '));
-  console.log('  Notes:', notes.join(' → '));
-  console.log('  MIDI:', frets.map(f => TECH_OPEN_MIDI[f.string] + f.fret).join(', '));
-}
-
-function playTechExercise(techKey, exIndex, slowMode) {
-  console.log('TECH_EXERCISES keys:', Object.keys(TECH_EXERCISES));
-  const exercises = TECH_EXERCISES[techKey];
-  if (!exercises || !exercises[exIndex]) {
-    console.log('playTechExercise: exercise not found', techKey, exIndex, 'available:', exercises);
-    return;
-  }
-
-  const ex = exercises[exIndex];
-  const tab = ex.tab;
-  console.log('Playing exercise:', techKey, exIndex, 'slowMode:', slowMode);
-
   // Map string labels to MIDI indices: high e, B, G, D, A, low E
   const stringMap = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4, 'E': 5 };
 
@@ -7490,8 +7417,6 @@ function playTechExercise(techKey, exIndex, slowMode) {
     const idx = stringMap[s] !== undefined ? stringMap[s] : stringMap[s.toLowerCase()];
     if (idx !== undefined) stringLines[idx] = m[2];
   });
-
-  console.log('Parsed string lines:', stringLines);
 
   if (Object.keys(stringLines).length === 0) return;
 
@@ -7530,18 +7455,13 @@ function playTechExercise(techKey, exIndex, slowMode) {
     });
   }
 
-  console.log('Extracted frets:', frets);
-
   const ctx = getAudioCtx();
   const now = ctx.currentTime;
   const baseStep = slowMode ? 0.15 : 0.08;
 
-  console.log('Audio context ready, playing', frets.length, 'notes');
-
   frets.forEach((f, i) => {
     const midi = TECH_OPEN_MIDI[f.string] + f.fret;
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
-    console.log('Playing note:', i, 'string:', f.string, 'fret:', f.fret, 'MIDI:', midi, 'freq:', freq.toFixed(2));
     playNote(freq, now + i * baseStep, 0.6);
   });
 }
