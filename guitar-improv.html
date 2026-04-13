@@ -1982,6 +1982,54 @@
     text-align: center;
   }
   .cs-pos-block .mini-fb { width: 190px; height: auto; border-radius: 6px; }
+
+  /* ── TRANSIZIONE MODALE ── */
+  .trans-tabs{display:flex;gap:6px;margin-bottom:20px;}
+  .trans-tab-btn{background:none;border:none;color:var(--text-mid);
+    font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;
+    padding:6px 12px;cursor:pointer;border-radius:4px;transition:all .2s;
+    white-space:nowrap;border-bottom:2px solid transparent;}
+  .trans-tab-btn:hover{color:var(--text);}
+  .trans-tab-btn.active{color:var(--amber);border-bottom-color:var(--amber);background:var(--amber-glow);}
+  .trans-view{display:none;}.trans-view.active{display:block;}
+  .trans-legend{display:flex;gap:18px;margin-bottom:22px;flex-wrap:wrap;align-items:center;}
+  .trans-legend-item{display:flex;align-items:center;gap:7px;
+    font-family:'Space Mono',monospace;font-size:11px;color:var(--text-mid);}
+  .trans-swatch{width:28px;height:28px;border-radius:5px;border:1px solid;flex-shrink:0;}
+  .ts-root{background:var(--amber-glow);border-color:var(--amber-dim);}
+  .ts-normal{background:var(--bg3);border-color:var(--border);}
+  .ts-changed{background:rgba(245,158,11,0.2);border-color:var(--amber);
+    box-shadow:0 0 8px rgba(245,158,11,0.4);}
+  .trans-schema-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+  .trans-schema-wrap::-webkit-scrollbar{height:6px;}
+  .trans-schema-wrap::-webkit-scrollbar-track{background:transparent;}
+  .trans-schema-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+  #trans-schema{position:relative;}
+  .tg-header-row{display:flex;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:2px;}
+  .tg-label-spacer{flex-shrink:0;}
+  .tg-st-header{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .tg-st-num{font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim);}
+  .tg-st-note{font-family:'Space Mono',monospace;font-size:11px;color:var(--text-mid);}
+  .tg-mode-row{display:flex;border-bottom:1px solid var(--border);}
+  .tg-mode-row:last-child{border-bottom:none;}
+  .tg-mode-label{flex-shrink:0;padding:12px 14px 12px 0;border-right:1px solid var(--border);
+    display:flex;flex-direction:column;justify-content:center;gap:4px;}
+  .tg-mode-name{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;
+    letter-spacing:1.5px;color:var(--text);}
+  .tg-mode-alts{font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.5px;}
+  .tg-note-cell{flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .tg-note-block{border-radius:6px;display:flex;align-items:center;justify-content:center;
+    font-family:'Space Mono',monospace;font-weight:700;border:1px solid;letter-spacing:0;transition:box-shadow .2s;}
+  .tg-note-block.root{background:var(--amber-glow);border-color:var(--amber-dim);color:var(--amber);}
+  .tg-note-block.normal{background:var(--bg3);border-color:var(--border);color:var(--text-mid);}
+  .tg-note-block.changed{background:rgba(245,158,11,0.2);border-color:var(--amber);
+    color:var(--amber);box-shadow:0 0 12px rgba(245,158,11,0.4);}
+  #trans-arrows-svg{position:absolute;top:0;left:0;pointer-events:none;overflow:visible;}
+  .trans-circle-wrap{display:flex;justify-content:center;padding:8px 0;}
+  #trans-circle-svg{max-width:min(100%,680px);height:auto;display:block;}
+  .trans-intro{font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);
+    letter-spacing:1px;line-height:1.8;margin-bottom:22px;max-width:640px;}
 </style>
 </head>
 <body>
@@ -2031,6 +2079,7 @@
     <button class="nav-btn" onclick="showPage('caged')">CAGED</button>
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
     <button class="nav-btn" onclick="showPage('circle');renderCircleOfFifths()">♯♭ Circolo</button>
+    <button class="nav-btn" onclick="showPage('transition');initTransition()">Transizione</button>
     <button class="nav-btn" onclick="showPage('jam')">🎸 Basi</button>
     <button class="nav-btn" onclick="showPage('tuner')">🎵 Accordatore</button>
     <button class="nav-btn" onclick="showPage('audio')">🎛 Audio</button>
@@ -2455,6 +2504,38 @@
       <div style="color:var(--text-dim);font-family:'Space Mono',monospace;font-size:12px;text-align:center;padding:30px 0">
         ← Click su una<br>tonalità
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ TRANSIZIONE MODALE ══════════════════════ -->
+<div id="page-transition" class="page">
+  <h2>Transizione Modale</h2>
+  <div class="subtitle">// da Lidia a Locria: una nota alla volta si abbassa di un semitono</div>
+  <div class="trans-tabs">
+    <button class="trans-tab-btn active" data-tv="griglia">Griglia Cromatica</button>
+    <button class="trans-tab-btn" data-tv="circolo5">Circolo delle Quinte</button>
+  </div>
+  <div id="trans-griglia" class="trans-view active">
+    <p class="trans-intro">
+      Ad ogni passo una sola nota si abbassa di un semitono, spostandosi di una colonna verso sinistra.
+    </p>
+    <div class="trans-legend">
+      <div class="trans-legend-item"><div class="trans-swatch ts-root"></div><span>tonica (1)</span></div>
+      <div class="trans-legend-item"><div class="trans-swatch ts-normal"></div><span>nota stabile</span></div>
+      <div class="trans-legend-item"><div class="trans-swatch ts-changed"></div><span>nota abbassata ←</span></div>
+    </div>
+    <div class="trans-schema-wrap">
+      <div id="trans-schema"></div>
+    </div>
+  </div>
+  <div id="trans-circolo5" class="trans-view">
+    <p class="trans-intro">
+      Le 7 scale modali di Do occupano 7 posizioni consecutive sul circolo delle quinte.<br>
+      Ogni passo in senso antiorario abbassa di un semitono il grado indicato.
+    </p>
+    <div class="trans-circle-wrap">
+      <svg id="trans-circle-svg" viewBox="0 0 760 760" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
   </div>
 </div>
@@ -7604,6 +7685,227 @@ function loadCircleKey(noteIdx) {
   FB_STATE.keyIndex = noteIdx;
   showPage('fretboard');
   renderFretboard();
+}
+
+// ─── TRANSIZIONE MODALE ────────────────────────────────────────────────────
+
+const TRANS_ST_SHORT=['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+
+const TRANS_MODES=[
+  {name:'LIDIA',    alts:'#4',             notes:[
+    {d:'1', s:0,k:'root'},{d:'2',s:2,k:'normal'},{d:'3',s:4,k:'normal'},
+    {d:'#4',s:6,k:'normal'},{d:'5',s:7,k:'normal'},{d:'6',s:9,k:'normal'},{d:'7',s:11,k:'normal'}]},
+  {name:'IONICA',   alts:'—',              notes:[
+    {d:'1',s:0,k:'root'},{d:'2',s:2,k:'normal'},{d:'3',s:4,k:'normal'},
+    {d:'4',s:5,k:'changed'},{d:'5',s:7,k:'normal'},{d:'6',s:9,k:'normal'},{d:'7',s:11,k:'normal'}]},
+  {name:'MISOLIDIA',alts:'b7',             notes:[
+    {d:'1',s:0,k:'root'},{d:'2',s:2,k:'normal'},{d:'3',s:4,k:'normal'},
+    {d:'4',s:5,k:'normal'},{d:'5',s:7,k:'normal'},{d:'6',s:9,k:'normal'},{d:'b7',s:10,k:'changed'}]},
+  {name:'DORICA',   alts:'b3, b7',         notes:[
+    {d:'1',s:0,k:'root'},{d:'2',s:2,k:'normal'},{d:'b3',s:3,k:'changed'},
+    {d:'4',s:5,k:'normal'},{d:'5',s:7,k:'normal'},{d:'6',s:9,k:'normal'},{d:'b7',s:10,k:'normal'}]},
+  {name:'EOLIA',    alts:'b3, b6, b7',     notes:[
+    {d:'1',s:0,k:'root'},{d:'2',s:2,k:'normal'},{d:'b3',s:3,k:'normal'},
+    {d:'4',s:5,k:'normal'},{d:'5',s:7,k:'normal'},{d:'b6',s:8,k:'changed'},{d:'b7',s:10,k:'normal'}]},
+  {name:'FRIGIA',   alts:'b2, b3, b6, b7', notes:[
+    {d:'1',s:0,k:'root'},{d:'b2',s:1,k:'changed'},{d:'b3',s:3,k:'normal'},
+    {d:'4',s:5,k:'normal'},{d:'5',s:7,k:'normal'},{d:'b6',s:8,k:'normal'},{d:'b7',s:10,k:'normal'}]},
+  {name:'LOCRIA',   alts:'b2, b3, b5, b6, b7', notes:[
+    {d:'1',s:0,k:'root'},{d:'b2',s:1,k:'normal'},{d:'b3',s:3,k:'normal'},
+    {d:'4',s:5,k:'normal'},{d:'b5',s:6,k:'changed'},{d:'b6',s:8,k:'normal'},{d:'b7',s:10,k:'normal'}]},
+];
+
+let _tGridBuilt=false,_tCircleBuilt=false;
+const _tCellRefs=[];
+const TG_LW=158,TG_SW=52,TG_RH=76,TG_BW=40,TG_BH=40,TG_BFS=11;
+
+document.querySelectorAll('.trans-tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.trans-tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.trans-view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('trans-'+btn.dataset.tv).classList.add('active');
+    if(btn.dataset.tv==='griglia') requestAnimationFrame(drawTransArrows);
+    else if(!_tCircleBuilt){buildTransCircle();_tCircleBuilt=true;}
+  });
+});
+
+function initTransition(){
+  if(!_tGridBuilt){buildTransGrid();_tGridBuilt=true;}
+  requestAnimationFrame(drawTransArrows);
+}
+
+function buildTransGrid(){
+  const schema=document.getElementById('trans-schema');
+  const tw=TG_LW+12*TG_SW;
+  schema.style.minWidth=tw+'px';
+  const hr=document.createElement('div');hr.className='tg-header-row';
+  schema.appendChild(hr);
+  const sp=document.createElement('div');sp.className='tg-label-spacer';
+  sp.style.width=TG_LW+'px';hr.appendChild(sp);
+  for(let s=0;s<12;s++){
+    const h=document.createElement('div');h.className='tg-st-header';
+    h.style.width=TG_SW+'px';
+    h.innerHTML=`<span class="tg-st-num">${s}</span><span class="tg-st-note">${TRANS_ST_SHORT[s]}</span>`;
+    hr.appendChild(h);
+  }
+  TRANS_MODES.forEach((mode,mi)=>{
+    const nm={};mode.notes.forEach(n=>{nm[n.s]=n;});
+    const row=document.createElement('div');row.className='tg-mode-row';
+    row.style.height=TG_RH+'px';schema.appendChild(row);
+    const lbl=document.createElement('div');lbl.className='tg-mode-label';
+    lbl.style.width=TG_LW+'px';
+    lbl.innerHTML=`<div class="tg-mode-name">${mode.name}</div><div class="tg-mode-alts">${mode.alts}</div>`;
+    row.appendChild(lbl);
+    const rc={};
+    for(let s=0;s<12;s++){
+      const cell=document.createElement('div');cell.className='tg-note-cell';
+      cell.style.width=TG_SW+'px';cell.style.height=TG_RH+'px';
+      const n=nm[s];
+      if(n){
+        const blk=document.createElement('div');
+        blk.className='tg-note-block '+n.k;
+        blk.style.width=TG_BW+'px';blk.style.height=TG_BH+'px';blk.style.fontSize=TG_BFS+'px';
+        blk.textContent=n.d;cell.appendChild(blk);
+      }
+      row.appendChild(cell);rc[s]=cell;
+    }
+    _tCellRefs.push(rc);
+  });
+}
+
+function drawTransArrows(){
+  const schema=document.getElementById('trans-schema');
+  if(!schema)return;
+  const ex=document.getElementById('trans-arrows-svg');if(ex)ex.remove();
+  const sw=schema.offsetWidth,sh=schema.offsetHeight;
+  if(!sw||!sh)return;
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.id='trans-arrows-svg';svg.setAttribute('width',sw);svg.setAttribute('height',sh);
+  svg.innerHTML=`<defs><marker id="tah" markerWidth="7" markerHeight="5"
+    refX="5.5" refY="2.5" orient="auto">
+    <polygon points="0 0,7 2.5,0 5" fill="rgba(245,158,11,0.85)"/></marker></defs>`;
+  const sr=schema.getBoundingClientRect();
+  TRANS_MODES.forEach((mode,mi)=>{
+    if(mi===0)return;
+    const ch=mode.notes.find(n=>n.k==='changed');if(!ch)return;
+    const fromCell=_tCellRefs[mi-1][ch.s+1],toCell=_tCellRefs[mi][ch.s];
+    if(!fromCell||!toCell)return;
+    const fr=fromCell.getBoundingClientRect(),tr=toCell.getBoundingClientRect();
+    const x1=fr.left-sr.left+fr.width/2,y1=fr.bottom-sr.top-4;
+    const x2=tr.left-sr.left+tr.width/2,y2=tr.top-sr.top+6;
+    const my=(y1+y2)/2,dx=x2-x1;
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',`M ${x1} ${y1} C ${x1+dx*0.2} ${my},${x2-dx*0.1} ${my},${x2} ${y2}`);
+    p.setAttribute('stroke','rgba(245,158,11,0.6)');p.setAttribute('stroke-width','1.5');
+    p.setAttribute('fill','none');p.setAttribute('stroke-dasharray','5 3');
+    p.setAttribute('marker-end','url(#tah)');svg.appendChild(p);
+  });
+  schema.appendChild(svg);
+}
+
+window.addEventListener('resize',()=>{
+  if(document.getElementById('page-transition').classList.contains('active')
+     && document.getElementById('trans-griglia').classList.contains('active'))
+    drawTransArrows();
+});
+
+const TC_CX=380,TC_CY=380,TC_R=240,TC_RA=48,TC_RI=24,TC_D2R=Math.PI/180;
+function tcXY(pos,r){
+  const a=(pos*30-90)*TC_D2R;
+  return{x:TC_CX+r*Math.cos(a),y:TC_CY+r*Math.sin(a)};
+}
+const TC_KEYS=[
+  {pos:0,key:'C'},{pos:1,key:'G'},{pos:2,key:'D'},{pos:3,key:'A'},
+  {pos:4,key:'E'},{pos:5,key:'B'},{pos:6,key:'F#'},{pos:7,key:'Db'},
+  {pos:8,key:'Ab'},{pos:9,key:'Eb'},{pos:10,key:'Bb'},{pos:11,key:'F'}
+];
+const TC_MODES=[
+  {pos:1, key:'G',  mode:'LIDIA',     alts:'#4'},
+  {pos:0, key:'C',  mode:'IONICA',    alts:'—'},
+  {pos:11,key:'F',  mode:'MISOLIDIA', alts:'b7'},
+  {pos:10,key:'Bb', mode:'DORICA',    alts:'b3, b7'},
+  {pos:9, key:'Eb', mode:'EOLIA',     alts:'b3, b6, b7'},
+  {pos:8, key:'Ab', mode:'FRIGIA',    alts:'b2, b3, b6, b7'},
+  {pos:7, key:'Db', mode:'LOCRIA',    alts:'b2 b3 b5 b6 b7'},
+];
+const TC_ARCS=[
+  {f:1, t:0,  lbl:'#4 → 4', ma:15},
+  {f:0, t:11, lbl:'7 → b7',  ma:345},
+  {f:11,t:10, lbl:'3 → b3',  ma:315},
+  {f:10,t:9,  lbl:'6 → b6',  ma:285},
+  {f:9, t:8,  lbl:'2 → b2',  ma:255},
+  {f:8, t:7,  lbl:'5 → b5',  ma:225},
+];
+const TC_ACT=new Set(TC_MODES.map(m=>m.pos));
+const TC_MBP={};TC_MODES.forEach(m=>{TC_MBP[m.pos]=m;});
+
+function _tcEl(tag,attrs){
+  const e=document.createElementNS('http://www.w3.org/2000/svg',tag);
+  for(const[k,v]of Object.entries(attrs))e.setAttribute(k,v);return e;
+}
+function _tcTxt(tag,attrs,text){const e=_tcEl(tag,attrs);e.textContent=text;return e;}
+
+function buildTransCircle(){
+  const svg=document.getElementById('trans-circle-svg');
+  svg.innerHTML='';
+  const defs=_tcEl('defs',{});
+  defs.innerHTML=`<marker id="tcah" markerWidth="7" markerHeight="5"
+    refX="5" refY="2.5" orient="auto">
+    <polygon points="0 0,7 2.5,0 5" fill="rgba(245,158,11,0.9)"/></marker>`;
+  svg.appendChild(defs);
+  svg.appendChild(_tcEl('circle',{cx:TC_CX,cy:TC_CY,r:TC_R,fill:'none',stroke:'#1a1a1a','stroke-width':'1'}));
+  TC_ARCS.forEach(t=>{
+    const p1=tcXY(t.f,TC_R),p2=tcXY(t.t,TC_R);
+    const dx=p2.x-p1.x,dy=p2.y-p1.y,dist=Math.sqrt(dx*dx+dy*dy);
+    const ux=dx/dist,uy=dy/dist;
+    const sx=(p1.x+TC_RA*ux).toFixed(1),sy=(p1.y+TC_RA*uy).toFixed(1);
+    const ex=(p2.x-TC_RA*ux).toFixed(1),ey=(p2.y-TC_RA*uy).toFixed(1);
+    svg.appendChild(_tcEl('path',{
+      d:`M ${sx} ${sy} A ${TC_R} ${TC_R} 0 0 0 ${ex} ${ey}`,
+      stroke:'rgba(245,158,11,0.55)','stroke-width':'1.5',
+      fill:'none','stroke-dasharray':'5 3','marker-end':'url(#tcah)'}));
+    const ma=(t.ma-90)*TC_D2R,lr=TC_R+78;
+    const lx=(TC_CX+lr*Math.cos(ma)).toFixed(1),ly=(TC_CY+lr*Math.sin(ma)).toFixed(1);
+    const ang=((t.ma%360)+360)%360;
+    const anc=ang>20&&ang<160?'start':ang>200&&ang<340?'end':'middle';
+    svg.appendChild(_tcTxt('text',{
+      x:lx,y:ly,'text-anchor':anc,'dominant-baseline':'middle',
+      fill:'rgba(245,158,11,0.82)',
+      'font-family':"'Space Mono',monospace",'font-size':'11','font-weight':'700'},t.lbl));
+  });
+  TC_KEYS.forEach(k=>{
+    const act=TC_ACT.has(k.pos);
+    const{x,y}=tcXY(k.pos,TC_R);
+    const g=_tcEl('g',{transform:`translate(${x.toFixed(1)},${y.toFixed(1)})`});
+    if(act){
+      const m=TC_MBP[k.pos];
+      g.appendChild(_tcEl('circle',{cx:0,cy:0,r:TC_RA+5,fill:'none',
+        stroke:'rgba(245,158,11,0.12)','stroke-width':'6'}));
+      g.appendChild(_tcEl('circle',{cx:0,cy:0,r:TC_RA,fill:'#120d00',
+        stroke:'#f59e0b','stroke-width':'1.5'}));
+      g.appendChild(_tcTxt('text',{x:0,y:-10,'text-anchor':'middle',fill:'#f59e0b',
+        'font-family':"'Bebas Neue',sans-serif",'font-size':'20','letter-spacing':'2'},k.key));
+      g.appendChild(_tcTxt('text',{x:0,y:5,'text-anchor':'middle',fill:'#e5e5e5',
+        'font-family':"'Space Mono',monospace",'font-size':'8','font-weight':'700',
+        'letter-spacing':'0.8'},m.mode));
+      g.appendChild(_tcTxt('text',{x:0,y:18,'text-anchor':'middle',fill:'#6b6b6b',
+        'font-family':"'Space Mono',monospace",'font-size':'7'},m.alts));
+    } else {
+      g.appendChild(_tcEl('circle',{cx:0,cy:0,r:TC_RI,fill:'#1c1c1c',
+        stroke:'#252525','stroke-width':'1'}));
+      g.appendChild(_tcTxt('text',{x:0,y:0,'text-anchor':'middle',
+        'dominant-baseline':'middle',fill:'#555',
+        'font-family':"'Space Mono',monospace",'font-size':'10','font-weight':'700'},k.key));
+    }
+    svg.appendChild(g);
+  });
+  svg.appendChild(_tcTxt('text',{x:TC_CX,y:TC_CY-14,'text-anchor':'middle',fill:'#555',
+    'font-family':"'Space Mono',monospace",'font-size':'9','letter-spacing':'2'},'MODI DI'));
+  svg.appendChild(_tcTxt('text',{x:TC_CX,y:TC_CY+14,'text-anchor':'middle',fill:'#f59e0b',
+    'font-family':"'Bebas Neue',sans-serif",'font-size':'34','letter-spacing':'4'},'DO'));
+  svg.appendChild(_tcTxt('text',{x:TC_CX,y:TC_CY+32,'text-anchor':'middle',fill:'#3a3a3a',
+    'font-family':"'Space Mono',monospace",'font-size':'8'},'← antiorario'));
 }
 </script>
 
