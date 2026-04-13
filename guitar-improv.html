@@ -2720,10 +2720,15 @@ let _masterOut = null;     // master output gain
 
 function getAudioCtx() {
   if (!audioCtx) {
+    console.log('Creating new AudioContext...');
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     _buildMasterChain();
   }
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (audioCtx.state === 'suspended') {
+    console.log('Resuming suspended AudioContext...');
+    audioCtx.resume();
+  }
+  console.log('AudioContext ready, state:', audioCtx.state, '_masterOut exists:', !!_masterOut);
   return audioCtx;
 }
 
@@ -7364,9 +7369,10 @@ function debugTechExercise(techKey, exIndex) {
 }
 
 function playTechExercise(techKey, exIndex, slowMode) {
+  console.log('TECH_EXERCISES keys:', Object.keys(TECH_EXERCISES));
   const exercises = TECH_EXERCISES[techKey];
   if (!exercises || !exercises[exIndex]) {
-    console.log('playTechExercise: exercise not found', techKey, exIndex);
+    console.log('playTechExercise: exercise not found', techKey, exIndex, 'available:', exercises);
     return;
   }
 
