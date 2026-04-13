@@ -2849,8 +2849,13 @@ function _autoDisconnect(node, stopTime) {
 
 // ── GUITAR SINGLE NOTE ───────────────────────────────────────────────────────
 function playNote(freq, time, duration = 0.8) {
+  console.log('playNote called with freq:', freq, 'time:', time, 'duration:', duration);
   const ctx = getAudioCtx();
   const dest = _masterOut;
+  if (!dest) {
+    console.error('ERROR: _masterOut not initialized!');
+    return;
+  }
   const now = time || ctx.currentTime;
 
   const decay = duration * Math.max(0.7, Math.min(2.2, 80 / freq));
