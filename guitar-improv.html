@@ -6653,6 +6653,57 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="ex-grid" id="ex-legato-phrasing-grid"></div>
   </div>
 
+  <!-- EQUATOR TRICK (JOHN MAYER) -->
+  <div id="tp-equator" class="tech-panel">
+    <div class="notice">
+      <strong>Equator Trick (John Mayer):</strong> Una tecnica concettuale di visualizzazione del manico introdotta da John Mayer. Sul manico esiste un "equatore" immaginario che separa il <em>mondo minore</em> (pentatonica minore) dal <em>mondo maggiore</em> (pentatonica maggiore) della stessa tonalità. Attraversare questo equatore — con bending, slide o cambio di box — è il segreto del fraseggio blues moderno: alterni colore scuro e luminoso senza mai uscire dalla tonica.
+    </div>
+
+    <!-- SPIEGAZIONE DETTAGLIATA EQUATOR -->
+    <div style="background:rgba(245,158,11,0.1);border-left:3px solid var(--amber);padding:16px;margin:20px 0;font-size:13px;line-height:1.6;color:var(--text)">
+      <h4 style="color:var(--amber);margin-top:0">🌍 Cos'è l'Equatore</h4>
+
+      <p>Per ogni tonalità (es. <strong>La</strong>) esistono due box pentatonici "gemelli":</p>
+      <ul style="margin:8px 0;padding-left:20px">
+        <li><strong>Emisfero Sud — La minore pentatonica</strong> (root al 5° tasto, 6ª corda): <code>A C D E G</code> — suono <em>scuro, bluesy, malinconico</em>.</li>
+        <li><strong>Emisfero Nord — La maggiore pentatonica</strong> (stessa diteggiatura, 3 tasti più in basso, root al 2° tasto): <code>A B C# E F#</code> — suono <em>luminoso, country, gospel</em>.</li>
+      </ul>
+
+      <p><strong>L'equatore</strong> è la coppia di note <strong>♭3 → 3</strong> (a La: <code>Do → Do#</code>): un solo semitono che separa i due mondi. È la "linea di confine" emotiva del blues.</p>
+
+      <h4 style="color:var(--amber)">🎯 Le tre regole di Mayer</h4>
+      <ol style="margin:8px 0;padding-left:20px">
+        <li><strong>Stessa diteggiatura, due latitudini.</strong> La forma del box non cambia: scendi di 3 tasti per passare da minore a maggiore (e viceversa). A 5° tasto = La min · A 2° tasto = La maj.</li>
+        <li><strong>Attraversa l'equatore col bending.</strong> Il classico bend di un semitono dalla ♭3 alla 3 (es. Do→Do# alla 3ª corda 5° tasto, oppure 8° tasto della 2ª corda) <em>è</em> l'attraversamento dell'equatore. È il "blues note crossing".</li>
+        <li><strong>Risolvi nel mondo che vince.</strong> Su un accordo <em>minore</em> (Am7) atterra a sud (♭3, 5, ♭7). Su un accordo <em>dominante o maggiore</em> (A7, Amaj) atterra a nord (3, 6). L'orecchio segue dove finisci la frase.</li>
+      </ol>
+
+      <h4 style="color:var(--amber)">🗺️ Mappa visuale (in La)</h4>
+      <pre style="background:#0a0a0a;color:#ccc;padding:12px;border-radius:6px;font-size:12px;line-height:1.4;overflow-x:auto;margin:8px 0">
+        2°fr    5°fr    8°fr
+         |       |       |
+e |------5-------8------|   ← stessa nota Mi (la "5")
+B |------5-------8------|
+G |--2---4-------7------|   ← Do# (3 maj)  Do (♭3 min)  ← l'EQUATORE
+D |--2---4---5---7------|
+A |--2---5-------7------|
+E |--2-3-5-------8------|
+   ╰── A maj pent ──╯    ╰── A min pent ──╯
+       (NORD)                   (SUD)</pre>
+
+      <h4 style="color:var(--amber)">🎸 Come applicarlo in un solo</h4>
+      <ul style="margin:8px 0;padding-left:20px">
+        <li><strong>Slow blues in La:</strong> parti dal box minore (5° tasto), bendi la ♭3 verso la 3, scivola in giù di 3 tasti e ti ritrovi nel box maggiore senza cambiare diteggiatura.</li>
+        <li><strong>Cambio I→IV (A7 → D7):</strong> sull'A7 stai a nord (maj pent), sul D7 puoi <em>tornare</em> a sud (Am pent) — funziona perché D7 contiene Do, la ♭7 di A che è anche la ♭3 nel suo mondo minore.</li>
+        <li><strong>Trick di Mayer su "Gravity":</strong> alterna mezza misura nord / mezza misura sud, sempre col root al 5° tasto come bussola.</li>
+      </ul>
+
+      <p style="margin-top:12px;color:var(--amber)"><strong>💡 Essenza della tecnica:</strong> non pensare "ora suono minore, ora suono maggiore" — pensa <em>posizione sul globo</em>. Il manico è una mappa, l'equatore è la ♭3↔3, e tu sei un viaggiatore che cambia clima quando cambi emisfero.</p>
+    </div>
+
+    <div class="ex-grid" id="ex-equator-grid"></div>
+  </div>
+
   <!-- I MAESTRI -->
   <div id="tp-masters" class="tech-panel">
     <div class="masters-grid" id="masters-grid"></div>
@@ -7081,6 +7132,28 @@ const TECH_EXERCISES = {
       tab:'e |--8h9h10h11-12\\10-9h10h11\\9-8h9--|\nB |----------------------------------|\nG |----------------------------------|\nD |----------------------------------|\nA |----------------------------------|\nE |----------------------------------|',
       tips:['Prima nota: pick, resto: hammer-ons','Movimento fluido come uno strumento a fiato','Velocità crescente, espressione sempre alta'],
       tags:['legato','chromatic','avanzato','Pat Metheny'] },
+  ],
+  equator: [
+    { title:'Crossing the equator: bend ♭3 → 3 (in La)', diff:1, bpmSlow:60, bpmMid:80, bpmFast:100,
+      tab:'e |--------------------|\nB |--8b(9)-8-5---------|\nG |------------7-5-----|\nD |----------------7-5-|\nA |--------------------|\nE |--------------------|',
+      tips:['Il bend di un semitono da Do (♭3) a Do# (3) È l\'equatore','Bendi lentamente: ascolta il momento in cui la nota "diventa" maggiore','Risolvi sulla 5 (Mi) per stabilizzare la frase'],
+      tags:['blues','bending','John Mayer','equator'] },
+    { title:'Slide fra emisferi: La min → La maj (3 tasti giù)', diff:2, bpmSlow:55, bpmMid:80, bpmFast:105,
+      tab:'e |--5-8-5\\2-----------|\nB |--5-8-5\\2-----------|\nG |--5-7-5\\2-----------|\nD |--5-7-5\\2-----------|\nA |--5-7-5\\2-----------|\nE |--5-8-5\\2-----------|',
+      tips:['Stessa forma del box: solo la posizione cambia','Slide pulito di 3 tasti = cambio di emisfero','Senti come il colore si schiarisce dopo lo slide'],
+      tags:['pentatonica','slide','equator','John Mayer'] },
+    { title:'Mayer-style I-IV: nord su A7, sud su D7', diff:3, bpmSlow:55, bpmMid:75, bpmFast:95,
+      tab:'e |---2-4-5-(A7)----------5-7-8-(D7)------|\nB |---2-5-----------------5-8-------------|\nG |---2-4-----------------5-7-------------|\nD |---------------------------------------|\nA |---------------------------------------|\nE |---------------------------------------|',
+      tips:['Battuta 1 (A7): A maj pent al 2° tasto = NORD','Battuta 2 (D7): A min pent al 5° tasto = SUD','Il root resta La in entrambi i casi: solo il clima cambia'],
+      tags:['blues','I-IV','John Mayer','equator'] },
+    { title:'Hybrid lick: pentatonica ibrida sull\'equatore', diff:3, bpmSlow:50, bpmMid:75, bpmFast:100,
+      tab:'e |--5-8-5---------------------|\nB |------5-8b(9)-5-------------|\nG |--------------7-5-----------|\nD |------------------7-5-------|\nA |---------------------5-7----|\nE |-------------------------5--|',
+      tips:['Bendi sempre la ♭3 verso la 3 prima di scendere','Uso della pent. ibrida (1-2-♭3-3-5-6-♭7) — la scala dei due emisferi insieme','Termina sul Mi (5) per chiudere "neutro"'],
+      tags:['pentatonica ibrida','blues','John Mayer','equator'] },
+    { title:'"Gravity" feel: oscilla fra nord e sud ogni 2 tempi', diff:4, bpmSlow:50, bpmMid:70, bpmFast:90,
+      tab:'e |--5-8-5\\2-4-5-2--|--2-5-2/5-8-5----|\nB |--5-8-5\\2-5-2----|--2-5-2/5-8------|\nG |--5-7-5\\2-4-2----|--2-4-2/5-7------|\nD |-----------------|-----------------|\nA |-----------------|-----------------|\nE |-----------------|-----------------|',
+      tips:['Misura 1: parti SUD (5° tasto) → scivola NORD (2° tasto)','Misura 2: parti NORD → scivola SUD','Il root La (5° tasto, 6ª corda) è la tua bussola: sempre presente nell\'orecchio','Vibrato lento sulle note finali, alla Mayer'],
+      tags:['blues','frase lunga','John Mayer','Gravity','equator','avanzato'] },
   ]
 };
 
@@ -7140,6 +7213,13 @@ const MAESTRI = [
     sound:'Ibanez signature, Yamaha amp. Tone jazz-fusion pulito con lieve compression.',
     songs:['Passages','Turbulence','Brutal Imagination','Live Wires'],
     challenge:'Suona l\'arpeggio Am 5 corde con "economy picking": su ogni cambio di corda, la pennata segue la direzione dello spostamento.'
+  },
+  {
+    name:'John Mayer', origin:'USA', active:'1996–presente', color:'#f59e0b',
+    techs:['Equator Trick (major/minor pentatonic blending)','Hybrid picking (plettro + dita)','Bending micro-controllato','Vibrato vocale','Pentatonica ibrida'],
+    sound:'Fender Strat (PRS Silver Sky), Two-Rock / Dumble-style amp, Klon Centaur, Tube Screamer, Memory Man delay.',
+    songs:['Gravity','Slow Dancing in a Burning Room','Out of My Head','Belief','Who Did You Think I Was'],
+    challenge:'Improvvisa 16 battute di slow blues in La attraversando l\'equatore almeno 4 volte: bendi sempre dalla ♭3 alla 3 prima di cambiare emisfero.'
   }
 ];
 
@@ -7157,6 +7237,7 @@ function initTechPage() {
     { id:'skipping',  label:'String Skipping' },
     { id:'dwps',      label:'Downward Pickslanting' },
     { id:'legato-phrasing', label:'Legato Phrasing' },
+    { id:'equator',   label:'Equator Trick (Mayer)' },
     { id:'masters',   label:'I Maestri' },
   ];
   const tabsEl = document.getElementById('tech-tabs');
@@ -7171,7 +7252,7 @@ function initTechPage() {
   ).join('');
 
   // Render exercise grids
-  ['alternate','legato','tapping','skipping','dwps','legato-phrasing'].forEach(key => {
+  ['alternate','legato','tapping','skipping','dwps','legato-phrasing','equator'].forEach(key => {
     const grid = document.getElementById('ex-' + key + '-grid');
     if (!grid) return;
     grid.innerHTML = (TECH_EXERCISES[key] || []).map((ex, exIdx) => `
