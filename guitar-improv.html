@@ -7456,62 +7456,55 @@ function playTechExercise(techKey, exIndex, slowMode) {
   // Map string labels to MIDI indices: high e, B, G, D, A, low E
   const stringMap = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4, 'E': 5 };
 
-  const lines = tab.split('\n').filter(l => l.trim());
-  const stringLines = {};
-
-  lines.forEach(line => {
+  // Parse every note keeping its horizontal column in the tab so the
+  // playback follows left-to-right reading order across all strings.
+  const notes = [];
+  tab.split('\n').forEach(line => {
     const m = line.match(/^([a-zA-Z])\s*\|(.*)$/);
     if (!m) return;
     const s = m[1];
     const idx = stringMap[s] !== undefined ? stringMap[s] : stringMap[s.toLowerCase()];
-    if (idx !== undefined) stringLines[idx] = m[2];
-  });
+    if (idx === undefined) return;
 
-  if (Object.keys(stringLines).length === 0) return;
+    // Strip parenthetical annotations (e.g. "(A7)", "(9)" bend target) so
+    // they don't get misread as fret numbers.
+    const data = m[2].replace(/\([^)]*\)/g, match => ' '.repeat(match.length));
 
-  const stringFrets = {};
-  Object.entries(stringLines).forEach(([idx, data]) => {
-    const fretsInStr = [];
     let i = 0;
     while (i < data.length) {
       const c = data[i];
       if (/\d/.test(c)) {
-        if (i + 1 < data.length && /\d/.test(data[i + 1])) {
-          fretsInStr.push(parseInt(c + data[i + 1]));
-          i += 2;
-        } else {
-          fretsInStr.push(parseInt(c));
-          i += 1;
-        }
+        const twoDigit = i + 1 < data.length && /\d/.test(data[i + 1]);
+        const fret = parseInt(twoDigit ? c + data[i + 1] : c);
+        notes.push({ string: idx, fret, col: i });
+        i += twoDigit ? 2 : 1;
       } else {
         i++;
       }
     }
-    stringFrets[idx] = fretsInStr;
   });
 
-  const frets = [];
-  const fretLengths = Object.values(stringFrets).map(f => f.length);
-  const numFrets = fretLengths.length > 0 ? Math.max(...fretLengths) : 0;
+  if (notes.length === 0) return;
 
-  if (numFrets === 0) return;
+  // Sort by horizontal column (tab reading order). Same-column notes
+  // ordered high string → low string, mimicking a downstroke roll.
+  notes.sort((a, b) => a.col - b.col || a.string - b.string);
 
-  for (let fretIdx = 0; fretIdx < numFrets; fretIdx++) {
-    Object.keys(stringFrets).sort((a, b) => parseInt(a) - parseInt(b)).forEach(idx => {
-      if (fretIdx < stringFrets[idx].length) {
-        frets.push({ string: parseInt(idx), fret: stringFrets[idx][fretIdx] });
-      }
-    });
-  }
+  // Tie spacing to the exercise BPM so notes don't overlap into a wash.
+  // Treat each notated note as an 8th note at the chosen tempo.
+  const bpm = slowMode ? (ex.bpmSlow || 60) : (ex.bpmMid || 90);
+  const step = Math.max(0.06, 30 / bpm);
 
   const ctx = getAudioCtx();
   const now = ctx.currentTime;
-  const baseStep = slowMode ? 0.15 : 0.08;
 
-  frets.forEach((f, i) => {
-    const midi = TECH_OPEN_MIDI[f.string] + f.fret;
+  let stepIdx = 0;
+  let prevCol = -1;
+  notes.forEach(n => {
+    if (n.col !== prevCol) { stepIdx++; prevCol = n.col; }
+    const midi = TECH_OPEN_MIDI[n.string] + n.fret;
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
-    playNote(freq, now + i * baseStep, 0.6);
+    playNote(freq, now + (stepIdx - 1) * step, Math.min(1.2, step * 2.2));
   });
 }
 
