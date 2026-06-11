@@ -638,6 +638,67 @@
   .master-song { font-family:'Space Mono',monospace; font-size:9px; background:var(--bg3); border:1px solid var(--border); padding:2px 8px; border-radius:4px; color:var(--text-mid); }
   .master-challenge { background:var(--bg3); border-radius:8px; padding:8px 10px; font-size:11px; color:var(--text-mid); line-height:1.5; border-left:3px solid; }
 
+  /* ── EQUATOR TRICK (John Mayer) ── */
+  .eq-globe { max-width:780px; margin:0 auto 26px; }
+  .eq-hemi { border:1px solid; border-radius:16px; padding:16px 18px; }
+  .eq-hemi.nord {
+    background:linear-gradient(180deg, rgba(245,158,11,.16), rgba(245,158,11,.03));
+    border-color:rgba(245,158,11,.45);
+    border-bottom-left-radius:5px; border-bottom-right-radius:5px;
+  }
+  .eq-hemi.sud {
+    background:linear-gradient(0deg, rgba(59,130,246,.16), rgba(59,130,246,.03));
+    border-color:rgba(59,130,246,.45);
+    border-top-left-radius:5px; border-top-right-radius:5px;
+  }
+  .eq-hemi-head { display:flex; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+  .eq-hemi-icon { font-size:24px; }
+  .eq-hemi-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:2px; line-height:1; }
+  .eq-hemi.nord .eq-hemi-title { color:var(--amber); }
+  .eq-hemi.sud .eq-hemi-title { color:var(--blue); }
+  .eq-hemi-sub { font-family:'Space Mono',monospace; font-size:10px; color:var(--text-mid); text-transform:uppercase; letter-spacing:.5px; margin-top:3px; }
+  .eq-hemi-head .play-btn { margin-left:auto; padding:6px 14px; font-size:12px; }
+  .eq-diagram { overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:10px; }
+  .eq-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  .eq-chip {
+    font-family:'Space Mono',monospace; font-size:10px; padding:3px 10px;
+    border-radius:10px; border:1px solid var(--border); color:var(--text-mid); background:var(--bg3);
+  }
+  .eq-chip.root { color:#000; background:var(--amber); border-color:var(--amber); font-weight:bold; }
+  .eq-chip.third-maj { color:#04140a; background:var(--green); border-color:var(--green); font-weight:bold; }
+  .eq-chip.third-min { color:#fff; background:var(--red); border-color:var(--red); font-weight:bold; }
+  .eq-mood { font-size:12px; color:var(--text-dim); font-style:italic; }
+  .eq-divider { display:flex; align-items:center; gap:14px; margin:12px 2px; }
+  .eq-line { flex:1; border-top:2px dashed var(--amber); opacity:.55; }
+  .eq-divider-center { display:flex; flex-direction:column; align-items:center; gap:7px; }
+  .eq-divider-label {
+    font-family:'Space Mono',monospace; font-size:10px; color:var(--amber);
+    letter-spacing:1.5px; text-transform:uppercase; text-align:center;
+  }
+  .eq-cross-btn {
+    animation:eqPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes eqPulse {
+    0%,100% { box-shadow:0 0 0 0 rgba(245,158,11,.35); }
+    50%      { box-shadow:0 0 0 7px rgba(245,158,11,0); }
+  }
+  .eq-rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px; margin:20px 0 24px; }
+  .eq-rule { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:18px 16px 14px; position:relative; }
+  .eq-rule-num {
+    position:absolute; top:-11px; left:14px; width:24px; height:24px; border-radius:50%;
+    background:var(--amber); color:#000; font-family:'Bebas Neue',sans-serif; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .eq-rule-title { font-family:'Bebas Neue',sans-serif; font-size:17px; letter-spacing:1px; color:var(--amber); margin:2px 0 6px; }
+  .eq-rule-body { font-size:12px; color:var(--text-mid); line-height:1.55; }
+  .eq-apply {
+    background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber);
+    border-radius:12px; padding:14px 18px; margin-bottom:10px; font-size:13px; line-height:1.6; color:var(--text-mid);
+  }
+  .eq-apply-title { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:1px; color:var(--amber); margin-bottom:8px; }
+  .eq-apply li { margin:0 0 7px 18px; }
+  .eq-essence { font-size:12.5px; color:var(--amber); font-style:italic; margin:14px 0 24px; line-height:1.6; }
+
   /* Fret markers */
   .fret-markers {
     display: flex;
@@ -6656,59 +6717,94 @@ window.addEventListener('DOMContentLoaded', function() {
   <!-- EQUATOR TRICK (JOHN MAYER) -->
   <div id="tp-equator" class="tech-panel">
     <div class="notice">
-      <strong>Equator Trick (John Mayer):</strong> Una tecnica concettuale di visualizzazione del manico introdotta da John Mayer. Sul manico esiste un "equatore" immaginario che separa il <em>mondo minore</em> (pentatonica minore) dal <em>mondo maggiore</em> (pentatonica maggiore) della stessa tonalità. Attraversare questo equatore — con bending, slide o cambio di box — è il segreto del fraseggio blues moderno: alterni colore scuro e luminoso senza mai uscire dalla tonica.
+      <strong>Equator Trick (John Mayer):</strong> Sul manico c'è un "equatore" immaginario che separa il <em>mondo minore</em> (pentatonica minore) dal <em>mondo maggiore</em> (pentatonica maggiore) della stessa tonalità. Attraversarlo — con bending, slide o cambio di box — è il segreto del fraseggio blues moderno: alterni colore scuro e luminoso senza mai uscire dalla tonica.
     </div>
 
-    <!-- SPIEGAZIONE DETTAGLIATA EQUATOR -->
-    <div style="background:rgba(245,158,11,0.1);border-left:3px solid var(--amber);padding:16px;margin:20px 0;font-size:13px;line-height:1.6;color:var(--text)">
-      <h4 style="color:var(--amber);margin-top:0">🌍 Cos'è l'Equatore</h4>
+    <!-- "GLOBO" — Nord / Equatore / Sud -->
+    <div class="eq-globe">
+      <!-- NORD -->
+      <div class="eq-hemi nord">
+        <div class="eq-hemi-head">
+          <span class="eq-hemi-icon">☀️</span>
+          <div>
+            <div class="eq-hemi-title">NORD · A MAJOR PENT</div>
+            <div class="eq-hemi-sub">Box al 2° tasto · luce / country / gospel</div>
+          </div>
+          <button class="play-btn" onclick="playEqHemi('nord')">▶ Play</button>
+        </div>
+        <div class="eq-diagram" id="eq-diagram-nord"></div>
+        <div class="eq-chips">
+          <span class="eq-chip root">A · 1</span>
+          <span class="eq-chip">B · 2</span>
+          <span class="eq-chip third-maj">C# · 3 maj</span>
+          <span class="eq-chip">E · 5</span>
+          <span class="eq-chip">F# · 6</span>
+        </div>
+        <div class="eq-mood">"Sole — note che ti sollevano. Vibe da Sweet Home Chicago, Hotel California solo, country licks."</div>
+      </div>
 
-      <p>Per ogni tonalità (es. <strong>La</strong>) esistono due box pentatonici "gemelli":</p>
-      <ul style="margin:8px 0;padding-left:20px">
-        <li><strong>Emisfero Sud — La minore pentatonica</strong> (root al 5° tasto, 6ª corda): <code>A C D E G</code> — suono <em>scuro, bluesy, malinconico</em>.</li>
-        <li><strong>Emisfero Nord — La maggiore pentatonica</strong> (stessa diteggiatura, 3 tasti più in basso, root al 2° tasto): <code>A B C# E F#</code> — suono <em>luminoso, country, gospel</em>.</li>
-      </ul>
+      <!-- EQUATORE -->
+      <div class="eq-divider">
+        <div class="eq-line"></div>
+        <div class="eq-divider-center">
+          <div class="eq-divider-label">♭3 ↔ 3 · l'EQUATORE</div>
+          <button class="play-btn eq-cross-btn" onclick="playEqCross()">↕ Attraversa (Do → Do#)</button>
+        </div>
+        <div class="eq-line"></div>
+      </div>
 
-      <p><strong>L'equatore</strong> è la coppia di note <strong>♭3 → 3</strong> (a La: <code>Do → Do#</code>): un solo semitono che separa i due mondi. È la "linea di confine" emotiva del blues.</p>
-
-      <h4 style="color:var(--amber)">🎯 Le tre regole di Mayer</h4>
-      <ol style="margin:8px 0;padding-left:20px">
-        <li><strong>Stessa diteggiatura, due latitudini.</strong> La forma del box non cambia: scendi di 3 tasti per passare da minore a maggiore (e viceversa). A 5° tasto = La min · A 2° tasto = La maj.</li>
-        <li><strong>Attraversa l'equatore col bending.</strong> Il classico bend di un semitono dalla ♭3 alla 3 (es. Do→Do# alla 3ª corda 5° tasto, oppure 8° tasto della 2ª corda) <em>è</em> l'attraversamento dell'equatore. È il "blues note crossing".</li>
-        <li><strong>Risolvi nel mondo che vince.</strong> Su un accordo <em>minore</em> (Am7) atterra a sud (♭3, 5, ♭7). Su un accordo <em>dominante o maggiore</em> (A7, Amaj) atterra a nord (3, 6). L'orecchio segue dove finisci la frase.</li>
-      </ol>
-
-      <h4 style="color:var(--amber)">🗺️ Mappa visuale (in La)</h4>
-      <pre style="background:#0a0a0a;color:#ccc;padding:12px;border-radius:6px;font-size:12px;line-height:1.4;overflow-x:auto;margin:8px 0">NORD — A major pentatonic (box al 2° tasto)
-   e |---2--5--|
-   B |---2--5--|  fret 2 = Do# · 3ª MAGGIORE di La
-   G |---2-4---|
-   D |---2-4---|
-   A |---2-4---|  fret 4 = Do# · 3ª MAGGIORE di La
-   E |---2--5--|
-
-SUD — A minor pentatonic (box al 5° tasto)
-   e |---5--8--|
-   B |---5--8--|
-   G |---5-7---|  fret 5 = Do  · ♭3 (TERZA MINORE) di La
-   D |---5-7---|
-   A |---5-7---|
-   E |---5--8--|  fret 8 = Do  · ♭3 (TERZA MINORE) di La
-
-EQUATORE = ♭3 → 3  (Do → Do#): un solo semitono separa
-i due emisferi. Bendi una nota marcata (♭3) di mezzo tono
-e hai attraversato l'equatore — sei passato dal mondo
-minore (SUD) al mondo maggiore (NORD).</pre>
-
-      <h4 style="color:var(--amber)">🎸 Come applicarlo in un solo</h4>
-      <ul style="margin:8px 0;padding-left:20px">
-        <li><strong>Slow blues in La:</strong> parti dal box minore (5° tasto), bendi la ♭3 verso la 3, scivola in giù di 3 tasti e ti ritrovi nel box maggiore senza cambiare diteggiatura.</li>
-        <li><strong>Cambio I→IV (A7 → D7):</strong> sull'A7 stai a nord (maj pent), sul D7 puoi <em>tornare</em> a sud (Am pent) — funziona perché D7 contiene Do, la ♭7 di A che è anche la ♭3 nel suo mondo minore.</li>
-        <li><strong>Trick di Mayer su "Gravity":</strong> alterna mezza misura nord / mezza misura sud, sempre col root al 5° tasto come bussola.</li>
-      </ul>
-
-      <p style="margin-top:12px;color:var(--amber)"><strong>💡 Essenza della tecnica:</strong> non pensare "ora suono minore, ora suono maggiore" — pensa <em>posizione sul globo</em>. Il manico è una mappa, l'equatore è la ♭3↔3, e tu sei un viaggiatore che cambia clima quando cambi emisfero.</p>
+      <!-- SUD -->
+      <div class="eq-hemi sud">
+        <div class="eq-hemi-head">
+          <span class="eq-hemi-icon">🌙</span>
+          <div>
+            <div class="eq-hemi-title">SUD · A MINOR PENT</div>
+            <div class="eq-hemi-sub">Box al 5° tasto · scuro / bluesy / malinconico</div>
+          </div>
+          <button class="play-btn" onclick="playEqHemi('sud')">▶ Play</button>
+        </div>
+        <div class="eq-diagram" id="eq-diagram-sud"></div>
+        <div class="eq-chips">
+          <span class="eq-chip root">A · 1</span>
+          <span class="eq-chip third-min">C · ♭3 min</span>
+          <span class="eq-chip">D · 4</span>
+          <span class="eq-chip">E · 5</span>
+          <span class="eq-chip">G · ♭7</span>
+        </div>
+        <div class="eq-mood">"Luna — note che ti sprofondano. Vibe da blues lento, soul, rock duro."</div>
+      </div>
     </div>
+
+    <!-- LE 3 REGOLE DI MAYER -->
+    <div class="eq-rules">
+      <div class="eq-rule">
+        <div class="eq-rule-num">1</div>
+        <div class="eq-rule-title">Stessa forma, due latitudini</div>
+        <div class="eq-rule-body">La diteggiatura del box non cambia: scendi di <strong>3 tasti</strong> per passare da minore a maggiore. La min al 5° tasto = La maj al 2°.</div>
+      </div>
+      <div class="eq-rule">
+        <div class="eq-rule-num">2</div>
+        <div class="eq-rule-title">Bend = attraversamento</div>
+        <div class="eq-rule-body">Il bend di un semitono dalla <strong>♭3 alla 3</strong> (Do → Do#, 3ª corda 5° tasto) <em>è</em> l'equatore. Quel momento è il "blues note crossing".</div>
+      </div>
+      <div class="eq-rule">
+        <div class="eq-rule-num">3</div>
+        <div class="eq-rule-title">Risolvi nel mondo che vince</div>
+        <div class="eq-rule-body">Su <strong>Am7</strong> atterra a SUD (♭3, 5, ♭7). Su <strong>A7 / Amaj</strong> atterra a NORD (3, 6). L'orecchio segue dove finisci.</div>
+      </div>
+    </div>
+
+    <!-- APPLICAZIONI -->
+    <div class="eq-apply">
+      <div class="eq-apply-title">🎸 Come applicarlo in un solo</div>
+      <ul>
+        <li><strong>Slow blues in La:</strong> parti dal box SUD (5° tasto), bendi la ♭3 verso la 3, scivola in giù di 3 tasti e ti trovi nel box NORD senza cambiare diteggiatura.</li>
+        <li><strong>Cambio I → IV (A7 → D7):</strong> sull'A7 stai a NORD (maj pent); sul D7 torna a SUD (min pent) — perché D7 contiene Do (♭7 di A = ♭3 nel suo mondo minore).</li>
+        <li><strong>"Gravity" feel:</strong> alterna mezza misura NORD / mezza misura SUD, con il root al 5° tasto come bussola sempre presente nell'orecchio.</li>
+      </ul>
+    </div>
+
+    <div class="eq-essence">💡 Non pensare "minore" o "maggiore". Pensa <strong>latitudine sul globo</strong>: il manico è una mappa, l'equatore è ♭3↔3, e tu sei un viaggiatore che cambia clima quando cambi emisfero.</div>
 
     <div class="ex-grid" id="ex-equator-grid"></div>
   </div>
@@ -7307,7 +7403,126 @@ function initTechPage() {
 
   // Initial sweep render
   renderSweepPanel();
+  // Equator Trick diagrams
+  renderEqDiagrams();
   _techInitialized = true;
+}
+
+// ─── EQUATOR TRICK (John Mayer) ──────────────────────────────────────────────
+const EQ_BOXES = {
+  nord: {
+    color:'#f59e0b', thirdColor:'#22c55e',
+    minFret:1, maxFret:6,
+    notes:[
+      { string:0, fret:2, label:'F#', role:'6' },
+      { string:0, fret:5, label:'A',  role:'1', root:true },
+      { string:1, fret:2, label:'C#', role:'3', third:true },
+      { string:1, fret:5, label:'E',  role:'5' },
+      { string:2, fret:2, label:'A',  role:'1', root:true },
+      { string:2, fret:4, label:'B',  role:'2' },
+      { string:3, fret:2, label:'E',  role:'5' },
+      { string:3, fret:4, label:'F#', role:'6' },
+      { string:4, fret:2, label:'B',  role:'2' },
+      { string:4, fret:4, label:'C#', role:'3', third:true },
+      { string:5, fret:2, label:'F#', role:'6' },
+      { string:5, fret:5, label:'A',  role:'1', root:true },
+    ],
+    seq:[ [5,2],[5,5],[4,2],[4,4],[3,2],[3,4],[2,2],[2,4],[1,2],[1,5],[0,2],[0,5] ]
+  },
+  sud: {
+    color:'#3b82f6', thirdColor:'#ef4444',
+    minFret:4, maxFret:9,
+    notes:[
+      { string:0, fret:5, label:'A',  role:'1', root:true },
+      { string:0, fret:8, label:'C',  role:'♭3', third:true },
+      { string:1, fret:5, label:'E',  role:'5' },
+      { string:1, fret:8, label:'G',  role:'♭7' },
+      { string:2, fret:5, label:'C',  role:'♭3', third:true },
+      { string:2, fret:7, label:'D',  role:'4' },
+      { string:3, fret:5, label:'G',  role:'♭7' },
+      { string:3, fret:7, label:'A',  role:'1', root:true },
+      { string:4, fret:5, label:'D',  role:'4' },
+      { string:4, fret:7, label:'E',  role:'5' },
+      { string:5, fret:5, label:'A',  role:'1', root:true },
+      { string:5, fret:8, label:'C',  role:'♭3', third:true },
+    ],
+    seq:[ [5,5],[5,8],[4,5],[4,7],[3,5],[3,7],[2,5],[2,7],[1,5],[1,8],[0,5],[0,8] ]
+  }
+};
+
+function buildEqSvg(c) {
+  const cellW = 38, cellH = 22, leftPad = 24, topPad = 16, dotR = 11;
+  const fretSpan = c.maxFret - c.minFret;
+  const W = leftPad + fretSpan * cellW + 10;
+  const H = topPad + 5 * cellH + 22;
+  const sNames = ['e','B','G','D','A','E'];
+
+  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:${W}px">`;
+  svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="10"/>`;
+
+  for (let f = 0; f <= fretSpan; f++) {
+    const x = leftPad + f * cellW;
+    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+5*cellH}" stroke="#2e2e2e" stroke-width="1"/>`;
+    const fn = c.minFret + f;
+    if (fn > 0) svg += `<text x="${x + cellW/2}" y="${H-5}" text-anchor="middle" font-size="9" fill="#666" font-family="'Space Mono',monospace">${fn}</text>`;
+  }
+
+  [3,5,7,9].forEach(f => {
+    if (f >= c.minFret && f < c.maxFret) {
+      const cx = leftPad + (f - c.minFret) * cellW + cellW/2;
+      const cy = topPad + 5*cellH + 7;
+      svg += `<circle cx="${cx}" cy="${cy}" r="2" fill="#3a2e1a"/>`;
+    }
+  });
+
+  for (let s = 0; s < 6; s++) {
+    const y = topPad + s * cellH;
+    const w = s===0?0.7:s===5?1.6:1;
+    svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + fretSpan * cellW}" y2="${y}" stroke="#555" stroke-width="${w}"/>`;
+    svg += `<text x="${leftPad-7}" y="${y+4}" text-anchor="end" font-size="9" fill="#888" font-family="'Space Mono',monospace">${sNames[s]}</text>`;
+  }
+
+  c.notes.forEach(n => {
+    const dotX = leftPad + (n.fret - c.minFret) * cellW - cellW/2;
+    const dotY = topPad + n.string * cellH;
+    let fill='#2c3e50', stroke='none', sw=0, txt='#cfd8dc';
+    if (n.root)       { fill=c.color;      stroke='#fff'; sw=1.5; txt='#000'; }
+    else if (n.third) { fill=c.thirdColor; stroke='#fff'; sw=1.4; txt='#fff'; }
+    svg += `<circle cx="${dotX}" cy="${dotY}" r="${dotR}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+    svg += `<text x="${dotX}" y="${dotY+3}" text-anchor="middle" font-size="8" fill="${txt}" font-family="'Space Mono',monospace" font-weight="bold">${n.label}</text>`;
+  });
+
+  svg += '</svg>';
+  return svg;
+}
+
+function renderEqDiagrams() {
+  const n = document.getElementById('eq-diagram-nord');
+  const s = document.getElementById('eq-diagram-sud');
+  if (n) n.innerHTML = buildEqSvg(EQ_BOXES.nord);
+  if (s) s.innerHTML = buildEqSvg(EQ_BOXES.sud);
+}
+
+function playEqHemi(side) {
+  const box = EQ_BOXES[side];
+  if (!box) return;
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+  const step = 0.30;
+  box.seq.forEach(([str, fret], i) => {
+    const midi = TECH_OPEN_MIDI[str] + fret;
+    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+    playNote(freq, now + i * step, 0.65);
+  });
+}
+
+function playEqCross() {
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+  const cMidi  = TECH_OPEN_MIDI[2] + 5;
+  const csMidi = TECH_OPEN_MIDI[2] + 6;
+  playNote(440 * Math.pow(2,(cMidi -69)/12), now,        1.0);
+  playNote(440 * Math.pow(2,(csMidi-69)/12), now + 0.55, 1.4);
 }
 
 function showTechTab(id) {
