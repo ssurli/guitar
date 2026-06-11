@@ -5529,36 +5529,39 @@ const P5_MINOR_BOXES = [
 ];
 
 const P5_MAJOR_BOXES = [
-  // C major penta: C D E G A — Box 3 maggiore = Box 1 minore relativa
-  { name:'Box 1', cagedShape:'G', color:'#22c55e',
+  // Convenzione standard: Box N maggiore = stessa diteggiatura del Box N minore,
+  // 3 tasti più in basso (la maggiore è la relativa della minore: equator trick).
+  // anchorOffset maggiore = anchorOffset minore - 3 (mod 12).
+  // Label CAGED verificati: il box contiene l'accordo maggiore della tonica in quella forma.
+  { name:'Box 1', cagedShape:'G', color:'#ef4444',
+    offsets: [[0,3],[0,3],[0,2],[0,2],[0,2],[0,3]],
+    anchorOffset: -3,
+    desc: 'Stessa diteggiatura del Box 1 minore, 3 tasti più in basso. Radice su corda G e sui due Mi.',
+    tips: ['Equator trick: è il Box 1 della relativa minore','La tonica maggiore è 3 tasti sotto quella minore','Country, pop, rock classico — Eric Johnson, Chet Atkins'],
+  },
+  { name:'Box 2', cagedShape:'E', color:'#8b5cf6',
+    offsets: [[0,2],[0,2],[-1,1],[-1,2],[-1,2],[0,2]],
+    anchorOffset: 0,
+    desc: 'Radice sulla 6ª e 1ª corda, allo stesso tasto del barrè. Il pattern "principale" della pentatonica maggiore.',
+    tips: ['Qui vive il barrè in forma E della tonica','È il "Pattern 1" dei metodi americani','Ottima per riff country-rock e melodie positive'],
+  },
+  { name:'Box 3', cagedShape:'D', color:'#f59e0b',
+    offsets: [[0,2],[0,3],[-1,2],[0,2],[0,2],[0,2]],
+    anchorOffset: 2,
+    desc: 'Radice sulle corde D e B. Collega il Box 2 al Box 4 nella zona centrale.',
+    tips: ['Stessa forma del Box 3 minore, 3 tasti sotto','Brad Paisley la usa moltissimo'],
+  },
+  { name:'Box 4', cagedShape:'C', color:'#3b82f6',
     offsets: [[0,3],[1,3],[0,2],[0,2],[0,3],[0,3]],
     anchorOffset: 4,
-    desc: 'Posizione aperta. Radice su E bassa e alta. Suono luminoso e solare.',
-    tips: ['Corrisponde al Box 3 della pentatonica minore relativa','Country, pop, rock classico','Eric Johnson, Chet Atkins'],
+    desc: 'Radice sulle corde A e B. Corrisponde alla forma C del CAGED.',
+    tips: ['Stessa forma del Box 4 minore, 3 tasti sotto','Ottima per melodie nella zona medio-alta del manico'],
   },
-  { name:'Box 2', cagedShape:'E', color:'#ef4444',
-    offsets: [[1,3],[1,3],[0,3],[0,3],[1,3],[1,3]],
-    anchorOffset: 6,
-    desc: 'Seconda posizione. Connessa alla forma E del CAGED.',
-    tips: ['Box 4 della pentatonica minore relativa','Ottima per riff country-rock e melodie positive'],
-  },
-  { name:'Box 3', cagedShape:'D', color:'#8b5cf6',
-    offsets: [[0,3],[0,3],[0,2],[0,2],[0,2],[0,3]],
-    anchorOffset: 9,
-    desc: 'Quinta posizione. Uguale nella forma al Box 1 minore.',
-    tips: ['Stesso pattern del Box 1 minore, tonica spostata','Brad Paisley la usa moltissimo'],
-  },
-  { name:'Box 4', cagedShape:'C', color:'#f59e0b',
-    offsets: [[1,3],[1,3],[0,2],[0,3],[0,3],[1,3]],
-    anchorOffset: 11,
-    desc: 'Settima posizione. Corrisponde al Box 2 minore relativa.',
-    tips: ['Ottima per melodie nella zona medio-alta del manico'],
-  },
-  { name:'Box 5', cagedShape:'A', color:'#3b82f6',
-    offsets: [[1,3],[1,4],[0,3],[1,3],[1,3],[1,3]],
-    anchorOffset: 1,
-    desc: 'Nona posizione. Chiude il ciclo, collega al Box 1 all\'ottava.',
-    tips: ['Box 3 minore relativa','Ottimo per frasi discendenti verso il Box 1'],
+  { name:'Box 5', cagedShape:'A', color:'#22c55e',
+    offsets: [[0,2],[0,2],[-1,2],[-1,2],[0,2],[0,2]],
+    anchorOffset: 7,
+    desc: 'Radice sulle corde A e G. Qui vive il barrè in forma A trasposto (per La maggiore: 12° tasto).',
+    tips: ['Stessa forma del Box 5 minore, 3 tasti sotto','Box 5 + 12 tasti = Box 1 all\'ottava','Chiude il ciclo dei 5 box'],
   },
 ];
 
@@ -5572,8 +5575,11 @@ function p5AnchorFret(box, keyIdx) {
   let rootFret = (keyIdx - lowEOpen + 24) % 12;
   // Box anchor = root fret + anchorOffset (mod 12 to stay in range)
   let anchor = rootFret + box.anchorOffset;
-  // Keep in playable range (allow up to fret 17)
+  // Keep in playable range (allow up to fret 17, never below fret 0
+  // accounting for negative string offsets in the box shape)
+  const minOff = Math.min(...box.offsets.map(o => Math.min(...o)));
   while (anchor > 17) anchor -= 12;
+  while (anchor + minOff < 0) anchor += 12;
   return anchor;
 }
 
