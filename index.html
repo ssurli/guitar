@@ -6331,10 +6331,10 @@ function getCsPositions(keyIdx) {
   const positions = [{ start: 0, label: 'Posizione aperta' }];
 
   if (pos2Start >= 3) {
-    positions.push({ start: pos2Start, label: `Pos. principale (${mainLowE}° tasto)` });
+    positions.push({ start: pos2Start, label: `Pos. principale · Tonica al ${mainLowE}°` });
   }
   if (Math.abs(pos3Start - pos2Start) >= 3 && pos3Start >= 3 && pos3Start !== pos2Start) {
-    positions.push({ start: pos3Start, label: `Pos. corda A (${mainA}° tasto)` });
+    positions.push({ start: pos3Start, label: `Pos. corda A · Tonica al ${mainA}°` });
   }
 
   return positions.slice(0, 3);
