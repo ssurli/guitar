@@ -3164,10 +3164,10 @@ function _autoDisconnect(node, stopTime) {
 }
 
 // ── GUITAR SINGLE NOTE ───────────────────────────────────────────────────────
-function playNote(freq, time, duration = 0.8) {
+function playNote(freq, time, duration = 0.8, destOverride = null) {
   console.log('playNote called with freq:', freq, 'time:', time, 'duration:', duration);
   const ctx = getAudioCtx();
-  const dest = _masterOut;
+  const dest = destOverride || _masterOut;
   if (!dest) {
     console.error('ERROR: _masterOut not initialized!');
     return;
@@ -3238,6 +3238,24 @@ function playNote(freq, time, duration = 0.8) {
     osc.stop(stopT);
     _autoDisconnect(osc, stopT); _autoDisconnect(env, stopT);
   });
+}
+
+// ── Tech page playback bus: lets us cut all scheduled notes on tab/exercise change ──
+let _techGain = null;
+function _ensureTechGain() {
+  const ctx = getAudioCtx();
+  if (!_techGain) {
+    _techGain = ctx.createGain();
+    _techGain.gain.value = 1.0;
+    _techGain.connect(_masterOut);
+  }
+  return _techGain;
+}
+function _stopTechPlayback() {
+  if (_techGain) {
+    try { _techGain.disconnect(); } catch(e) {}
+    _techGain = null;
+  }
 }
 
 function noteToFreq(noteIndex, octave = 4) {
@@ -7712,23 +7730,27 @@ function renderEqDiagrams() {
 function playEqHemi(side) {
   const box = EQ_BOXES[side];
   if (!box) return;
+  _stopTechPlayback();
+  const dest = _ensureTechGain();
   const ctx = getAudioCtx();
-  const now = ctx.currentTime;
+  const now = ctx.currentTime + 0.02;
   const step = 0.30;
   box.seq.forEach(([str, fret], i) => {
     const midi = TECH_OPEN_MIDI[str] + fret;
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
-    playNote(freq, now + i * step, 0.65);
+    playNote(freq, now + i * step, 0.65, dest);
   });
 }
 
 function playEqCross() {
+  _stopTechPlayback();
+  const dest = _ensureTechGain();
   const ctx = getAudioCtx();
-  const now = ctx.currentTime;
+  const now = ctx.currentTime + 0.02;
   const cMidi  = TECH_OPEN_MIDI[2] + 5;
   const csMidi = TECH_OPEN_MIDI[2] + 6;
-  playNote(440 * Math.pow(2,(cMidi -69)/12), now,        1.0);
-  playNote(440 * Math.pow(2,(csMidi-69)/12), now + 0.55, 1.4);
+  playNote(440 * Math.pow(2,(cMidi -69)/12), now,        1.0, dest);
+  playNote(440 * Math.pow(2,(csMidi-69)/12), now + 0.55, 1.4, dest);
 }
 
 // ─── TRIADI & MODI (sub-tab CAGED) ──────────────────────────────────────────
@@ -8020,6 +8042,7 @@ function showCagedSubpage(tab) {
 }
 
 function showTechTab(id) {
+  _stopTechPlayback();
   // Deactivate all tabs and panels
   document.querySelectorAll('.tech-tab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tech-panel').forEach(p => p.classList.remove('active'));
@@ -8042,20 +8065,29 @@ function selectSweepShape(idx) {
 }
 
 function computeArpFrets(rootNoteIdx, strings, semitones) {
-  // strings: array of string indices (0=e..5=E), ascending order (lowest string first)
-  // semitones: interval in semitones from root for each string
-  // Returns fret numbers ensuring strictly ascending MIDI pitch
-  const result = [];
-  let prevMidi = -1;
-  for (let i = 0; i < strings.length; i++) {
-    const si = strings[i];
+  // Pick the (base, base+12) combination per string with smallest fret spread.
+  const N = strings.length;
+  const baseFrets = strings.map((si, i) => {
     const openMidi = TECH_OPEN_MIDI[si];
     const noteClass = (rootNoteIdx + semitones[i]) % 12;
-    let fret = ((noteClass - openMidi % 12) + 12) % 12;
-    // Ensure ascending pitch
+    return ((noteClass - openMidi % 12) + 12) % 12;
+  });
+  let best = null, bestScore = Infinity;
+  for (let mask = 0; mask < (1 << N); mask++) {
+    const frets = baseFrets.map((f, i) => f + (((mask >> i) & 1) ? 12 : 0));
+    if (frets.some(f => f > 17)) continue;
+    const minF = Math.min(...frets), maxF = Math.max(...frets);
+    if (minF === 0 && maxF > 4) continue;
+    const score = (maxF - minF) + (minF === 0 ? 2 : 0);
+    if (score < bestScore) { bestScore = score; best = frets; }
+  }
+  if (best) return best;
+  const result = []; let prevMidi = -1;
+  for (let i = 0; i < N; i++) {
+    const si = strings[i]; const openMidi = TECH_OPEN_MIDI[si];
+    let fret = baseFrets[i];
     while (openMidi + fret <= prevMidi) fret += 12;
-    result.push(fret);
-    prevMidi = openMidi + fret;
+    result.push(fret); prevMidi = openMidi + fret;
   }
   return result;
 }
@@ -8154,14 +8186,16 @@ function playSweepArp(direction) {
   else if (direction === true) seq = [...midiNotes].reverse(); // down
   else seq = [...midiNotes, ...[...midiNotes].reverse()];    // up+down
 
+  _stopTechPlayback();
+  const dest = _ensureTechGain();
   const ctx = getAudioCtx();
-  const now = ctx.currentTime;
+  const now = ctx.currentTime + 0.02;
   const step = 0.10; // seconds between notes
 
   seq.forEach((midi, i) => {
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
     const t = now + i * step;
-    playNote(freq, t, 0.7);
+    playNote(freq, t, 0.7, dest);
   });
 }
 
@@ -8213,8 +8247,10 @@ function playTechExercise(techKey, exIndex, slowMode) {
   const bpm = slowMode ? (ex.bpmSlow || 60) : (ex.bpmMid || 90);
   const step = Math.max(0.06, 30 / bpm);
 
+  _stopTechPlayback();
+  const dest = _ensureTechGain();
   const ctx = getAudioCtx();
-  const now = ctx.currentTime;
+  const now = ctx.currentTime + 0.02;
 
   let stepIdx = 0;
   let prevCol = -1;
@@ -8222,7 +8258,7 @@ function playTechExercise(techKey, exIndex, slowMode) {
     if (n.col !== prevCol) { stepIdx++; prevCol = n.col; }
     const midi = TECH_OPEN_MIDI[n.string] + n.fret;
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
-    playNote(freq, now + (stepIdx - 1) * step, Math.min(1.2, step * 2.2));
+    playNote(freq, now + (stepIdx - 1) * step, Math.min(1.2, step * 2.2), dest);
   });
 }
 
