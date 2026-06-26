@@ -725,6 +725,12 @@
   .eq-apply-title { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:1px; color:var(--amber); margin-bottom:8px; }
   .eq-apply li { margin:0 0 7px 18px; }
   .eq-essence { font-size:12.5px; color:var(--amber); font-style:italic; margin:14px 0 24px; line-height:1.6; }
+  .eq-legend-chip {
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:'Space Mono',monospace; font-size:10px; color:var(--text-mid);
+    background:var(--bg3); border:1px solid var(--border); padding:5px 10px; border-radius:14px;
+  }
+  .eq-legend-dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
 
   /* ── TRIADI & MODI (sub-tab CAGED) ── */
   .mdx-degree-pill {
@@ -7084,80 +7090,66 @@ window.addEventListener('DOMContentLoaded', function() {
   <!-- EQUATOR TRICK (JOHN MAYER) -->
   <div id="tp-equator" class="tech-panel">
     <div class="notice">
-      <strong>Equator Trick (John Mayer):</strong> Sul manico c'è un "equatore" immaginario che separa il <em>mondo minore</em> (pentatonica minore) dal <em>mondo maggiore</em> (pentatonica maggiore) della stessa tonalità. Attraversarlo — con bending, slide o cambio di box — è il segreto del fraseggio blues moderno: alterni colore scuro e luminoso senza mai uscire dalla tonica.
+      <strong>Equatore Pentatonico (John Mayer):</strong> due box pentatonici adiacenti della <em>stessa</em> scala si toccano in una colonna di tasti — l'<strong>equatore</strong>. Quelle 6 note (una per corda) sono in comune fra i due box: sono il "ponte" per scivolare da una posizione all'altra senza interrompere il fraseggio.
     </div>
 
-    <!-- "GLOBO" — Nord / Equatore / Sud -->
-    <div class="eq-globe">
-      <!-- NORD -->
-      <div class="eq-hemi nord">
-        <div class="eq-hemi-head">
-          <span class="eq-hemi-icon">☀️</span>
-          <div>
-            <div class="eq-hemi-title">NORD · A MAJOR PENT</div>
-            <div class="eq-hemi-sub">Box al 2° tasto · luce / country / gospel</div>
-          </div>
-          <button class="play-btn" onclick="playEqHemi('nord')">▶ Play</button>
-        </div>
-        <div class="eq-diagram" id="eq-diagram-nord"></div>
-        <div class="eq-chips">
-          <span class="eq-chip root">A · 1</span>
-          <span class="eq-chip">B · 2</span>
-          <span class="eq-chip third-maj">C# · 3 maj</span>
-          <span class="eq-chip">E · 5</span>
-          <span class="eq-chip">F# · 6</span>
-        </div>
-        <div class="eq-mood">"Sole — note che ti sollevano. Vibe da Sweet Home Chicago, Hotel California solo, country licks."</div>
+    <div class="controls" style="margin-bottom:16px">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Tonalità</div>
+        <select id="eq-key" onchange="renderEquatorView()">
+          <option value="0">C</option><option value="1">C# / Db</option>
+          <option value="2">D</option><option value="3">D# / Eb</option>
+          <option value="4">E</option><option value="5">F</option>
+          <option value="6">F# / Gb</option><option value="7">G</option>
+          <option value="8">G# / Ab</option><option value="9" selected>A</option>
+          <option value="10">A# / Bb</option><option value="11">B</option>
+        </select>
       </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">Pentatonica</div>
+        <div style="display:flex;gap:4px;margin-top:2px">
+          <button class="pos-btn active" id="eq-min-btn" onclick="setEqQuality('minor')">Minore</button>
+          <button class="pos-btn" id="eq-maj-btn" onclick="setEqQuality('major')">Maggiore</button>
+        </div>
+      </div>
+      <div class="ctrl-group" style="flex:1 1 100%">
+        <div class="ctrl-label">Coppia di box adiacenti</div>
+        <div id="eq-pair-btns" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px"></div>
+      </div>
+    </div>
 
-      <!-- EQUATORE -->
-      <div class="eq-divider">
-        <div class="eq-line"></div>
-        <div class="eq-divider-center">
-          <div class="eq-divider-label">♭3 ↔ 3 · l'EQUATORE</div>
-          <button class="play-btn eq-cross-btn" onclick="playEqCross()">↕ Attraversa (Do → Do#)</button>
-        </div>
-        <div class="eq-line"></div>
-      </div>
+    <div id="eq-fretboard-wrap" style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
 
-      <!-- SUD -->
-      <div class="eq-hemi sud">
-        <div class="eq-hemi-head">
-          <span class="eq-hemi-icon">🌙</span>
-          <div>
-            <div class="eq-hemi-title">SUD · A MINOR PENT</div>
-            <div class="eq-hemi-sub">Box al 5° tasto · scuro / bluesy / malinconico</div>
-          </div>
-          <button class="play-btn" onclick="playEqHemi('sud')">▶ Play</button>
-        </div>
-        <div class="eq-diagram" id="eq-diagram-sud"></div>
-        <div class="eq-chips">
-          <span class="eq-chip root">A · 1</span>
-          <span class="eq-chip third-min">C · ♭3 min</span>
-          <span class="eq-chip">D · 4</span>
-          <span class="eq-chip">E · 5</span>
-          <span class="eq-chip">G · ♭7</span>
-        </div>
-        <div class="eq-mood">"Luna — note che ti sprofondano. Vibe da blues lento, soul, rock duro."</div>
-      </div>
+    <div class="eq-legend-row" style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin:14px 0">
+      <span class="eq-legend-chip"><span class="eq-legend-dot" style="background:#3b82f6"></span>Box basso</span>
+      <span class="eq-legend-chip"><span class="eq-legend-dot" style="background:#ef4444"></span>EQUATORE · note in comune</span>
+      <span class="eq-legend-chip"><span class="eq-legend-dot" style="background:#f59e0b"></span>Box alto</span>
+      <span class="eq-legend-chip"><span class="eq-legend-dot" style="background:#fff;border:2px solid #ef4444;width:8px;height:8px"></span>Tonica</span>
+    </div>
+
+    <div class="eq-play-row" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:20px">
+      <button class="play-btn" onclick="playEqBox('low')">▶ Box basso</button>
+      <button class="play-btn eq-cross-btn" onclick="playEqEquator()">↕ Solo equatore</button>
+      <button class="play-btn" onclick="playEqBox('high')">▶ Box alto</button>
+      <button class="play-btn" onclick="playEqBox('full')">↕ Entrambi (catena)</button>
     </div>
 
     <!-- LE 3 REGOLE DI MAYER -->
     <div class="eq-rules">
       <div class="eq-rule">
         <div class="eq-rule-num">1</div>
-        <div class="eq-rule-title">Stessa forma, due latitudini</div>
-        <div class="eq-rule-body">La diteggiatura del box non cambia: scendi di <strong>3 tasti</strong> per passare da minore a maggiore. La min al 5° tasto = La maj al 2°.</div>
+        <div class="eq-rule-title">Pensa a coppie di box</div>
+        <div class="eq-rule-body">Non studiare i 5 box separati: studiali a coppie adiacenti. Ogni coppia condivide una colonna di note — quella è la "porta di servizio" fra le due posizioni.</div>
       </div>
       <div class="eq-rule">
         <div class="eq-rule-num">2</div>
-        <div class="eq-rule-title">Bend = attraversamento</div>
-        <div class="eq-rule-body">Il bend di un semitono dalla <strong>♭3 alla 3</strong> (Do → Do#, 3ª corda 5° tasto) <em>è</em> l'equatore. Quel momento è il "blues note crossing".</div>
+        <div class="eq-rule-title">L'equatore è il punto di passaggio</div>
+        <div class="eq-rule-body">Quando il dito arriva su una nota dell'equatore, sei in entrambi i box contemporaneamente. È il momento giusto per spostare la mano e cambiare posizione senza far sentire il "salto".</div>
       </div>
       <div class="eq-rule">
         <div class="eq-rule-num">3</div>
-        <div class="eq-rule-title">Risolvi nel mondo che vince</div>
-        <div class="eq-rule-body">Su <strong>Am7</strong> atterra a SUD (♭3, 5, ♭7). Su <strong>A7 / Amaj</strong> atterra a NORD (3, 6). L'orecchio segue dove finisci.</div>
+        <div class="eq-rule-title">Bending sull'equatore</div>
+        <div class="eq-rule-body">Le note equatoriali sono sempre in scala — bendarle è sicuro. Mayer ci appoggia le frasi più espressive (ascolta i suoi solo blues: i bend più "raw" cadono sulla colonna condivisa).</div>
       </div>
     </div>
 
@@ -7165,13 +7157,13 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="eq-apply">
       <div class="eq-apply-title">🎸 Come applicarlo in un solo</div>
       <ul>
-        <li><strong>Slow blues in La:</strong> parti dal box SUD (5° tasto), bendi la ♭3 verso la 3, scivola in giù di 3 tasti e ti trovi nel box NORD senza cambiare diteggiatura.</li>
-        <li><strong>Cambio I → IV (A7 → D7):</strong> sull'A7 stai a NORD (maj pent); sul D7 torna a SUD (min pent) — perché D7 contiene Do (♭7 di A = ♭3 nel suo mondo minore).</li>
-        <li><strong>"Gravity" feel:</strong> alterna mezza misura NORD / mezza misura SUD, con il root al 5° tasto come bussola sempre presente nell'orecchio.</li>
+        <li><strong>Estendere verso l'acuto:</strong> dal box 1 sali fino all'equatore col box 2, e ti ritrovi al tasto 10 senza pensare. Continui fino al box 5 e copri tutto il manico.</li>
+        <li><strong>Frase blues "lazy":</strong> resta intorno all'equatore (es. fret 5 in La min): ogni nota la puoi dita-re dal box che ti fa più comodo, e i bend cadono sempre giusti.</li>
+        <li><strong>Da Mayer:</strong> nei solo di "Gravity" e "Slow Dancing" John si sposta continuamente fra box 1 e box 2 sulla colonna del 7°-8° tasto — è il suo cambio di posizione preferito.</li>
       </ul>
     </div>
 
-    <div class="eq-essence">💡 Non pensare "minore" o "maggiore". Pensa <strong>latitudine sul globo</strong>: il manico è una mappa, l'equatore è ♭3↔3, e tu sei un viaggiatore che cambia clima quando cambi emisfero.</div>
+    <div class="eq-essence">💡 Il manico non è una sequenza di box isolati: è una catena di equatori. Memorizza una colonna alla volta, e il manico diventa "un grande box solo".</div>
 
     <div class="ex-grid" id="ex-equator-grid"></div>
   </div>
@@ -7771,418 +7763,211 @@ function initTechPage() {
   // Initial sweep render
   renderSweepPanel();
   // Equator Trick diagrams
-  renderEqDiagrams();
+  renderEquatorView();
   _techInitialized = true;
 }
 
 // ─── EQUATOR TRICK (John Mayer) ──────────────────────────────────────────────
-const EQ_BOXES = {
-  nord: {
-    color:'#f59e0b', thirdColor:'#22c55e',
-    minFret:1, maxFret:6,
-    notes:[
-      { string:0, fret:2, label:'F#', role:'6' },
-      { string:0, fret:5, label:'A',  role:'1', root:true },
-      { string:1, fret:2, label:'C#', role:'3', third:true },
-      { string:1, fret:5, label:'E',  role:'5' },
-      { string:2, fret:2, label:'A',  role:'1', root:true },
-      { string:2, fret:4, label:'B',  role:'2' },
-      { string:3, fret:2, label:'E',  role:'5' },
-      { string:3, fret:4, label:'F#', role:'6' },
-      { string:4, fret:2, label:'B',  role:'2' },
-      { string:4, fret:4, label:'C#', role:'3', third:true },
-      { string:5, fret:2, label:'F#', role:'6' },
-      { string:5, fret:5, label:'A',  role:'1', root:true },
-    ],
-    seq:[ [5,2],[5,5],[4,2],[4,4],[3,2],[3,4],[2,2],[2,4],[1,2],[1,5],[0,2],[0,5] ]
-  },
-  sud: {
-    color:'#3b82f6', thirdColor:'#ef4444',
-    minFret:4, maxFret:9,
-    notes:[
-      { string:0, fret:5, label:'A',  role:'1', root:true },
-      { string:0, fret:8, label:'C',  role:'♭3', third:true },
-      { string:1, fret:5, label:'E',  role:'5' },
-      { string:1, fret:8, label:'G',  role:'♭7' },
-      { string:2, fret:5, label:'C',  role:'♭3', third:true },
-      { string:2, fret:7, label:'D',  role:'4' },
-      { string:3, fret:5, label:'G',  role:'♭7' },
-      { string:3, fret:7, label:'A',  role:'1', root:true },
-      { string:4, fret:5, label:'D',  role:'4' },
-      { string:4, fret:7, label:'E',  role:'5' },
-      { string:5, fret:5, label:'A',  role:'1', root:true },
-      { string:5, fret:8, label:'C',  role:'♭3', third:true },
-    ],
-    seq:[ [5,5],[5,8],[4,5],[4,7],[3,5],[3,7],[2,5],[2,7],[1,5],[1,8],[0,5],[0,8] ]
-  }
-};
+// ── EQUATORE PENTATONICO (John Mayer) ──
+// Costruisce la vista per una coppia di box adiacenti della stessa pentatonica.
+// Riusa P5_MINOR_BOXES / P5_MAJOR_BOXES e p5BoxFrets (definiti nella pagina 5 Box Penta).
+const EQ_STATE = { keyIdx: 9, quality: 'minor', pairIdx: 4 }; // default: A min, Box5↔Box1
 
-function buildEqSvg(c) {
-  const cellW = 38, cellH = 22, leftPad = 24, topPad = 16, dotR = 11;
-  const fretSpan = c.maxFret - c.minFret;
-  const W = leftPad + fretSpan * cellW + 10;
-  const H = topPad + 5 * cellH + 22;
-  const sNames = ['e','B','G','D','A','E'];
+function _eqBoxes() {
+  return EQ_STATE.quality === 'minor' ? P5_MINOR_BOXES : P5_MAJOR_BOXES;
+}
+
+function buildEquatorView(keyIdx, quality, pairIdx) {
+  const boxes = quality === 'minor' ? P5_MINOR_BOXES : P5_MAJOR_BOXES;
+  // box "basso" = quello con anchor minore in fret. Sceglie le 5 coppie ciclic.
+  // pairIdx 0 = Box1+Box2, 1 = Box2+Box3, 2 = Box3+Box4, 3 = Box4+Box5, 4 = Box5+Box1
+  const idxA = pairIdx;
+  const idxB = (pairIdx + 1) % 5;
+  const boxA = boxes[idxA];
+  const boxB = boxes[idxB];
+
+  // Provo tutte le 3×3 combinazioni di octava-shift per A e B,
+  // scelgo quella con massimo overlap; tie-break: preferisco la zona bassa del manico.
+  const rawA = p5BoxFrets(boxA, keyIdx);
+  const rawB = p5BoxFrets(boxB, keyIdx);
+  let fA = rawA, fB = rawB, bestScore = -Infinity;
+  for (const shA of [-12, 0, 12]) {
+    const cA = rawA.map(arr => arr.map(f => f + shA));
+    if (cA.flat().some(x => x < 0 || x > 22)) continue;
+    for (const shB of [-12, 0, 12]) {
+      const cB = rawB.map(arr => arr.map(f => f + shB));
+      if (cB.flat().some(x => x < 0 || x > 22)) continue;
+      let overlap = 0;
+      for (let s = 0; s < 6; s++) {
+        const sa = new Set(cA[s]);
+        cB[s].forEach(f => { if (sa.has(f)) overlap++; });
+      }
+      const allFr = cA.flat().concat(cB.flat());
+      const meanFret = allFr.reduce((a,b) => a+b, 0) / allFr.length;
+      const score = overlap * 100 - meanFret;
+      if (score > bestScore) { bestScore = score; fA = cA; fB = cB; }
+    }
+  }
+
+  // Identifico il box "basso" (anchor in fret minore) e quello "alto"
+  const minA = Math.min(...fA.flat());
+  const minB = Math.min(...fB.flat());
+  let lowFrets, highFrets, lowName, highName;
+  if (minA <= minB) {
+    lowFrets = fA;  highFrets = fB;  lowName = boxA.name; highName = boxB.name;
+  } else {
+    lowFrets = fB;  highFrets = fA;  lowName = boxB.name; highName = boxA.name;
+  }
+
+  // Note totali (deduplicate per string+fret) + provenance
+  const notes = [];
+  const PENT_INTERVALS = quality === 'minor' ? [0,3,5,7,10] : [0,2,4,7,9];
+  const scaleClasses = new Set(PENT_INTERVALS.map(iv => (keyIdx + iv) % 12));
+  const rootClass = keyIdx % 12;
+
+  for (let s = 0; s < 6; s++) {
+    const setLow  = new Set(lowFrets[s]);
+    const setHigh = new Set(highFrets[s]);
+    const allOnString = new Set([...setLow, ...setHigh]);
+    for (const f of allOnString) {
+      const inLow  = setLow.has(f);
+      const inHigh = setHigh.has(f);
+      const box = (inLow && inHigh) ? 'equator' : (inLow ? 'low' : 'high');
+      const noteClass = (TECH_OPEN_MIDI[s] + f) % 12;
+      notes.push({ string: s, fret: f, box, noteClass, isRoot: noteClass === rootClass });
+    }
+  }
+
+  const allFrets = notes.map(n => n.fret);
+  const minFret = Math.max(0, Math.min(...allFrets) - 1);
+  const maxFret = Math.max(...allFrets) + 1;
+  const equatorFretsSet = new Set(notes.filter(n => n.box === 'equator').map(n => n.fret));
+  const equatorFrets = [...equatorFretsSet].sort((a,b) => a-b);
+
+  return { notes, minFret, maxFret, equatorFrets, lowName, highName, rootClass };
+}
+
+function drawEquatorSvg(view) {
+  const sNames = ['e','B','G','D','A','E']; // index 0..5
+  const NOTES_LBL = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const COL_LOW = '#3b82f6', COL_HIGH = '#f59e0b', COL_EQ = '#ef4444';
+  const { notes, minFret, maxFret, equatorFrets, rootClass } = view;
+  const fretSpan = maxFret - minFret;
+  const cellW = 36, cellH = 26, leftPad = 30, topPad = 20, dotR = 11;
+  const W = leftPad + fretSpan * cellW + 16;
+  const H = topPad + 5 * cellH + 28;
 
   let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:${W}px">`;
   svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="10"/>`;
 
+  // Highlight equator columns (red translucent box)
+  equatorFrets.forEach(f => {
+    const cx = leftPad + (f - minFret) * cellW - cellW/2;
+    svg += `<rect x="${cx - cellW/2 + 2}" y="${topPad - 4}" width="${cellW - 4}" height="${5*cellH + 8}" fill="${COL_EQ}" opacity="0.10" stroke="${COL_EQ}" stroke-width="1.8" stroke-opacity="0.55" rx="4"/>`;
+  });
+
+  // Fret lines + numbers
   for (let f = 0; f <= fretSpan; f++) {
     const x = leftPad + f * cellW;
     svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+5*cellH}" stroke="#2e2e2e" stroke-width="1"/>`;
-    const fn = c.minFret + f;
-    if (fn > 0) svg += `<text x="${x + cellW/2}" y="${H-5}" text-anchor="middle" font-size="9" fill="#666" font-family="'Space Mono',monospace">${fn}</text>`;
+    const fn = minFret + f;
+    if (fn > 0) svg += `<text x="${x + cellW/2}" y="${H-5}" text-anchor="middle" font-size="10" fill="${equatorFrets.includes(fn) ? COL_EQ : '#666'}" font-family="'Space Mono',monospace" font-weight="${equatorFrets.includes(fn) ? 'bold' : 'normal'}">${fn}</text>`;
   }
 
-  [3,5,7,9].forEach(f => {
-    if (f >= c.minFret && f < c.maxFret) {
-      const cx = leftPad + (f - c.minFret) * cellW + cellW/2;
-      const cy = topPad + 5*cellH + 7;
-      svg += `<circle cx="${cx}" cy="${cy}" r="2" fill="#3a2e1a"/>`;
+  // Inlay markers
+  [3,5,7,9,12,15].forEach(f => {
+    if (f >= minFret + 1 && f <= maxFret) {
+      const x = leftPad + (f - minFret) * cellW - cellW/2;
+      const y = topPad + 5*cellH + 8;
+      svg += `<circle cx="${x}" cy="${y}" r="2" fill="#3a2e1a"/>`;
+      if (f === 12) {
+        svg += `<circle cx="${x-5}" cy="${y}" r="2" fill="#3a2e1a"/>`;
+        svg += `<circle cx="${x+5}" cy="${y}" r="2" fill="#3a2e1a"/>`;
+      }
     }
   });
 
+  // String lines
   for (let s = 0; s < 6; s++) {
     const y = topPad + s * cellH;
-    const w = s===0?0.7:s===5?1.6:1;
+    const w = s===0 ? 0.7 : s===5 ? 1.6 : 1;
     svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + fretSpan * cellW}" y2="${y}" stroke="#555" stroke-width="${w}"/>`;
-    svg += `<text x="${leftPad-7}" y="${y+4}" text-anchor="end" font-size="9" fill="#888" font-family="'Space Mono',monospace">${sNames[s]}</text>`;
+    svg += `<text x="${leftPad-8}" y="${y+4}" text-anchor="end" font-size="10" fill="#888" font-family="'Space Mono',monospace">${sNames[s]}</text>`;
   }
 
-  c.notes.forEach(n => {
-    const dotX = leftPad + (n.fret - c.minFret) * cellW - cellW/2;
+  // Note dots
+  notes.forEach(n => {
+    if (n.fret <= 0) return;
+    const dotX = leftPad + (n.fret - minFret) * cellW - cellW/2;
     const dotY = topPad + n.string * cellH;
-    let fill='#2c3e50', stroke='none', sw=0, txt='#cfd8dc';
-    if (n.root)       { fill=c.color;      stroke='#fff'; sw=1.5; txt='#000'; }
-    else if (n.third) { fill=c.thirdColor; stroke='#fff'; sw=1.4; txt='#fff'; }
-    svg += `<circle cx="${dotX}" cy="${dotY}" r="${dotR}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
-    svg += `<text x="${dotX}" y="${dotY+3}" text-anchor="middle" font-size="8" fill="${txt}" font-family="'Space Mono',monospace" font-weight="bold">${n.label}</text>`;
+    const fill = n.box === 'equator' ? COL_EQ : (n.box === 'low' ? COL_LOW : COL_HIGH);
+    const strokeC = n.isRoot ? '#fff' : 'none';
+    const sw = n.isRoot ? 2 : 0;
+    const noteLbl = NOTES_LBL[n.noteClass];
+    svg += `<circle cx="${dotX}" cy="${dotY}" r="${dotR}" fill="${fill}" stroke="${strokeC}" stroke-width="${sw}" opacity="${n.isRoot ? 1 : 0.92}"/>`;
+    svg += `<text x="${dotX}" y="${dotY+3}" text-anchor="middle" font-size="8" fill="#fff" font-family="'Space Mono',monospace" font-weight="bold">${noteLbl}</text>`;
   });
 
   svg += '</svg>';
   return svg;
 }
 
-function renderEqDiagrams() {
-  const n = document.getElementById('eq-diagram-nord');
-  const s = document.getElementById('eq-diagram-sud');
-  if (n) n.innerHTML = buildEqSvg(EQ_BOXES.nord);
-  if (s) s.innerHTML = buildEqSvg(EQ_BOXES.sud);
+function setEqQuality(q) {
+  EQ_STATE.quality = q;
+  document.getElementById('eq-min-btn').classList.toggle('active', q === 'minor');
+  document.getElementById('eq-maj-btn').classList.toggle('active', q === 'major');
+  renderEquatorView();
+}
+function setEqPair(idx) {
+  EQ_STATE.pairIdx = idx;
+  renderEquatorView();
 }
 
-function playEqHemi(side) {
-  const box = EQ_BOXES[side];
-  if (!box) return;
+function renderEquatorView() {
+  const keySel = document.getElementById('eq-key');
+  if (!keySel) return;
+  EQ_STATE.keyIdx = parseInt(keySel.value);
+
+  // Render pair pills
+  const pairBtns = document.getElementById('eq-pair-btns');
+  const pairLabels = ['Box 1+2', 'Box 2+3', 'Box 3+4', 'Box 4+5', 'Box 5+1'];
+  pairBtns.innerHTML = pairLabels.map((lbl, i) =>
+    `<button class="pos-btn${i === EQ_STATE.pairIdx ? ' active' : ''}" onclick="setEqPair(${i})">${lbl}</button>`
+  ).join('');
+
+  const view = buildEquatorView(EQ_STATE.keyIdx, EQ_STATE.quality, EQ_STATE.pairIdx);
+  document.getElementById('eq-fretboard-wrap').innerHTML = drawEquatorSvg(view);
+}
+
+// Suona le note di un lato del manico (box basso/alto), oppure solo l'equatore, o tutta la catena
+function playEqBox(which) {
   _stopTechPlayback();
   const dest = _ensureTechGain();
   const ctx = getAudioCtx();
   const now = ctx.currentTime + 0.02;
-  const step = 0.30;
-  box.seq.forEach(([str, fret], i) => {
-    const midi = TECH_OPEN_MIDI[str] + fret;
+  const step = 0.22;
+
+  const view = buildEquatorView(EQ_STATE.keyIdx, EQ_STATE.quality, EQ_STATE.pairIdx);
+  let pool;
+  if (which === 'low')        pool = view.notes.filter(n => n.box === 'low' || n.box === 'equator');
+  else if (which === 'high')  pool = view.notes.filter(n => n.box === 'high' || n.box === 'equator');
+  else if (which === 'full')  pool = view.notes;
+  else                        pool = view.notes.filter(n => n.box === 'equator');
+
+  // Ordina: dalla 6ª corda (low E = string 5) all'1ª, per ogni corda dal fret più basso al più alto
+  pool.sort((a, b) => (b.string - a.string) || (a.fret - b.fret));
+
+  pool.forEach((n, i) => {
+    const midi = TECH_OPEN_MIDI[n.string] + n.fret;
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
-    playNote(freq, now + i * step, 0.65, dest);
+    playNote(freq, now + i * step, 0.7, dest);
   });
 }
-
-function playEqCross() {
-  _stopTechPlayback();
-  const dest = _ensureTechGain();
-  const ctx = getAudioCtx();
-  const now = ctx.currentTime + 0.02;
-  const cMidi  = TECH_OPEN_MIDI[2] + 5;
-  const csMidi = TECH_OPEN_MIDI[2] + 6;
-  playNote(440 * Math.pow(2,(cMidi -69)/12), now,        1.0, dest);
-  playNote(440 * Math.pow(2,(csMidi-69)/12), now + 0.55, 1.4, dest);
-}
+function playEqEquator() { playEqBox('equator'); }
 
 // ─── TRIADI & MODI (sub-tab CAGED) ──────────────────────────────────────────
 // String MIDI (open): e=64 B=59 G=55 D=50 A=45 E=40 — index 0..5
 const MDX_OPEN_MIDI = [64, 59, 55, 50, 45, 40];
-
-// Quattro set di 3 corde adiacenti, ordinate da grave ad acuto (string-index alto = corda grave)
-const MDX_SETS = [
-  { id:'low',    name:'Set grave',        strIdx:[5,4,3], strNames:'E·A·D' },
-  { id:'midlow', name:'Set medio-grave',  strIdx:[4,3,2], strNames:'A·D·G' },
-  { id:'mid',    name:'Set medio',        strIdx:[3,2,1], strNames:'D·G·B' },
-  { id:'high',   name:'Set alto',         strIdx:[2,1,0], strNames:'G·B·e' },
-];
-// Per i 7th: 4 corde adiacenti
-const MDX_SETS_4 = [
-  { id:'low',    name:'Set grave',        strIdx:[5,4,3,2], strNames:'E·A·D·G' },
-  { id:'midlow', name:'Set medio-grave',  strIdx:[4,3,2,1], strNames:'A·D·G·B' },
-  { id:'high',   name:'Set alto',         strIdx:[3,2,1,0], strNames:'D·G·B·e' },
-];
-
-const MDX_QUALITIES_TRIAD = {
-  major: { intervals:[0,4,7],  symbol:'',      bass:['R','3','5'] },
-  minor: { intervals:[0,3,7],  symbol:'m',     bass:['R','♭3','5'] },
-  dim:   { intervals:[0,3,6],  symbol:'°',     bass:['R','♭3','♭5'] },
-};
-const MDX_QUALITIES_7TH = {
-  maj7:  { intervals:[0,4,7,11], symbol:'maj7', bass:['R','3','5','7'] },
-  m7:    { intervals:[0,3,7,10], symbol:'m7',   bass:['R','♭3','5','♭7'] },
-  dom7:  { intervals:[0,4,7,10], symbol:'7',    bass:['R','3','5','♭7'] },
-  m7b5:  { intervals:[0,3,6,10], symbol:'m7♭5', bass:['R','♭3','♭5','♭7'] },
-};
-
-// Le 7 colonne diatoniche della scala maggiore (Ionica)
-// Indice 0 = I grado (Ionico) … 6 = VII grado (Locrio)
-const MDX_DEGREES = [
-  { roman:'I',    rel:0,  mode:'Ionico',     modeIntervals:[0,2,4,5,7,9,11], triad:'major', seventh:'maj7', desc:'tonica · suono "casa", luminoso' },
-  { roman:'ii',   rel:2,  mode:'Dorico',     modeIntervals:[0,2,3,5,7,9,10], triad:'minor', seventh:'m7',   desc:'minore con 6ª naturale · jazz, funk, fusion' },
-  { roman:'iii',  rel:4,  mode:'Frigio',     modeIntervals:[0,1,3,5,7,8,10], triad:'minor', seventh:'m7',   desc:'minore con ♭2 · suono spagnolo / metal' },
-  { roman:'IV',   rel:5,  mode:'Lidio',      modeIntervals:[0,2,4,6,7,9,11], triad:'major', seventh:'maj7', desc:'maggiore con #4 · suono sognante / Satriani' },
-  { roman:'V',    rel:7,  mode:'Misolidio',  modeIntervals:[0,2,4,5,7,9,10], triad:'major', seventh:'dom7', desc:'dominante con ♭7 · blues, rock, gospel' },
-  { roman:'vi',   rel:9,  mode:'Eolio',      modeIntervals:[0,2,3,5,7,8,10], triad:'minor', seventh:'m7',   desc:'minore naturale · ballate, hard rock' },
-  { roman:'vii°', rel:11, mode:'Locrio',     modeIntervals:[0,1,3,5,6,8,10], triad:'dim',   seventh:'m7b5', desc:'semi-diminuito · ii-V-i minore, tensione' },
-];
-
-const MDX_NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-const MDX_STATE = { voicing:'triad', degreeIdx:0 };
-
-// Voicing relativo per ogni inversione, in intervalli da una nota base
-// inversion 0 = fondamentale, 1 = 1ª, 2 = 2ª (triade)
-function mdxVoicingIntervals(intervals, inversion) {
-  // intervals = [0, x, y] o [0, x, y, z]
-  const n = intervals.length;
-  const out = intervals.slice();
-  for (let i = 0; i < inversion; i++) {
-    // sposta la prima nota un'ottava sopra
-    out.push(out.shift() + 12);
-  }
-  return out;
-}
-
-// Calcola i tasti di una triade/7th su un set di corde nella tonalità rootNoteIdx
-// preferendo posizionarsi nella regione centrale del manico (tasti 3-15)
-function mdxFretsOnSet(stringIndices, intervals, inversion, rootNoteIdx) {
-  const voicing = mdxVoicingIntervals(intervals, inversion);
-  // La nota più bassa è voicing[0], suonata sulla corda più grave del set (stringIndices[0])
-  const bassStringMidi = MDX_OPEN_MIDI[stringIndices[0]];
-  const bassIntervalFromRoot = voicing[0];
-  const bassPitchClass = (rootNoteIdx + bassIntervalFromRoot + 144) % 12;
-  let bassFret = (bassPitchClass - (bassStringMidi % 12) + 12) % 12; // 0..11
-  // Preferisci posizione media: se siamo sotto al 3° tasto e c'è spazio per +12, alza
-  // (così la 2ª inversione non finisce sempre in posizione aperta)
-  if (bassFret < 3) bassFret += 12;
-  const bassMidi = bassStringMidi + bassFret;
-  const rootMidi = bassMidi - bassIntervalFromRoot;
-  return stringIndices.map((si, i) => {
-    const noteMidi = rootMidi + voicing[i];
-    const fret = noteMidi - MDX_OPEN_MIDI[si];
-    return { string: si, fret, semitones: voicing[i] % 12, noteIdx: noteMidi % 12, midi: noteMidi };
-  });
-}
-
-// SVG diagramma compatto verticale per un voicing (3 o 4 note)
-function mdxDrawVoicing(notes, rootMidi, color) {
-  const stringsAll = [0,1,2,3,4,5]; // mostro tutte e 6 le corde, evidenzio quelle suonate
-  const playedSet = new Map(notes.map(n => [n.string, n]));
-  const allFrets = notes.map(n => n.fret);
-  const minF = Math.max(0, Math.min(...allFrets) - 1);
-  const maxF = Math.max(...allFrets) + 1;
-  const fretCount = Math.max(3, maxF - minF);
-  const cellW = 14, cellH = 16, leftPad = 14, topPad = 16, dotR = 6;
-  const W = leftPad + 6 * cellW + 4;
-  const H = topPad + (fretCount) * cellH + 14;
-  let svg = `<svg class="mdx-inv-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="6"/>`;
-  // Strings (vertical, e on right per convenzione diagramma accordi)
-  // Ordine corde: 0=e (alta) a destra, 5=E (grave) a sinistra
-  for (let s = 0; s < 6; s++) {
-    const x = leftPad + (5 - s) * cellW;
-    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad + fretCount * cellH}" stroke="#555" stroke-width="${s===5?1.5:s===0?0.7:1}"/>`;
-  }
-  // Fret labels (sinistra)
-  for (let f = 0; f <= fretCount; f++) {
-    const y = topPad + f * cellH;
-    svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + 5 * cellW}" y2="${y}" stroke="${f===0&&minF===0?'#c8a84b':'#333'}" stroke-width="${f===0&&minF===0?2.5:1}"/>`;
-  }
-  // First-fret label
-  if (minF > 0) {
-    svg += `<text x="2" y="${topPad + cellH/2 + 3}" font-size="9" fill="#888" font-family="'Space Mono',monospace">${minF + 1}fr</text>`;
-  }
-  // Mute/open markers above strings
-  stringsAll.forEach(s => {
-    const x = leftPad + (5 - s) * cellW;
-    if (!playedSet.has(s)) {
-      svg += `<text x="${x}" y="${topPad - 4}" text-anchor="middle" font-size="8" fill="#444" font-family="monospace">×</text>`;
-    } else if (playedSet.get(s).fret === 0) {
-      svg += `<circle cx="${x}" cy="${topPad - 6}" r="3" fill="none" stroke="#aaa" stroke-width="1"/>`;
-    }
-  });
-  // Note dots
-  notes.forEach(n => {
-    if (n.fret <= 0) return;
-    const x = leftPad + (5 - n.string) * cellW;
-    const y = topPad + (n.fret - minF - 0.5) * cellH;
-    const isRoot = n.midi === rootMidi;
-    const fill = isRoot ? (color || '#f59e0b') : '#cfd8dc';
-    const stroke = isRoot ? '#fff' : 'none';
-    svg += `<circle cx="${x}" cy="${y}" r="${dotR}" fill="${fill}" stroke="${stroke}" stroke-width="1.2"/>`;
-  });
-  svg += '</svg>';
-  return svg;
-}
-
-function setMdxVoicing(v) {
-  MDX_STATE.voicing = v;
-  document.getElementById('mdx-triad-btn').classList.toggle('active', v === 'triad');
-  document.getElementById('mdx-7th-btn').classList.toggle('active', v === 'seventh');
-  renderModi();
-}
-function setMdxDegree(i) {
-  MDX_STATE.degreeIdx = i;
-  renderModi();
-}
-
-function renderModi() {
-  const grid = document.getElementById('mdx-sets-grid');
-  if (!grid) return;
-  const keySel = document.getElementById('caged-key');
-  const keyIdx = keySel ? parseInt(keySel.value) : 0;
-  const keyName = MDX_NOTE_NAMES[keyIdx];
-
-  // Degree buttons
-  const degBtns = document.getElementById('mdx-degree-btns');
-  degBtns.innerHTML = MDX_DEGREES.map((d, i) => {
-    const noteIdx = (keyIdx + d.rel) % 12;
-    const qd = (MDX_STATE.voicing === 'triad') ? MDX_QUALITIES_TRIAD[d.triad] : MDX_QUALITIES_7TH[d.seventh];
-    const chordName = MDX_NOTE_NAMES[noteIdx] + qd.symbol;
-    return `<button class="mdx-degree-pill${i===MDX_STATE.degreeIdx?' active':''}" onclick="setMdxDegree(${i})">${d.roman}<small>${chordName}</small></button>`;
-  }).join('');
-
-  const deg = MDX_DEGREES[MDX_STATE.degreeIdx];
-  const chordRootIdx = (keyIdx + deg.rel) % 12;
-  const chordRootName = MDX_NOTE_NAMES[chordRootIdx];
-  const quality = (MDX_STATE.voicing === 'triad') ? deg.triad : deg.seventh;
-  const qDef = (MDX_STATE.voicing === 'triad') ? MDX_QUALITIES_TRIAD[quality] : MDX_QUALITIES_7TH[quality];
-  const chordName = chordRootName + qDef.symbol;
-  const chordNoteIdxs = qDef.intervals.map(iv => (chordRootIdx + iv) % 12);
-  const chordNoteNames = chordNoteIdxs.map(i => MDX_NOTE_NAMES[i]);
-
-  // Summary card
-  document.getElementById('mdx-degree-summary').innerHTML = `
-    <div class="mdx-deg-big">${deg.roman}</div>
-    <div class="mdx-deg-mid">
-      <div class="mdx-deg-mode">${deg.mode}</div>
-      <div class="mdx-deg-chord">${chordName} &nbsp;·&nbsp; ${chordNoteNames.join(' – ')}</div>
-      <div class="mdx-deg-notes">${deg.desc}</div>
-    </div>
-    <div class="mdx-deg-play">
-      <button class="play-btn" onclick="playMdxChord()">▶ Accordo</button>
-      <button class="play-btn" onclick="playMdxMode()">▶ Modo (${deg.mode})</button>
-    </div>`;
-
-  // Sets grid
-  const sets = (MDX_STATE.voicing === 'triad') ? MDX_SETS : MDX_SETS_4;
-  const numInv = (MDX_STATE.voicing === 'triad') ? 3 : 3; // mostro fondamentale, 1ª, 2ª anche per 7ª
-  const sNamesFull = ['e','B','G','D','A','E'];
-  grid.innerHTML = sets.map(set => {
-    const invHtml = [];
-    for (let inv = 0; inv < numInv; inv++) {
-      const notes = mdxFretsOnSet(set.strIdx, qDef.intervals, inv, chordRootIdx);
-      const valid = notes.every(n => n.fret >= 0 && n.fret <= 17);
-      const rootMidi = notes[0].midi - mdxVoicingIntervals(qDef.intervals, inv)[0];
-      const tabFrets = notes.map(n => `${sNamesFull[n.string]}:${n.fret}`).join(' ');
-      const invLabel = inv === 0 ? 'Fondamentale' : (inv === 1 ? '1ª inv' : '2ª inv');
-      const bassLabel = qDef.bass[inv % qDef.bass.length];
-      invHtml.push(`
-        <div class="mdx-inv">
-          <div class="mdx-inv-label">${invLabel}</div>
-          <div class="mdx-inv-bass">Basso: ${bassLabel}</div>
-          ${valid ? mdxDrawVoicing(notes, rootMidi, '#f59e0b') : '<div style="font-size:10px;color:var(--text-dim);padding:14px 0">fuori range</div>'}
-          ${valid ? `<button class="mdx-inv-play" onclick="playMdxVoicing('${set.id}',${inv})">▶ Arpeggio</button>` : ''}
-        </div>`);
-    }
-    return `
-      <div class="mdx-set-card">
-        <div class="mdx-set-head">
-          <span class="mdx-set-name">${set.name}</span>
-          <span class="mdx-set-strings">${set.strNames}</span>
-        </div>
-        <div class="mdx-inversions">${invHtml.join('')}</div>
-      </div>`;
-  }).join('');
-
-  // Mode section
-  const modeNotes = deg.modeIntervals.map(iv => MDX_NOTE_NAMES[(chordRootIdx + iv) % 12]);
-  // Formula in numeri sulla scala maggiore (es. Dorico = 1 2 ♭3 4 5 6 ♭7)
-  const majIvs = [0,2,4,5,7,9,11];
-  const modeFormula = deg.modeIntervals.map((iv, i) => {
-    const diff = iv - majIvs[i];
-    const num = i + 1;
-    if (diff === 0) return String(num);
-    if (diff === 1) return '#' + num;
-    if (diff === -1) return '♭' + num;
-    return num + (diff > 0 ? '+' + diff : diff);
-  }).join(' ');
-  document.getElementById('mdx-mode-section').innerHTML = `
-    <div class="mdx-mode-head">
-      <div>
-        <div class="mdx-mode-title">${chordRootName} ${deg.mode}</div>
-        <div class="mdx-mode-formula">Formula: <b>${modeFormula}</b> — Note: ${modeNotes.join(' · ')}</div>
-      </div>
-      <button class="play-btn" onclick="playMdxMode()">▶ Suona la scala</button>
-    </div>
-    <div style="font-size:12px;color:var(--text-mid);line-height:1.6">
-      <strong style="color:var(--amber)">Da provare:</strong> suona uno dei voicing qui sopra, poi improvvisa con la scala <strong>${deg.mode}</strong> centrata su <strong>${chordRootName}</strong>.
-      Tutte le note di <strong>${chordName}</strong> sono contenute nel modo — gli altri 3-4 toni sono le "note di passaggio" che colorano la frase.
-      Tonalità "madre": <strong>${keyName} maggiore</strong> (la scala diatonica condivisa da tutti e 7 i gradi).
-    </div>`;
-}
-
-function playMdxVoicing(setId, inversion) {
-  const keyIdx = parseInt(document.getElementById('caged-key').value);
-  const deg = MDX_DEGREES[MDX_STATE.degreeIdx];
-  const chordRootIdx = (keyIdx + deg.rel) % 12;
-  const quality = (MDX_STATE.voicing === 'triad') ? deg.triad : deg.seventh;
-  const qDef = (MDX_STATE.voicing === 'triad') ? MDX_QUALITIES_TRIAD[quality] : MDX_QUALITIES_7TH[quality];
-  const sets = (MDX_STATE.voicing === 'triad') ? MDX_SETS : MDX_SETS_4;
-  const set = sets.find(s => s.id === setId);
-  if (!set) return;
-  const notes = mdxFretsOnSet(set.strIdx, qDef.intervals, inversion, chordRootIdx);
-  const ctx = getAudioCtx();
-  const now = ctx.currentTime;
-  // Arpeggio: nota per nota, poi accordo
-  notes.forEach((n, i) => {
-    const f = 440 * Math.pow(2, (n.midi - 69) / 12);
-    playNote(f, now + i * 0.22, 0.7);
-  });
-  // Strum finale insieme
-  const strumStart = now + notes.length * 0.22 + 0.12;
-  notes.forEach((n, i) => {
-    const f = 440 * Math.pow(2, (n.midi - 69) / 12);
-    playNote(f, strumStart + i * 0.015, 1.4);
-  });
-}
-function playMdxChord() {
-  // Usa la prima inversione disponibile (fondamentale) sul set medio
-  const sets = (MDX_STATE.voicing === 'triad') ? MDX_SETS : MDX_SETS_4;
-  playMdxVoicing(sets[1].id, 0);
-}
-function playMdxMode() {
-  const keyIdx = parseInt(document.getElementById('caged-key').value);
-  const deg = MDX_DEGREES[MDX_STATE.degreeIdx];
-  const chordRootIdx = (keyIdx + deg.rel) % 12;
-  // Suona la scala dal root del modo, salendo per 1 ottava poi tornando al root
-  const baseMidi = 60 + chordRootIdx; // ottava 4
-  const seq = [...deg.modeIntervals.map(iv => baseMidi + iv), baseMidi + 12];
-  const ctx = getAudioCtx();
-  const now = ctx.currentTime;
-  seq.forEach((m, i) => {
-    const f = 440 * Math.pow(2, (m - 69) / 12);
-    playNote(f, now + i * 0.28, 0.55);
-  });
-}
-
-function showCagedSubpage(tab) {
-  document.querySelectorAll('#page-caged .cpage-tab-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.tab === tab));
-  document.querySelectorAll('#page-caged .cpage-view').forEach(v =>
-    v.classList.toggle('active', v.id === 'cpage-caged-' + tab));
-}
 
 function showTechTab(id) {
   _stopTechPlayback();
