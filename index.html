@@ -485,6 +485,17 @@
     outline: 2px solid rgba(255,255,255,0.85); outline-offset: 1px;
     z-index: 5;
   }
+  /* Modalità arpeggio: nasconde del tutto le note fuori dall'accordo corrente */
+  #jam-fretboard.arp-mode .note-dot.chord-dim { display: none; }
+
+  .jam-fb-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .jam-fb-toggle button {
+    font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: .5px;
+    background: transparent; color: var(--text-mid); border: none; cursor: pointer;
+    padding: 6px 12px; transition: background .15s, color .15s;
+  }
+  .jam-fb-toggle button + button { border-left: 1px solid var(--border); }
+  .jam-fb-toggle button.active { background: var(--amber-glow); color: var(--amber); }
 
   /* ── OVERLAY TECNICA (bend / vibrato) ── */
   .note-dot { position: relative; }
@@ -4751,8 +4762,18 @@ const JAM_SCALE_MAP = {
   harmonic_minor:'harmonic_minor', blues:'blues',
 };
 let _jamChordIdx = -1; // ultimo accordo evidenziato (per aggiornare solo al cambio)
+let _jamFbMode = 'scale'; // 'scale' = scala intera · 'arp' = solo arpeggio dell'accordo corrente
 
 function jamScaleKey() { return JAM_SCALE_MAP[BT.modeKey] || 'natural_minor'; }
+
+// Toggle manico: scala intera ↔ arpeggio dell'accordo corrente (le note cambiano ad ogni accordo)
+function jamSetFbMode(mode) {
+  _jamFbMode = mode;
+  const fb = document.getElementById('jam-fretboard');
+  if (fb) fb.classList.toggle('arp-mode', mode === 'arp');
+  document.querySelectorAll('#jam-fb-toggle button').forEach(b =>
+    b.classList.toggle('active', b.dataset.fbmode === mode));
+}
 
 function makeJamDot(s, f, noteIndex, keyIndex, scale) {
   const interval = (noteIndex - keyIndex + 12) % 12;
@@ -5264,6 +5285,10 @@ function findSeventhShapes(rootMidi, typeKey, inversion, stringIndices) {
       return;
     }
     for (const { fret, noteIdx } of optsByString[pos]) {
+      // La corda più grave (pos 0) deve suonare il basso dell'inversione.
+      // targetNotes è già ruotato da seventhNotes(): l'indice 0 è sempre il basso
+      // (fondamentale, 3ª, 5ª o 7ª a seconda dell'inversione).
+      if (pos === 0 && noteIdx !== 0) continue;
       if (!usedNotes.has(noteIdx)) {
         usedNotes.add(noteIdx);
         pick(pos + 1, [...chosen, fret], usedNotes);
@@ -7041,8 +7066,9 @@ window.addEventListener('DOMContentLoaded', function() {
 
   <!-- ── MANICO LIVE: scala suggerita + toni dell'accordo in tempo reale ── -->
   <div class="jam-fb-header">
-    <div class="loop-info" style="margin-bottom:0">
-      <span>MANICO LIVE — SCALA &amp; ACCORDO</span>
+    <div class="jam-fb-toggle" id="jam-fb-toggle">
+      <button class="active" data-fbmode="scale" onclick="jamSetFbMode('scale')">SCALA</button>
+      <button data-fbmode="arp" onclick="jamSetFbMode('arp')">ARPEGGIO ACCORDO</button>
     </div>
     <div class="jam-now-wrap">
       <span class="jam-now-lbl">Ora suona</span>
@@ -7793,8 +7819,8 @@ const TECH_EXERCISES = {
       tips:['Tieni il polso rilassato','Partenza con pennata verso il basso','Segna i punti di corda cambiamento'],
       tags:['pentatonica','scale'] },
     { title:'Sequenza di 3 note (triplet run)', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
-      tab:'e |--5-7-8-7-5-3-|\nB |-------------5-|\nG |--------------|\nD |--------------|\nA |--------------|\nE |--------------|',
-      tips:['Ogni gruppo di 3 comincia ↓','Accelera solo quando il ritmo è preciso'],
+      tab:'e |--5-8-10-8-5----|\nB |------------8-5-|\nG |---------------|\nD |---------------|\nA |---------------|\nE |---------------|',
+      tips:['Ogni gruppo di 3 comincia ↓','Tutte note di La min pentatonica (A C D … G E)','Accelera solo quando il ritmo è preciso'],
       tags:['sequenza','triplet'] },
     { title:'Inside/Outside picking', diff:4, bpmSlow:50, bpmMid:80, bpmFast:110,
       tab:'e |--8-10------|--10-8------|\nB |--8-10------|--10-8------|\nG |------------|------------|\nD |--7-9-------|--9-7-------|\nA |--7-9-------|--9-7-------|\nE |------------|------------|',
@@ -7847,8 +7873,8 @@ const TECH_EXERCISES = {
       tips:['Muta con le dita della mano sinistra','Suona le due corde quasi insieme'],
       tags:['ottave','string skipping'] },
     { title:'10e intervalli (Guthrie Govan)', diff:4, bpmSlow:50, bpmMid:75, bpmFast:100,
-      tab:'e |--5-----------8---|\nB |------------------|\nG |------------------|\nD |------7-----------|\nA |------------------|\nE |------------------|\n(e+D skip 2 corde)',
-      tips:['Intervalli di 10a = ottava + terza','Stira le dita gradualmente'],
+      tab:'e |------7-------9-------10--|\nB |-------------------------|\nG |-------------------------|\nD |--5-------7-------9-------|\nA |-------------------------|\nE |-------------------------|\n(corde D+e, skip di 2 corde: ogni coppia = 10ª)',
+      tips:['10ª = ottava + terza (es. G→B)','Nota grave su D, la sua 10ª su e','Stira le dita gradualmente'],
       tags:['10e','avanzato'] },
   ],
   dwps: [
@@ -7889,23 +7915,23 @@ const TECH_EXERCISES = {
   ],
   equator: [
     { title:'Crossing the equator: bend ♭3 → 3 (in La)', diff:1, bpmSlow:60, bpmMid:80, bpmFast:100,
-      tab:'e |--------------------|\nB |--8b(9)-8-5---------|\nG |------------7-5-----|\nD |----------------7-5-|\nA |--------------------|\nE |--------------------|',
-      tips:['Il bend di un semitono da Do (♭3) a Do# (3) È l\'equatore','Bendi lentamente: ascolta il momento in cui la nota "diventa" maggiore','Risolvi sulla 5 (Mi) per stabilizzare la frase'],
+      tab:'e |--8b(9)-8-5---------|\nB |-------------5------|\nG |--------------------|\nD |--------------------|\nA |--------------------|\nE |--------------------|',
+      tips:['Il bend è sul Do (♭3, cantino 8° tasto) tirato fino a Do# (3): è l\'equatore','Bendi lentamente: ascolta il momento in cui la nota "diventa" maggiore','Risolvi sulla 5 (Mi, corda B 5° tasto) per stabilizzare la frase'],
       tags:['blues','bending','John Mayer','equator'] },
     { title:'Slide fra emisferi: La min → La maj (3 tasti giù)', diff:2, bpmSlow:55, bpmMid:80, bpmFast:105,
       tab:'e |--5-8-5\\2-----------|\nB |--5-8-5\\2-----------|\nG |--5-7-5\\2-----------|\nD |--5-7-5\\2-----------|\nA |--5-7-5\\2-----------|\nE |--5-8-5\\2-----------|',
       tips:['Stessa forma del box: solo la posizione cambia','Slide pulito di 3 tasti = cambio di emisfero','Senti come il colore si schiarisce dopo lo slide'],
       tags:['pentatonica','slide','equator','John Mayer'] },
     { title:'Mayer-style I-IV: nord su A7, sud su D7', diff:3, bpmSlow:55, bpmMid:75, bpmFast:95,
-      tab:'e |---2-4-5-(A7)----------5-7-8-(D7)------|\nB |---2-5-----------------5-8-------------|\nG |---2-4-----------------5-7-------------|\nD |---------------------------------------|\nA |---------------------------------------|\nE |---------------------------------------|',
+      tab:'e |---2-5-(A7)----------5-8-(D7)------|\nB |---2-5---------------5-8-----------|\nG |---2-4---------------5-7-----------|\nD |----------------------------------|\nA |----------------------------------|\nE |----------------------------------|',
       tips:['Battuta 1 (A7): A maj pent al 2° tasto = NORD','Battuta 2 (D7): A min pent al 5° tasto = SUD','Il root resta La in entrambi i casi: solo il clima cambia'],
       tags:['blues','I-IV','John Mayer','equator'] },
     { title:'Hybrid lick: pentatonica ibrida sull\'equatore', diff:3, bpmSlow:50, bpmMid:75, bpmFast:100,
-      tab:'e |--5-8-5---------------------|\nB |------5-8b(9)-5-------------|\nG |--------------7-5-----------|\nD |------------------7-5-------|\nA |---------------------5-7----|\nE |-------------------------5--|',
-      tips:['Bendi sempre la ♭3 verso la 3 prima di scendere','Uso della pent. ibrida (1-2-♭3-3-5-6-♭7) — la scala dei due emisferi insieme','Termina sul Mi (5) per chiudere "neutro"'],
+      tab:'e |--5-8b(9)-8-5-------------|\nB |--------------8-5---------|\nG |-------------------------|\nD |-------------------------|\nA |-------------------------|\nE |-------------------------|',
+      tips:['Bendi la ♭3 (Do, cantino 8°) verso la 3 (Do#) prima di scendere','Uso della pent. ibrida (1-2-♭3-3-5-6-♭7) — la scala dei due emisferi insieme','Termina sul Mi (5, corda B 5°) per chiudere "neutro"'],
       tags:['pentatonica ibrida','blues','John Mayer','equator'] },
     { title:'"Gravity" feel: oscilla fra nord e sud ogni 2 tempi', diff:4, bpmSlow:50, bpmMid:70, bpmFast:90,
-      tab:'e |--5-8-5\\2-4-5-2--|--2-5-2/5-8-5----|\nB |--5-8-5\\2-5-2----|--2-5-2/5-8------|\nG |--5-7-5\\2-4-2----|--2-4-2/5-7------|\nD |-----------------|-----------------|\nA |-----------------|-----------------|\nE |-----------------|-----------------|',
+      tab:'e |--5-8-5\\2-5-2----|--2-5-2/5-8-5----|\nB |--5-8-5\\2-5-2----|--2-5-2/5-8------|\nG |--5-7-5\\2-4-2----|--2-4-2/5-7------|\nD |-----------------|-----------------|\nA |-----------------|-----------------|\nE |-----------------|-----------------|',
       tips:['Misura 1: parti SUD (5° tasto) → scivola NORD (2° tasto)','Misura 2: parti NORD → scivola SUD','Il root La (5° tasto, 6ª corda) è la tua bussola: sempre presente nell\'orecchio','Vibrato lento sulle note finali, alla Mayer'],
       tags:['blues','frase lunga','John Mayer','Gravity','equator','avanzato'] },
   ]
@@ -8785,14 +8811,15 @@ function renderSweepPanel() {
   document.getElementById('sweep-interval-row').innerHTML =
     intervals.map((iv, i) => `<span class="sweep-pill" style="background:${shape.semitones[i]===0?shape.color:'rgba(59,130,246,0.25)'}">${iv}</span>`).join('');
 
-  // Tab — transpose numbers by computing fret differences
-  // Build a simple tab from computed frets
-  const tabLines = ['e','B','G','D','A','E'].map((sn, si) => {
-    const idx = shape.strings.indexOf(si);
-    const fval = idx >= 0 ? String(frets[idx]) : '---';
-    return `${sn} |--${fval.padEnd(3,'-')}--|`;
+  // Tab — note sfalsate nell'ordine di esecuzione dello sweep (NON impilate:
+  // ogni nota occupa una colonna diversa, così si legge come una sequenza e non come un accordo)
+  const N = shape.strings.length;
+  const cells = Array.from({ length: 6 }, () => Array(N).fill('----'));
+  shape.strings.forEach((si, ii) => {
+    cells[si][ii] = (String(frets[ii]) + '----').slice(0, 4);
   });
-  document.getElementById('sweep-tab-display').textContent = tabLines.join('\n') + '\n    ▲ sweep up';
+  const tabLines = ['e','B','G','D','A','E'].map((sn, si) => `${sn} |--${cells[si].join('')}|`);
+  document.getElementById('sweep-tab-display').textContent = tabLines.join('\n') + '\n   ▲ sweep up';
 
   // Players
   if (shape.players && shape.players.length) {
