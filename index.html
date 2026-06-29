@@ -6281,6 +6281,13 @@ function renderChordScale() {
   if (CS_STATE.scaleKey === null) {
     buildCsScaleList();
     buildCsChordTabs();
+    // Pre-seleziona la prima scala così il pannello dettaglio non è mai vuoto
+    if (CS_SCALES.length) {
+      CS_STATE.scaleKey = CS_SCALES[0].key;
+      const first = document.querySelector(`.cs-scale-item[data-key="${CS_SCALES[0].key}"]`);
+      if (first) first.classList.add('active');
+      renderCsDetail();
+    }
   }
 }
 
@@ -6318,6 +6325,11 @@ function buildCsScaleList() {
       item.classList.add('active');
       CS_STATE.scaleKey = sc.key;
       renderCsDetail();
+      // Su mobile la lista sta sopra e il dettaglio sotto: porta in vista la diteggiatura
+      if (window.matchMedia('(max-width: 760px)').matches) {
+        const detail = document.getElementById('cs-detail-panel');
+        if (detail) detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     };
     list.appendChild(item);
   });
@@ -8639,9 +8651,12 @@ function playTechExercise(techKey, exIndex, slowMode) {
 
   if (notes.length === 0) return;
 
-  // Sort by horizontal column (tab reading order). Same-column notes
-  // ordered high string → low string, mimicking a downstroke roll.
-  notes.sort((a, b) => a.col - b.col || a.string - b.string);
+  // Read order: left→right by column, then (within a column) from the low E
+  // string up to the high e. Crucially EVERY note is its own sequential step —
+  // these exercises are single-note lines / scales, never chords, so notes
+  // aligned in the same tab column (e.g. a pentatonic box drawn as a grid)
+  // must play one after another, not all at once.
+  notes.sort((a, b) => a.col - b.col || b.string - a.string);
 
   // Tie spacing to the exercise BPM so notes don't overlap into a wash.
   // Treat each notated note as an 8th note at the chosen tempo.
@@ -8653,13 +8668,10 @@ function playTechExercise(techKey, exIndex, slowMode) {
   const ctx = getAudioCtx();
   const now = ctx.currentTime + 0.02;
 
-  let stepIdx = 0;
-  let prevCol = -1;
-  notes.forEach(n => {
-    if (n.col !== prevCol) { stepIdx++; prevCol = n.col; }
+  notes.forEach((n, i) => {
     const midi = TECH_OPEN_MIDI[n.string] + n.fret;
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
-    playNote(freq, now + (stepIdx - 1) * step, Math.min(1.2, step * 2.2), dest);
+    playNote(freq, now + i * step, Math.min(1.2, step * 2.2), dest);
   });
 }
 
