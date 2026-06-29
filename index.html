@@ -438,6 +438,54 @@
   }
   .note-dot.hidden { display: none; }
 
+  /* ── JAM: MANICO LIVE (scala + accordo in tempo reale) ── */
+  .jam-fb-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-top: 26px; flex-wrap: wrap;
+  }
+  .jam-now-wrap { display: flex; align-items: center; gap: 8px; }
+  .jam-now-lbl {
+    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 1px;
+    color: var(--text-dim); text-transform: uppercase;
+  }
+  .jam-now-chord {
+    font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1;
+    color: var(--amber); min-width: 54px; text-align: center;
+    padding: 5px 14px; border: 1px solid var(--amber-dim); border-radius: 8px;
+    background: var(--amber-glow); transition: transform .15s, box-shadow .15s;
+  }
+  .jam-now-chord.pulse {
+    transform: scale(1.12);
+    box-shadow: 0 0 18px rgba(245,158,11,0.6);
+  }
+  .jam-fb-legend {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-mid);
+    margin: 12px 0 4px;
+  }
+  .jam-fb-legend i.lg {
+    display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+    margin-right: 5px; vertical-align: -1px;
+  }
+  .jam-fb-legend .lg-root { background: var(--amber); }
+  .jam-fb-legend .lg-third { background: var(--blue); }
+  .jam-fb-legend .lg-fifth { background: var(--green); }
+  .jam-fb-legend .lg-seventh { background: var(--purple); }
+  .jam-fb-legend .lg-hint { color: var(--text-dim); }
+
+  /* chord-aware highlighting: dim non-chord scale tones, light up chord tones */
+  #jam-fretboard .note-dot {
+    transition: transform .18s, box-shadow .18s, opacity .18s, filter .18s;
+  }
+  #jam-fretboard .note-dot.chord-dim {
+    opacity: 0.26; filter: saturate(0.45); transform: scale(0.8);
+  }
+  #jam-fretboard .note-dot.chord-tone {
+    opacity: 1; transform: scale(1.08);
+    outline: 2px solid rgba(255,255,255,0.85); outline-offset: 1px;
+    z-index: 5;
+  }
+
   /* ── OVERLAY TECNICA (bend / vibrato) ── */
   .note-dot { position: relative; }
   body.show-tech .note-dot[data-tech]::before {
@@ -4509,10 +4557,12 @@ function jamUpdateLEDs(step) {
 }
 
 function jamUpdateChordBlocks(loopStep) {
+  let activeIdx = -1;
   BT.progression.forEach((chord, idx) => {
+    const active = loopStep >= chord.start && loopStep <= chord.end;
+    if (active) activeIdx = idx;
     const el = document.getElementById(`bt-chord-${idx}`);
     if (!el) return;
-    const active = loopStep >= chord.start && loopStep <= chord.end;
     el.classList.toggle('chord-active', active);
     const bar = el.querySelector('.chord-progress');
     if (bar) {
@@ -4521,6 +4571,12 @@ function jamUpdateChordBlocks(loopStep) {
         : '0%';
     }
   });
+  // Manico live: aggiorna l'evidenziazione solo quando cambia l'accordo
+  if (activeIdx !== -1 && activeIdx !== _jamChordIdx) {
+    _jamChordIdx = activeIdx;
+    const chord = BT.progression[activeIdx];
+    jamHighlightChord((BT.rootIdx + chord.s) % 12, chord.t);
+  }
 }
 
 // ─── PUBLIC API ──────────────────────────────────────────────────────────────
@@ -4536,9 +4592,11 @@ function jamTogglePlay() {
     btn.textContent = '▶';
     btn.classList.remove('playing');
     jamUpdateLEDs(-1);
+    jamClearChordHighlight();
   } else {
     btBuildProg();
     BT.playing = true;
+    _jamChordIdx = -1;
     BT.absoluteStep = 0;
     BT.nextNoteTime = BT.ctx.currentTime + 0.05;
     BT.notesInQueue = [];
@@ -4555,6 +4613,7 @@ function jamUpdateSettings() {
   BT.styleKey = document.getElementById('jam-style').value;
   jamRebuildChordUI();
   jamRenderModeInfo();
+  renderJamFretboard();
   if (BT.playing && BT.ctx && BT.masterGain) {
     // Fade out quickly, stop scheduler, then restart with new settings
     clearTimeout(BT.timerID);
@@ -4684,10 +4743,148 @@ function jamRenderModeInfo() {
     </div>`;
 }
 
+// ─── JAM LIVE FRETBOARD ──────────────────────────────────────────────────────
+// Mappa modo della base → scala da disegnare sul manico (riusa SCALES)
+const JAM_SCALE_MAP = {
+  major:'major', dorian:'dorian', phrygian:'phrygian', lydian:'lydian',
+  mixolydian:'mixolydian', natural_minor:'natural_minor',
+  harmonic_minor:'harmonic_minor', blues:'blues',
+};
+let _jamChordIdx = -1; // ultimo accordo evidenziato (per aggiornare solo al cambio)
+
+function jamScaleKey() { return JAM_SCALE_MAP[BT.modeKey] || 'natural_minor'; }
+
+function makeJamDot(s, f, noteIndex, keyIndex, scale) {
+  const interval = (noteIndex - keyIndex + 12) % 12;
+  const role = getIntervalRole(interval, scale.intervals);
+  const dot = document.createElement('div');
+  dot.className = `note-dot ${role}`;
+  if (f === 0) { dot.style.width = '28px'; dot.style.height = '28px'; dot.style.fontSize = '9px'; }
+  dot.textContent = NOTES[noteIndex];
+  dot.dataset.pc = noteIndex;
+  const midi = OPEN_STRING_MIDI[s] + f;
+  dot.onclick = () => {
+    playNote(midiToFreq(midi), getAudioCtx().currentTime, 0.6);
+    dot.classList.add('playing');
+    setTimeout(() => dot.classList.remove('playing'), 550);
+  };
+  return dot;
+}
+
+function renderJamFretboard() {
+  const fb = document.getElementById('jam-fretboard');
+  if (!fb) return;
+  const keyIndex = BT.rootIdx;
+  const scale = SCALES[jamScaleKey()];
+  if (!scale) return;
+  const scaleSet = new Set(scale.intervals.map(i => (keyIndex + i) % 12));
+  const fretCount = 15;
+  const fretWidths = [0];
+  for (let f = 1; f <= fretCount; f++) fretWidths.push(Math.round(58 - f * 1.1));
+  const OPEN_COL_W = 40, NUT_W = 14;
+
+  fb.innerHTML = '';
+
+  // Riga numeri tasto
+  const numRow = document.createElement('div');
+  numRow.className = 'fret-numbers';
+  const openHdr = document.createElement('div');
+  openHdr.className = 'fret-num'; openHdr.style.width = OPEN_COL_W + 'px'; openHdr.textContent = '0';
+  numRow.appendChild(openHdr);
+  const nutHdr = document.createElement('div');
+  nutHdr.className = 'fret-num'; nutHdr.style.width = NUT_W + 'px';
+  numRow.appendChild(nutHdr);
+  for (let f = 1; f <= fretCount; f++) {
+    const d = document.createElement('div');
+    d.className = 'fret-num'; d.style.width = fretWidths[f] + 'px'; d.textContent = f;
+    numRow.appendChild(d);
+  }
+  fb.appendChild(numRow);
+
+  // Corde
+  const strContainer = document.createElement('div');
+  strContainer.className = 'strings-container';
+  const STRING_HEIGHTS = ['0.65px', '0.85px', '1.1px', '1.5px', '1.9px', '2.3px'];
+
+  for (let s = 0; s < 6; s++) {
+    const row = document.createElement('div');
+    row.className = 'string-row';
+    row.style.setProperty('--str-h', STRING_HEIGHTS[s]);
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'string-name'; nameDiv.textContent = STRING_NAMES[s];
+    row.appendChild(nameDiv);
+
+    const openNote = OPEN_STRINGS[s];
+
+    // Corda a vuoto
+    const openCell = document.createElement('div');
+    openCell.className = 'open-col';
+    const openNoteIndex = openNote % 12;
+    if (scaleSet.has(openNoteIndex)) openCell.appendChild(makeJamDot(s, 0, openNoteIndex, keyIndex, scale));
+    row.appendChild(openCell);
+
+    // Capotasto
+    const nut = document.createElement('div');
+    nut.className = 'nut-col';
+    row.appendChild(nut);
+
+    // Tasti
+    for (let f = 1; f <= fretCount; f++) {
+      const cell = document.createElement('div');
+      cell.className = 'fret-cell';
+      cell.style.width = fretWidths[f] + 'px';
+      const noteIndex = (openNote + f) % 12;
+      if (scaleSet.has(noteIndex)) cell.appendChild(makeJamDot(s, f, noteIndex, keyIndex, scale));
+      row.appendChild(cell);
+    }
+    strContainer.appendChild(row);
+  }
+  fb.appendChild(strContainer);
+
+  // Se la base è in riproduzione, riapplica subito l'evidenziazione dell'accordo corrente
+  _jamChordIdx = -1;
+  if (BT.playing && BT.loopTotalSteps) {
+    const chord = btChordAt(BT.absoluteStep);
+    if (chord) jamHighlightChord((BT.rootIdx + chord.s) % 12, chord.t);
+  } else {
+    const badge = document.getElementById('jam-now-chord');
+    if (badge) badge.textContent = '—';
+  }
+}
+
+// Accende i toni dell'accordo corrente, attenua le altre note della scala
+function jamHighlightChord(chordRootPc, chordType) {
+  const fb = document.getElementById('jam-fretboard');
+  if (!fb) return;
+  const toneSet = new Set((CHORD_IV[chordType] || [0,4,7]).map(iv => (chordRootPc + iv) % 12));
+  fb.querySelectorAll('.note-dot').forEach(dot => {
+    const pc = parseInt(dot.dataset.pc);
+    const isTone = toneSet.has(pc);
+    dot.classList.toggle('chord-tone', isTone);
+    dot.classList.toggle('chord-dim', !isTone);
+  });
+  const badge = document.getElementById('jam-now-chord');
+  if (badge) {
+    badge.textContent = NOTES[chordRootPc] + (CHORD_QUAL_LABEL[chordType] || '');
+    badge.classList.add('pulse');
+    setTimeout(() => badge.classList.remove('pulse'), 300);
+  }
+}
+
+// Torna alla scala "piena" (nessun accordo evidenziato)
+function jamClearChordHighlight() {
+  const fb = document.getElementById('jam-fretboard');
+  if (fb) fb.querySelectorAll('.note-dot').forEach(d => d.classList.remove('chord-tone', 'chord-dim'));
+  const badge = document.getElementById('jam-now-chord');
+  if (badge) badge.textContent = '—';
+  _jamChordIdx = -1;
+}
+
 function jamInit() {
   jamInitLEDs();
   jamRebuildChordUI();
   jamRenderModeInfo();
+  renderJamFretboard();
 }
 
 
@@ -6840,6 +7037,27 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="mode-info-panel" id="jam-mode-info">
       <!-- populated by JS -->
     </div>
+  </div>
+
+  <!-- ── MANICO LIVE: scala suggerita + toni dell'accordo in tempo reale ── -->
+  <div class="jam-fb-header">
+    <div class="loop-info" style="margin-bottom:0">
+      <span>MANICO LIVE — SCALA &amp; ACCORDO</span>
+    </div>
+    <div class="jam-now-wrap">
+      <span class="jam-now-lbl">Ora suona</span>
+      <span class="jam-now-chord" id="jam-now-chord">—</span>
+    </div>
+  </div>
+  <div class="jam-fb-legend">
+    <span><i class="lg lg-root"></i>Tonica</span>
+    <span><i class="lg lg-third"></i>3ª</span>
+    <span><i class="lg lg-fifth"></i>5ª</span>
+    <span><i class="lg lg-seventh"></i>7ª</span>
+    <span class="lg-hint">// con la base in play, le note dell'<strong>accordo corrente</strong> si illuminano — punta quelle</span>
+  </div>
+  <div class="fretboard-wrap">
+    <div class="fretboard" id="jam-fretboard"></div>
   </div>
   </div><!-- /bpage-basi -->
   <div id="bpage-accordatore" class="cpage-view">
