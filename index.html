@@ -7833,7 +7833,7 @@ const TECH_EXERCISES = {
       tips:['Colpisci forte con le dita di arrivo','Non sollevare le dita sulla corda'],
       tags:['hammer-on','pull-off'] },
     { title:'Scala legato 3 note per corda', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
-      tab:'e |--5h7h8-----|--8p7p5-----|\nB |--5h7h8-----|--8p7p5-----|\nG |--5h7h9-----|--9p7p5-----|\nD |--5h7h9-----|--9p7p5-----|\nA |--5h7h8-----|--8p7p5-----|\nE |--5h7h8-----|--8p7p5-----|',
+      tab:'e |--5h7h8-----|--8p7p5-----|\nB |--5h6h8-----|--8p6p5-----|\nG |--5h7h9-----|--9p7p5-----|\nD |--5h7h9-----|--9p7p5-----|\nA |--5h7h8-----|--8p7p5-----|\nE |--5h7h8-----|--8p7p5-----|',
       tips:['Primo pizzico per ogni corda','Massima efficienza mano sinistra'],
       tags:['scale','legato'] },
     { title:'Legato con hammer-on da vuoto', diff:2, bpmSlow:60, bpmMid:95, bpmFast:125,
@@ -7891,13 +7891,13 @@ const TECH_EXERCISES = {
       tips:['3 note (dispari) = usa hammer-on sulla 3ª nota','Risparmi una pennata = posizione libera per cambio','Legato risolve il problema del numero dispari'],
       tags:['dwps','legato','dispari','hammer-on'] },
     { title:'Pentatonic Cascade di Eric Johnson', diff:4, bpmSlow:50, bpmMid:75, bpmFast:100,
-      tab:'e |--5-7--5-7-8--|--8-7-5--8-7-|\nB |--5-7--5-7-8--|--8-7-5--8-7-|\nG |--5-7--5-7-8--|--8-7-5--8-7-|',
-      tips:['Pattern pentatonico 5 note ripetuto 2 volte = 10 note (numero PARI)','Ascendente: cambio corda dopo up-stroke','Discendente: usa sweep o legato per arrivare all\'up-stroke finale','Questo è il vero esercizio di Johnson'],
+      tab:'e |--8-5-----------8-5-----------|\nB |------8-5-----------8-5-------|\nG |----------7-----------7-------|\nD |-----------------------------|\nA |-----------------------------|\nE |-----------------------------|',
+      tips:['Pattern pentatonico 5 note (Do La Sol Mi Re) ripetuto 2 volte = 10 note (numero PARI)','Tutte note di La min pentatonica — niente note di passaggio','Discendente: usa sweep o legato per arrivare all\'up-stroke finale','Questo è il vero esercizio di Johnson'],
       tags:['dwps','pentatonica','Johnson','cascade','avanzato'] },
   ],
   'legato-phrasing': [
     { title:'Unprepared hammer-on base', diff:2, bpmSlow:70, bpmMid:100, bpmFast:130,
-      tab:'e |--5h6h7h8-----|--7h6h5p3-----|\nB |--------- ------|----------------|\nG |--------- ------|----------------|\nD |--------- ------|----------------|\nA |--------- ------|----------------|\nE |--------- ------|--------- ------|',
+      tab:'e |--5h6h7h8-----|--7h6h5p3-----|\nB |--------------|--------------|\nG |--------------|--------------|\nD |--------------|--------------|\nA |--------------|--------------|\nE |--------------|--------------|',
       tips:['Colpisci la prima nota con il plettro','Tutti gli altri: hammer-on senza pizzico','Non sollevare le dita, scivola fra le note'],
       tags:['legato','hammer-on','Pat Metheny'] },
     { title:'Slides espressivi con cromatica', diff:3, bpmSlow:60, bpmMid:85, bpmFast:110,
@@ -8032,6 +8032,25 @@ function initTechPage() {
   ).join('');
 
   // Render exercise grids
+  // Normalizza la tab: pareggia la lunghezza delle righe (così le barre di chiusura '|'
+  // si allineano) e sostituisce eventuali spazi interni con trattini.
+  function normalizeTab(tab) {
+    const lines = tab.split('\n');
+    const isTabLine = l => /^[eBGDAE]\s*\|/.test(l);
+    const parsed = lines.map(l => {
+      if (!isTabLine(l)) return { tab: false, raw: l };
+      const first = l.indexOf('|');
+      const label = l.slice(0, first).trimEnd();
+      let body = l.slice(first + 1);
+      const trailing = body.endsWith('|');
+      if (trailing) body = body.slice(0, -1);
+      body = body.replace(/ /g, '-'); // niente spazi interni
+      return { tab: true, label, body };
+    });
+    const maxLen = Math.max(...parsed.filter(p => p.tab).map(p => p.body.length));
+    return parsed.map(p => p.tab ? `${p.label} |${p.body.padEnd(maxLen, '-')}|` : p.raw).join('\n');
+  }
+
   ['alternate','legato','tapping','skipping','dwps','legato-phrasing','equator'].forEach(key => {
     const grid = document.getElementById('ex-' + key + '-grid');
     if (!grid) return;
@@ -8041,7 +8060,7 @@ function initTechPage() {
           <span class="ex-card-title">${ex.title}</span>
           <span class="ex-diff">${'⬅'.repeat(ex.diff)}<span style="color:var(--text-dim)">${'⬅'.repeat(5-ex.diff)}</span></span>
         </div>
-        <pre class="ex-tab">${ex.tab}</pre>
+        <pre class="ex-tab">${normalizeTab(ex.tab)}</pre>
         <div class="ex-bpm-row">
           <span class="ex-bpm-slow">Slow ${ex.bpmSlow}</span>
           <span class="ex-bpm-mid">Mid ${ex.bpmMid}</span>
