@@ -3235,76 +3235,106 @@ function _autoDisconnect(node, stopTime) {
   setTimeout(() => { try { node.disconnect(); } catch(e) {} }, delay);
 }
 
-// ── GUITAR SINGLE NOTE ───────────────────────────────────────────────────────
+// ── GUITAR SINGLE NOTE — Karplus-Strong (corda pizzicata, timbro realistico) ──
+// Sostituisce la vecchia sintesi additiva di sinusoidi (suono "MIDI") con un
+// modello fisico della corda: un'eccitazione di rumore filtrata in un anello di
+// ritardo accordato sulla frequenza della nota. Il risultato è renderizzato in un
+// AudioBuffer e poi colorato da filtri (tono, corpo) e dalla distorsione dinamica.
 function playNote(freq, time, duration = 0.8, destOverride = null) {
   const ctx = getAudioCtx();
   const dest = destOverride || _masterOut;
   const now = time || ctx.currentTime;
+  const sr = ctx.sampleRate;
 
-  const decay = duration * Math.max(0.7, Math.min(2.2, 80 / freq));
+  // Coda di risonanza: le note gravi tengono più a lungo
+  const ring = Math.min(4.0, duration * Math.max(1.5, 130 / freq));
+  const N = Math.max(1, Math.floor(sr * ring));
+  const L = Math.max(2, Math.round(sr / freq));   // lunghezza della "corda" in campioni
 
-  // Pick transient: noise burst
-  const transLen = Math.floor(ctx.sampleRate * 0.014);
-  const transBuf = ctx.createBuffer(1, transLen, ctx.sampleRate);
-  const td = transBuf.getChannelData(0);
-  for (let i = 0; i < transLen; i++) td[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / transLen, 3);
-  const transNoise = ctx.createBufferSource();
-  transNoise.buffer = transBuf;
-  const transFilter = ctx.createBiquadFilter();
-  transFilter.type = 'bandpass';
-  transFilter.frequency.value = Math.min(5000, freq * 5);
-  transFilter.Q.value = 0.9;
-  const transGain = ctx.createGain();
-  transGain.gain.setValueAtTime(0.5, now);
-  transGain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
-  transNoise.connect(transFilter); transFilter.connect(transGain); transGain.connect(dest);
-  transNoise.start(now); transNoise.stop(now + 0.018);
-  _autoDisconnect(transNoise, now + 0.02);
+  const ksBuf = ctx.createBuffer(1, N, sr);
+  const out = ksBuf.getChannelData(0);
 
-  // LP filter: bright at pick → darkens over time
+  // Eccitazione: rumore passa-basso (pizzicato morbido, non "fizzy")
+  const exc = new Float32Array(L);
+  let lp = 0;
+  for (let i = 0; i < L; i++) {
+    const w = Math.random() * 2 - 1;
+    lp = 0.5 * w + 0.5 * lp;
+    exc[i] = lp;
+  }
+  // Posizione del plettro (~1/5 della corda): notch che attenua un'armonica → carattere
+  const pp = Math.max(1, Math.round(L * 0.2));
+  for (let i = L - 1; i >= pp; i--) exc[i] -= 0.5 * exc[i - pp];
+
+  // Smorzamento (<1 = decadimento stabile); gli acuti smorzano un filo di più
+  const damping = 0.996 - Math.min(0.012, (freq / 1200) * 0.012);
+  let idx = 0, prev = 0;
+  for (let n = 0; n < N; n++) {
+    const cur = exc[idx];
+    out[n] = cur;
+    exc[idx] = (cur + prev) * 0.5 * damping;   // media mobile = perdita di alti della corda
+    prev = cur;
+    idx = idx + 1 >= L ? 0 : idx + 1;
+  }
+
+  // Inviluppo: attacco rapido + coda che sfuma (niente click)
+  const atk = Math.min(N, Math.floor(sr * 0.004));
+  const fade = Math.max(1, Math.floor(N * 0.12));
+  for (let n = 0; n < N; n++) {
+    let e = 1;
+    if (n < atk) e = n / atk;
+    else if (n > N - fade) e = (N - n) / fade;
+    out[n] *= e * 0.85;
+  }
+
+  const src = ctx.createBufferSource();
+  src.buffer = ksBuf;
+
+  // Tono: brillante al pizzico → si scurisce nel tempo
   const lpf = ctx.createBiquadFilter();
   lpf.type = 'lowpass';
-  lpf.frequency.setValueAtTime(Math.min(7000, freq * 14), now);
-  lpf.frequency.exponentialRampToValueAtTime(Math.max(700, freq * 3.5), now + decay * 0.65);
-  lpf.Q.value = 0.45;
+  lpf.frequency.setValueAtTime(Math.min(9000, freq * 18), now);
+  lpf.frequency.exponentialRampToValueAtTime(Math.max(1000, freq * 4.5), now + ring * 0.5);
+  lpf.Q.value = 0.5;
 
-  // Body resonance
-  const bodyRes = ctx.createBiquadFilter();
-  bodyRes.type = 'peaking';
-  bodyRes.frequency.value = Math.min(280, Math.max(80, freq * 0.9));
-  bodyRes.Q.value = 1.8;
-  bodyRes.gain.value = freq < 250 ? 6 : 3;
+  // Risonanza del corpo
+  const body = ctx.createBiquadFilter();
+  body.type = 'peaking';
+  body.frequency.value = Math.min(260, Math.max(90, freq * 0.9));
+  body.Q.value = 1.1;
+  body.gain.value = freq < 250 ? 4.5 : 2;
 
-  // Dynamic distortion based on user setting (0-100%)
-  const shaperAmount = Math.max(5, (_audioParams.distortion / 100) * 60);
-  const shaper = _makeWaveshaper(ctx, shaperAmount);
-  lpf.connect(bodyRes); bodyRes.connect(shaper); shaper.connect(dest);
+  const amp = ctx.createGain();
+  amp.gain.value = 0.9;
+  src.connect(lpf); lpf.connect(body); body.connect(amp);
 
-  // Harmonic series with natural inharmonicity
-  const B = 0.0003;
-  [
-    { mul: 1, vol: 0.50 },
-    { mul: 2, vol: 0.24 },
-    { mul: 3, vol: 0.14 },
-    { mul: 4, vol: 0.07 },
-    { mul: 5, vol: 0.04 },
-  ].forEach(({ mul, vol }) => {
-    const inharmonicFreq = freq * mul * Math.sqrt(1 + B * mul * mul);
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = inharmonicFreq;
-    osc.detune.value = (Math.random() - 0.5) * 3;
-    const env = ctx.createGain();
-    const partialDecay = decay / mul;
-    env.gain.setValueAtTime(0, now);
-    env.gain.linearRampToValueAtTime(vol, now + 0.003);
-    env.gain.exponentialRampToValueAtTime(0.001, now + partialDecay);
-    osc.connect(env); env.connect(lpf);
-    osc.start(now);
-    const stopT = now + partialDecay + 0.04;
-    osc.stop(stopT);
-    _autoDisconnect(osc, stopT); _autoDisconnect(env, stopT);
-  });
+  // Click del plettro: transiente breve per definire l'attacco
+  const transLen = Math.floor(sr * 0.012);
+  const transBuf = ctx.createBuffer(1, transLen, sr);
+  const td = transBuf.getChannelData(0);
+  for (let i = 0; i < transLen; i++) td[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / transLen, 3);
+  const trans = ctx.createBufferSource(); trans.buffer = transBuf;
+  const transBP = ctx.createBiquadFilter();
+  transBP.type = 'bandpass'; transBP.frequency.value = Math.min(4500, freq * 4); transBP.Q.value = 0.8;
+  const transGain = ctx.createGain();
+  transGain.gain.setValueAtTime(0.16, now);
+  transGain.gain.exponentialRampToValueAtTime(0.001, now + 0.014);
+  trans.connect(transBP); transBP.connect(transGain); transGain.connect(body);
+
+  // Distorsione dinamica (0 = pulito → bypassata)
+  if (_audioParams.distortion > 0) {
+    const shaper = _makeWaveshaper(ctx, Math.max(5, (_audioParams.distortion / 100) * 60));
+    amp.connect(shaper); shaper.connect(dest);
+    _autoDisconnect(shaper, now + ring + 0.1);
+  } else {
+    amp.connect(dest);
+  }
+
+  const endT = now + ring + 0.05;
+  src.start(now); src.stop(endT);
+  trans.start(now); trans.stop(now + 0.02);
+  _autoDisconnect(src, endT); _autoDisconnect(trans, now + 0.05);
+  _autoDisconnect(lpf, endT); _autoDisconnect(body, endT); _autoDisconnect(amp, endT);
 }
 
 // ── Tech page playback bus: lets us cut all scheduled notes on tab/exercise change ──
