@@ -2260,7 +2260,9 @@
   #cm-svg{width:100%;height:100%;}
   #cm-fb-wrap{width:100%;max-width:580px;overflow-x:auto;}
   #cm-fb-svg{min-width:320px;width:100%;height:auto;display:block;}
-  .cpage-tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:4px;}
+  .cpage-tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:4px;
+    flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+  .cpage-tabs::-webkit-scrollbar{display:none;}
   .cpage-tab-btn{background:none;border:none;color:var(--text-mid);
     font-family:'Space Mono',monospace;font-size:12px;letter-spacing:1px;
     padding:8px 14px;cursor:pointer;border-radius:4px 4px 0 0;transition:all .2s;
@@ -2369,8 +2371,7 @@
   <!-- Riga 2: nav sempre sotto, scrollabile -->
   <nav>
     <button class="nav-btn active" onclick="showPage('fretboard')">Fretboard</button>
-    <button class="nav-btn" onclick="showPage('scales')">Scale Library</button>
-    <button class="nav-btn" onclick="showPage('chord-scale');renderChordScale()">Scala/Accordi</button>
+    <button class="nav-btn" onclick="showPage('scales')">Scale &amp; Accordi</button>
     <button class="nav-btn" onclick="showPage('caged')">CAGED</button>
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
     <button class="nav-btn" onclick="showPage('circle');renderCircleOfFifths()">♯♭ Circolo</button>
@@ -2511,9 +2512,12 @@
 <!-- ═══════════════════════════════ SCALE LIBRARY ═════════════════════════════════ -->
 <div id="page-scales" class="page">
   <div class="cpage-tabs">
-    <button class="cpage-tab-btn active" data-tab="scales" onclick="showScalesSubpage('scales')">Scale Library</button>
+    <button class="cpage-tab-btn active" data-tab="scales" onclick="showScalesSubpage('scales')">Scale</button>
     <button class="cpage-tab-btn" data-tab="modi" onclick="showScalesSubpage('modi')">Modi</button>
     <button class="cpage-tab-btn" data-tab="progressioni" onclick="showScalesSubpage('progressioni')">Progressioni</button>
+    <button class="cpage-tab-btn" data-tab="chordscale" onclick="showChordScaleSubpage('chordscale');renderChordScale()">Scala↔Accordi</button>
+    <button class="cpage-tab-btn" data-tab="triadi" onclick="showChordScaleSubpage('triadi')">Triadi</button>
+    <button class="cpage-tab-btn" data-tab="seventh" onclick="showChordScaleSubpage('seventh')">Acc. 7ª</button>
   </div>
   <div id="spage-scales" class="cpage-view active">
     <h2>Scale Library</h2>
@@ -2547,15 +2551,7 @@
     </div>
     <div class="prog-grid" id="prog-grid"></div>
   </div>
-</div>
-
-<div id="page-chord-scale" class="page">
-  <div class="cpage-tabs">
-    <button class="cpage-tab-btn active" data-tab="chordscale" onclick="showChordScaleSubpage('chordscale');renderChordScale()">Scala/Accordi</button>
-    <button class="cpage-tab-btn" data-tab="triadi" onclick="showChordScaleSubpage('triadi')">Triadi</button>
-    <button class="cpage-tab-btn" data-tab="seventh" onclick="showChordScaleSubpage('seventh')">Acc. 7ª</button>
-  </div>
-  <div id="cspage-chordscale" class="cpage-view active">
+  <div id="cspage-chordscale" class="cpage-view">
     <h2>Scala &amp; Accordi</h2>
     <div class="subtitle">// quale scala suonare su un accordo — e quali accordi emergono da una scala</div>
     <div class="cs-mode-tabs">
@@ -9263,9 +9259,9 @@ function showScalesSubpage(tab) {
     v.classList.toggle('active', v.id==='spage-'+tab));
 }
 function showChordScaleSubpage(tab) {
-  document.querySelectorAll('#page-chord-scale .cpage-tab-btn').forEach(b=>
+  document.querySelectorAll('#page-scales .cpage-tab-btn').forEach(b=>
     b.classList.toggle('active', b.dataset.tab===tab));
-  document.querySelectorAll('#page-chord-scale .cpage-view').forEach(v=>
+  document.querySelectorAll('#page-scales .cpage-view').forEach(v=>
     v.classList.toggle('active', v.id==='cspage-'+tab));
 }
 
