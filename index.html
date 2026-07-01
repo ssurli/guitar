@@ -617,15 +617,21 @@
   }
 
   /* ══════════════════════════════ TECNICA AVANZATA ══════════════════════════════ */
-  .tech-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:24px; }
-  .tech-tab {
-    background:var(--bg3); border:2px solid var(--border);
-    color:var(--text-mid); font-family:'Space Mono',monospace;
-    font-size:10px; text-transform:uppercase; letter-spacing:.5px;
-    padding:7px 14px; border-radius:20px; cursor:pointer; transition:all .2s;
+  /* Stile allineato a .cpage-tab-btn (usato da tutte le altre sezioni) per coerenza visiva */
+  .tech-tabs {
+    display:flex; gap:6px; margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:4px;
+    flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;
   }
-  .tech-tab:hover { border-color:var(--amber-dim); color:var(--text); }
-  .tech-tab.active { border-color:var(--amber); color:var(--amber); background:var(--amber-glow); }
+  .tech-tabs::-webkit-scrollbar { display:none; }
+  .tech-tab {
+    background:none; border:none;
+    color:var(--text-mid); font-family:'Space Mono',monospace;
+    font-size:12px; text-transform:uppercase; letter-spacing:1px;
+    padding:8px 14px; cursor:pointer; border-radius:4px 4px 0 0; transition:all .2s;
+    white-space:nowrap; border-bottom:2px solid transparent;
+  }
+  .tech-tab:hover { color:var(--text); }
+  .tech-tab.active { color:var(--amber); border-bottom-color:var(--amber); background:var(--amber-glow); }
   .tech-panel { display:none; }
   .tech-panel.active { display:block; }
 
