@@ -50,7 +50,7 @@
     --purple: #a855f7;
     --cyan: #06b6d4;
     --text: #e5e5e5;
-    --text-dim: #6b6b6b;
+    --text-dim: #8a8a8a; /* 5.6:1 su --bg, WCAG AA (era #6b6b6b, 3.65:1, sotto soglia) */
     --text-mid: #a0a0a0;
     --fret-color: #3d3020;
     --string-color: #c8a84b;
@@ -129,7 +129,7 @@
     font-size: 12px;
     letter-spacing: 1px;
     padding: 8px 13px;
-    min-height: 38px;
+    min-height: 44px;
     cursor: pointer;
     border-radius: 4px;
     transition: all .2s;
@@ -666,7 +666,7 @@
   }
 
   .ex-grid {
-    display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(min(270px,100%),1fr));
     gap:16px; margin-top:8px;
   }
   .ex-card {
@@ -1249,6 +1249,9 @@
     .logo {
       font-size: 18px;
       flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .global-key-wrap {
       border-left: none;
@@ -1264,7 +1267,7 @@
     .nav-btn {
       font-size: 12px;
       padding: 8px 13px;
-      min-height: 38px;
+      min-height: 44px;
       border-radius: 6px;
     }
     .nav-btn.active {
@@ -1407,8 +1410,8 @@
     background: var(--bg3);
     border: 1px solid var(--border);
     color: var(--text-mid);
-    font-size: 14px;
-    width: 28px; height: 22px;
+    font-size: 15px;
+    width: 40px; height: 36px;
     border-radius: 4px;
     cursor: pointer;
     transition: all .15s;
@@ -7903,8 +7906,8 @@ const TECH_EXERCISES = {
       tips:['Muta con le dita della mano sinistra','Suona le due corde quasi insieme'],
       tags:['ottave','string skipping'] },
     { title:'10e intervalli (Guthrie Govan)', diff:4, bpmSlow:50, bpmMid:75, bpmFast:100,
-      tab:'e |------7-------9-------10--|\nB |-------------------------|\nG |-------------------------|\nD |--5-------7-------9-------|\nA |-------------------------|\nE |-------------------------|\n(corde D+e, skip di 2 corde: ogni coppia = 10ª)',
-      tips:['10ª = ottava + terza (es. G→B)','Nota grave su D, la sua 10ª su e','Stira le dita gradualmente'],
+      tab:'e |----7-------9-------10----|\nB |--------------------------|\nG |--------------------------|\nD |----5-------7-------9-----|\nA |--------------------------|\nE |--------------------------|\n(corde D+e, skip di 2 corde: ogni coppia = 10ª suonata insieme)',
+      tips:['10ª = ottava + terza (es. G→B)','Le due note di ogni coppia si suonano INSIEME (stessa colonna) — non in sequenza','Nota grave su D, la sua 10ª su e','Stira le dita gradualmente'],
       tags:['10e','avanzato'] },
   ],
   dwps: [
