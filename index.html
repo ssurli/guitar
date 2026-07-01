@@ -3537,9 +3537,10 @@ function playChordSynth(ctx, dest, rootMidi, chordType, startTime, endTime) {
   });
 }
 
-// ─── BASS SYNTH ──────────────────────────────────────────────────────────────
+// ─── BASS SYNTH — Karplus-Strong (stessa famiglia timbrica della chitarra) ────
 function playBassSynth(ctx, dest, rootMidi, time, duration) {
   const freq = midiToFreq(rootMidi - 24);
+  const sr = ctx.sampleRate;
 
   const masterG = ctx.createGain();
   masterG.gain.setValueAtTime(0, time);
@@ -3549,30 +3550,47 @@ function playBassSynth(ctx, dest, rootMidi, time, duration) {
   masterG.gain.linearRampToValueAtTime(0, time + duration);
   masterG.connect(dest);
 
-  // Bass EQ chain
+  // Bass EQ chain (invariata)
   const lpf = ctx.createBiquadFilter();
   lpf.type = 'lowpass'; lpf.frequency.value = 700;
   const boost = ctx.createBiquadFilter();
   boost.type = 'peaking'; boost.frequency.value = 80; boost.gain.value = 5; boost.Q.value = 1;
   lpf.connect(boost); boost.connect(masterG);
 
-  // Sub sine (fundamental)
-  const sine = ctx.createOscillator();
-  sine.type = 'sine'; sine.frequency.value = freq;
-  const sG = ctx.createGain(); sG.gain.value = 0.6;
-  sine.connect(sG); sG.connect(lpf);
-  sine.start(time); sine.stop(time + duration + 0.05);
-  _autoDisconnect(sine, time + duration + 0.05);
+  // Corda di basso pizzicata: stesso modello fisico della chitarra (playNote),
+  // eccitazione più scura (meno brillante) e coda più lunga per il sustain grave.
+  const ring = duration + 0.4;
+  const N = Math.max(1, Math.floor(sr * ring));
+  const L = Math.max(2, Math.round(sr / freq));
+  const ksBuf = ctx.createBuffer(1, N, sr);
+  const out = ksBuf.getChannelData(0);
 
-  // Pluck character — triangle at 2× with faster decay
-  const tri = ctx.createOscillator();
-  tri.type = 'triangle'; tri.frequency.value = freq * 2;
-  const tEnv = ctx.createGain();
-  tEnv.gain.setValueAtTime(0.3, time);
-  tEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
-  tri.connect(tEnv); tEnv.connect(lpf);
-  tri.start(time); tri.stop(time + 0.15);
-  _autoDisconnect(tri, time + 0.15);
+  const exc = new Float32Array(L);
+  let elp = 0;
+  for (let i = 0; i < L; i++) {
+    const w = Math.random() * 2 - 1;
+    elp = 0.7 * w + 0.3 * elp; // più lowpass del pizzico chitarra -> attacco più scuro
+    exc[i] = elp;
+  }
+  const damping = 0.997; // sustain lungo, adatto al ruolo ritmico del basso
+  let idx = 0, prev = 0;
+  for (let n = 0; n < N; n++) {
+    const cur = exc[idx];
+    out[n] = cur;
+    exc[idx] = (cur + prev) * 0.5 * damping;
+    prev = cur;
+    idx = idx + 1 >= L ? 0 : idx + 1;
+  }
+  const atk = Math.min(N, Math.floor(sr * 0.006));
+  for (let n = 0; n < atk; n++) out[n] *= n / atk;
+
+  const ks = ctx.createBufferSource();
+  ks.buffer = ksBuf;
+  const ksG = ctx.createGain(); ksG.gain.value = 0.85;
+  ks.connect(ksG); ksG.connect(lpf);
+  const ksEnd = time + ring + 0.05;
+  ks.start(time); ks.stop(ksEnd);
+  _autoDisconnect(ks, ksEnd);
 
   // Bite — short noise transient (finger/pick attack)
   const bLen = Math.floor(ctx.sampleRate * 0.02);
