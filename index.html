@@ -50,7 +50,7 @@
     --purple: #a855f7;
     --cyan: #06b6d4;
     --text: #e5e5e5;
-    --text-dim: #6b6b6b;
+    --text-dim: #8a8a8a; /* 5.6:1 su --bg, WCAG AA (era #6b6b6b, 3.65:1, sotto soglia) */
     --text-mid: #a0a0a0;
     --fret-color: #3d3020;
     --string-color: #c8a84b;
@@ -129,7 +129,7 @@
     font-size: 12px;
     letter-spacing: 1px;
     padding: 8px 13px;
-    min-height: 38px;
+    min-height: 44px;
     cursor: pointer;
     border-radius: 4px;
     transition: all .2s;
@@ -617,15 +617,21 @@
   }
 
   /* ══════════════════════════════ TECNICA AVANZATA ══════════════════════════════ */
-  .tech-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:24px; }
-  .tech-tab {
-    background:var(--bg3); border:2px solid var(--border);
-    color:var(--text-mid); font-family:'Space Mono',monospace;
-    font-size:10px; text-transform:uppercase; letter-spacing:.5px;
-    padding:7px 14px; border-radius:20px; cursor:pointer; transition:all .2s;
+  /* Stile allineato a .cpage-tab-btn (usato da tutte le altre sezioni) per coerenza visiva */
+  .tech-tabs {
+    display:flex; gap:6px; margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:4px;
+    flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;
   }
-  .tech-tab:hover { border-color:var(--amber-dim); color:var(--text); }
-  .tech-tab.active { border-color:var(--amber); color:var(--amber); background:var(--amber-glow); }
+  .tech-tabs::-webkit-scrollbar { display:none; }
+  .tech-tab {
+    background:none; border:none;
+    color:var(--text-mid); font-family:'Space Mono',monospace;
+    font-size:12px; text-transform:uppercase; letter-spacing:1px;
+    padding:8px 14px; cursor:pointer; border-radius:4px 4px 0 0; transition:all .2s;
+    white-space:nowrap; border-bottom:2px solid transparent;
+  }
+  .tech-tab:hover { color:var(--text); }
+  .tech-tab.active { color:var(--amber); border-bottom-color:var(--amber); background:var(--amber-glow); }
   .tech-panel { display:none; }
   .tech-panel.active { display:block; }
 
@@ -666,7 +672,7 @@
   }
 
   .ex-grid {
-    display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(min(270px,100%),1fr));
     gap:16px; margin-top:8px;
   }
   .ex-card {
@@ -1249,6 +1255,9 @@
     .logo {
       font-size: 18px;
       flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .global-key-wrap {
       border-left: none;
@@ -1264,7 +1273,7 @@
     .nav-btn {
       font-size: 12px;
       padding: 8px 13px;
-      min-height: 38px;
+      min-height: 44px;
       border-radius: 6px;
     }
     .nav-btn.active {
@@ -1407,8 +1416,8 @@
     background: var(--bg3);
     border: 1px solid var(--border);
     color: var(--text-mid);
-    font-size: 14px;
-    width: 28px; height: 22px;
+    font-size: 15px;
+    width: 40px; height: 36px;
     border-radius: 4px;
     cursor: pointer;
     transition: all .15s;
@@ -2257,7 +2266,9 @@
   #cm-svg{width:100%;height:100%;}
   #cm-fb-wrap{width:100%;max-width:580px;overflow-x:auto;}
   #cm-fb-svg{min-width:320px;width:100%;height:auto;display:block;}
-  .cpage-tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:4px;}
+  .cpage-tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:4px;
+    flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+  .cpage-tabs::-webkit-scrollbar{display:none;}
   .cpage-tab-btn{background:none;border:none;color:var(--text-mid);
     font-family:'Space Mono',monospace;font-size:12px;letter-spacing:1px;
     padding:8px 14px;cursor:pointer;border-radius:4px 4px 0 0;transition:all .2s;
@@ -2366,8 +2377,7 @@
   <!-- Riga 2: nav sempre sotto, scrollabile -->
   <nav>
     <button class="nav-btn active" onclick="showPage('fretboard')">Fretboard</button>
-    <button class="nav-btn" onclick="showPage('scales')">Scale Library</button>
-    <button class="nav-btn" onclick="showPage('chord-scale');renderChordScale()">Scala/Accordi</button>
+    <button class="nav-btn" onclick="showPage('scales')">Scale &amp; Accordi</button>
     <button class="nav-btn" onclick="showPage('caged')">CAGED</button>
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
     <button class="nav-btn" onclick="showPage('circle');renderCircleOfFifths()">♯♭ Circolo</button>
@@ -2508,9 +2518,12 @@
 <!-- ═══════════════════════════════ SCALE LIBRARY ═════════════════════════════════ -->
 <div id="page-scales" class="page">
   <div class="cpage-tabs">
-    <button class="cpage-tab-btn active" data-tab="scales" onclick="showScalesSubpage('scales')">Scale Library</button>
+    <button class="cpage-tab-btn active" data-tab="scales" onclick="showScalesSubpage('scales')">Scale</button>
     <button class="cpage-tab-btn" data-tab="modi" onclick="showScalesSubpage('modi')">Modi</button>
     <button class="cpage-tab-btn" data-tab="progressioni" onclick="showScalesSubpage('progressioni')">Progressioni</button>
+    <button class="cpage-tab-btn" data-tab="chordscale" onclick="showChordScaleSubpage('chordscale');renderChordScale()">Scala↔Accordi</button>
+    <button class="cpage-tab-btn" data-tab="triadi" onclick="showChordScaleSubpage('triadi')">Triadi</button>
+    <button class="cpage-tab-btn" data-tab="seventh" onclick="showChordScaleSubpage('seventh')">Acc. 7ª</button>
   </div>
   <div id="spage-scales" class="cpage-view active">
     <h2>Scale Library</h2>
@@ -2544,15 +2557,7 @@
     </div>
     <div class="prog-grid" id="prog-grid"></div>
   </div>
-</div>
-
-<div id="page-chord-scale" class="page">
-  <div class="cpage-tabs">
-    <button class="cpage-tab-btn active" data-tab="chordscale" onclick="showChordScaleSubpage('chordscale');renderChordScale()">Scala/Accordi</button>
-    <button class="cpage-tab-btn" data-tab="triadi" onclick="showChordScaleSubpage('triadi')">Triadi</button>
-    <button class="cpage-tab-btn" data-tab="seventh" onclick="showChordScaleSubpage('seventh')">Acc. 7ª</button>
-  </div>
-  <div id="cspage-chordscale" class="cpage-view active">
+  <div id="cspage-chordscale" class="cpage-view">
     <h2>Scala &amp; Accordi</h2>
     <div class="subtitle">// quale scala suonare su un accordo — e quali accordi emergono da una scala</div>
     <div class="cs-mode-tabs">
@@ -3235,76 +3240,106 @@ function _autoDisconnect(node, stopTime) {
   setTimeout(() => { try { node.disconnect(); } catch(e) {} }, delay);
 }
 
-// ── GUITAR SINGLE NOTE ───────────────────────────────────────────────────────
+// ── GUITAR SINGLE NOTE — Karplus-Strong (corda pizzicata, timbro realistico) ──
+// Sostituisce la vecchia sintesi additiva di sinusoidi (suono "MIDI") con un
+// modello fisico della corda: un'eccitazione di rumore filtrata in un anello di
+// ritardo accordato sulla frequenza della nota. Il risultato è renderizzato in un
+// AudioBuffer e poi colorato da filtri (tono, corpo) e dalla distorsione dinamica.
 function playNote(freq, time, duration = 0.8, destOverride = null) {
   const ctx = getAudioCtx();
   const dest = destOverride || _masterOut;
   const now = time || ctx.currentTime;
+  const sr = ctx.sampleRate;
 
-  const decay = duration * Math.max(0.7, Math.min(2.2, 80 / freq));
+  // Coda di risonanza: le note gravi tengono più a lungo
+  const ring = Math.min(4.0, duration * Math.max(1.5, 130 / freq));
+  const N = Math.max(1, Math.floor(sr * ring));
+  const L = Math.max(2, Math.round(sr / freq));   // lunghezza della "corda" in campioni
 
-  // Pick transient: noise burst
-  const transLen = Math.floor(ctx.sampleRate * 0.014);
-  const transBuf = ctx.createBuffer(1, transLen, ctx.sampleRate);
-  const td = transBuf.getChannelData(0);
-  for (let i = 0; i < transLen; i++) td[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / transLen, 3);
-  const transNoise = ctx.createBufferSource();
-  transNoise.buffer = transBuf;
-  const transFilter = ctx.createBiquadFilter();
-  transFilter.type = 'bandpass';
-  transFilter.frequency.value = Math.min(5000, freq * 5);
-  transFilter.Q.value = 0.9;
-  const transGain = ctx.createGain();
-  transGain.gain.setValueAtTime(0.5, now);
-  transGain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
-  transNoise.connect(transFilter); transFilter.connect(transGain); transGain.connect(dest);
-  transNoise.start(now); transNoise.stop(now + 0.018);
-  _autoDisconnect(transNoise, now + 0.02);
+  const ksBuf = ctx.createBuffer(1, N, sr);
+  const out = ksBuf.getChannelData(0);
 
-  // LP filter: bright at pick → darkens over time
+  // Eccitazione: rumore passa-basso (pizzicato morbido, non "fizzy")
+  const exc = new Float32Array(L);
+  let lp = 0;
+  for (let i = 0; i < L; i++) {
+    const w = Math.random() * 2 - 1;
+    lp = 0.5 * w + 0.5 * lp;
+    exc[i] = lp;
+  }
+  // Posizione del plettro (~1/5 della corda): notch che attenua un'armonica → carattere
+  const pp = Math.max(1, Math.round(L * 0.2));
+  for (let i = L - 1; i >= pp; i--) exc[i] -= 0.5 * exc[i - pp];
+
+  // Smorzamento (<1 = decadimento stabile); gli acuti smorzano un filo di più
+  const damping = 0.996 - Math.min(0.012, (freq / 1200) * 0.012);
+  let idx = 0, prev = 0;
+  for (let n = 0; n < N; n++) {
+    const cur = exc[idx];
+    out[n] = cur;
+    exc[idx] = (cur + prev) * 0.5 * damping;   // media mobile = perdita di alti della corda
+    prev = cur;
+    idx = idx + 1 >= L ? 0 : idx + 1;
+  }
+
+  // Inviluppo: attacco rapido + coda che sfuma (niente click)
+  const atk = Math.min(N, Math.floor(sr * 0.004));
+  const fade = Math.max(1, Math.floor(N * 0.12));
+  for (let n = 0; n < N; n++) {
+    let e = 1;
+    if (n < atk) e = n / atk;
+    else if (n > N - fade) e = (N - n) / fade;
+    out[n] *= e * 0.85;
+  }
+
+  const src = ctx.createBufferSource();
+  src.buffer = ksBuf;
+
+  // Tono: brillante al pizzico → si scurisce nel tempo
   const lpf = ctx.createBiquadFilter();
   lpf.type = 'lowpass';
-  lpf.frequency.setValueAtTime(Math.min(7000, freq * 14), now);
-  lpf.frequency.exponentialRampToValueAtTime(Math.max(700, freq * 3.5), now + decay * 0.65);
-  lpf.Q.value = 0.45;
+  lpf.frequency.setValueAtTime(Math.min(9000, freq * 18), now);
+  lpf.frequency.exponentialRampToValueAtTime(Math.max(1000, freq * 4.5), now + ring * 0.5);
+  lpf.Q.value = 0.5;
 
-  // Body resonance
-  const bodyRes = ctx.createBiquadFilter();
-  bodyRes.type = 'peaking';
-  bodyRes.frequency.value = Math.min(280, Math.max(80, freq * 0.9));
-  bodyRes.Q.value = 1.8;
-  bodyRes.gain.value = freq < 250 ? 6 : 3;
+  // Risonanza del corpo
+  const body = ctx.createBiquadFilter();
+  body.type = 'peaking';
+  body.frequency.value = Math.min(260, Math.max(90, freq * 0.9));
+  body.Q.value = 1.1;
+  body.gain.value = freq < 250 ? 4.5 : 2;
 
-  // Dynamic distortion based on user setting (0-100%)
-  const shaperAmount = Math.max(5, (_audioParams.distortion / 100) * 60);
-  const shaper = _makeWaveshaper(ctx, shaperAmount);
-  lpf.connect(bodyRes); bodyRes.connect(shaper); shaper.connect(dest);
+  const amp = ctx.createGain();
+  amp.gain.value = 0.9;
+  src.connect(lpf); lpf.connect(body); body.connect(amp);
 
-  // Harmonic series with natural inharmonicity
-  const B = 0.0003;
-  [
-    { mul: 1, vol: 0.50 },
-    { mul: 2, vol: 0.24 },
-    { mul: 3, vol: 0.14 },
-    { mul: 4, vol: 0.07 },
-    { mul: 5, vol: 0.04 },
-  ].forEach(({ mul, vol }) => {
-    const inharmonicFreq = freq * mul * Math.sqrt(1 + B * mul * mul);
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = inharmonicFreq;
-    osc.detune.value = (Math.random() - 0.5) * 3;
-    const env = ctx.createGain();
-    const partialDecay = decay / mul;
-    env.gain.setValueAtTime(0, now);
-    env.gain.linearRampToValueAtTime(vol, now + 0.003);
-    env.gain.exponentialRampToValueAtTime(0.001, now + partialDecay);
-    osc.connect(env); env.connect(lpf);
-    osc.start(now);
-    const stopT = now + partialDecay + 0.04;
-    osc.stop(stopT);
-    _autoDisconnect(osc, stopT); _autoDisconnect(env, stopT);
-  });
+  // Click del plettro: transiente breve per definire l'attacco
+  const transLen = Math.floor(sr * 0.012);
+  const transBuf = ctx.createBuffer(1, transLen, sr);
+  const td = transBuf.getChannelData(0);
+  for (let i = 0; i < transLen; i++) td[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / transLen, 3);
+  const trans = ctx.createBufferSource(); trans.buffer = transBuf;
+  const transBP = ctx.createBiquadFilter();
+  transBP.type = 'bandpass'; transBP.frequency.value = Math.min(4500, freq * 4); transBP.Q.value = 0.8;
+  const transGain = ctx.createGain();
+  transGain.gain.setValueAtTime(0.16, now);
+  transGain.gain.exponentialRampToValueAtTime(0.001, now + 0.014);
+  trans.connect(transBP); transBP.connect(transGain); transGain.connect(body);
+
+  // Distorsione dinamica (0 = pulito → bypassata)
+  if (_audioParams.distortion > 0) {
+    const shaper = _makeWaveshaper(ctx, Math.max(5, (_audioParams.distortion / 100) * 60));
+    amp.connect(shaper); shaper.connect(dest);
+    _autoDisconnect(shaper, now + ring + 0.1);
+  } else {
+    amp.connect(dest);
+  }
+
+  const endT = now + ring + 0.05;
+  src.start(now); src.stop(endT);
+  trans.start(now); trans.stop(now + 0.02);
+  _autoDisconnect(src, endT); _autoDisconnect(trans, now + 0.05);
+  _autoDisconnect(lpf, endT); _autoDisconnect(body, endT); _autoDisconnect(amp, endT);
 }
 
 // ── Tech page playback bus: lets us cut all scheduled notes on tab/exercise change ──
@@ -3502,9 +3537,10 @@ function playChordSynth(ctx, dest, rootMidi, chordType, startTime, endTime) {
   });
 }
 
-// ─── BASS SYNTH ──────────────────────────────────────────────────────────────
+// ─── BASS SYNTH — Karplus-Strong (stessa famiglia timbrica della chitarra) ────
 function playBassSynth(ctx, dest, rootMidi, time, duration) {
   const freq = midiToFreq(rootMidi - 24);
+  const sr = ctx.sampleRate;
 
   const masterG = ctx.createGain();
   masterG.gain.setValueAtTime(0, time);
@@ -3514,30 +3550,47 @@ function playBassSynth(ctx, dest, rootMidi, time, duration) {
   masterG.gain.linearRampToValueAtTime(0, time + duration);
   masterG.connect(dest);
 
-  // Bass EQ chain
+  // Bass EQ chain (invariata)
   const lpf = ctx.createBiquadFilter();
   lpf.type = 'lowpass'; lpf.frequency.value = 700;
   const boost = ctx.createBiquadFilter();
   boost.type = 'peaking'; boost.frequency.value = 80; boost.gain.value = 5; boost.Q.value = 1;
   lpf.connect(boost); boost.connect(masterG);
 
-  // Sub sine (fundamental)
-  const sine = ctx.createOscillator();
-  sine.type = 'sine'; sine.frequency.value = freq;
-  const sG = ctx.createGain(); sG.gain.value = 0.6;
-  sine.connect(sG); sG.connect(lpf);
-  sine.start(time); sine.stop(time + duration + 0.05);
-  _autoDisconnect(sine, time + duration + 0.05);
+  // Corda di basso pizzicata: stesso modello fisico della chitarra (playNote),
+  // eccitazione più scura (meno brillante) e coda più lunga per il sustain grave.
+  const ring = duration + 0.4;
+  const N = Math.max(1, Math.floor(sr * ring));
+  const L = Math.max(2, Math.round(sr / freq));
+  const ksBuf = ctx.createBuffer(1, N, sr);
+  const out = ksBuf.getChannelData(0);
 
-  // Pluck character — triangle at 2× with faster decay
-  const tri = ctx.createOscillator();
-  tri.type = 'triangle'; tri.frequency.value = freq * 2;
-  const tEnv = ctx.createGain();
-  tEnv.gain.setValueAtTime(0.3, time);
-  tEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
-  tri.connect(tEnv); tEnv.connect(lpf);
-  tri.start(time); tri.stop(time + 0.15);
-  _autoDisconnect(tri, time + 0.15);
+  const exc = new Float32Array(L);
+  let elp = 0;
+  for (let i = 0; i < L; i++) {
+    const w = Math.random() * 2 - 1;
+    elp = 0.7 * w + 0.3 * elp; // più lowpass del pizzico chitarra -> attacco più scuro
+    exc[i] = elp;
+  }
+  const damping = 0.997; // sustain lungo, adatto al ruolo ritmico del basso
+  let idx = 0, prev = 0;
+  for (let n = 0; n < N; n++) {
+    const cur = exc[idx];
+    out[n] = cur;
+    exc[idx] = (cur + prev) * 0.5 * damping;
+    prev = cur;
+    idx = idx + 1 >= L ? 0 : idx + 1;
+  }
+  const atk = Math.min(N, Math.floor(sr * 0.006));
+  for (let n = 0; n < atk; n++) out[n] *= n / atk;
+
+  const ks = ctx.createBufferSource();
+  ks.buffer = ksBuf;
+  const ksG = ctx.createGain(); ksG.gain.value = 0.85;
+  ks.connect(ksG); ksG.connect(lpf);
+  const ksEnd = time + ring + 0.05;
+  ks.start(time); ks.stop(ksEnd);
+  _autoDisconnect(ks, ksEnd);
 
   // Bite — short noise transient (finger/pick attack)
   const bLen = Math.floor(ctx.sampleRate * 0.02);
@@ -7873,8 +7926,8 @@ const TECH_EXERCISES = {
       tips:['Muta con le dita della mano sinistra','Suona le due corde quasi insieme'],
       tags:['ottave','string skipping'] },
     { title:'10e intervalli (Guthrie Govan)', diff:4, bpmSlow:50, bpmMid:75, bpmFast:100,
-      tab:'e |------7-------9-------10--|\nB |-------------------------|\nG |-------------------------|\nD |--5-------7-------9-------|\nA |-------------------------|\nE |-------------------------|\n(corde D+e, skip di 2 corde: ogni coppia = 10ª)',
-      tips:['10ª = ottava + terza (es. G→B)','Nota grave su D, la sua 10ª su e','Stira le dita gradualmente'],
+      tab:'e |----7-------9-------10----|\nB |--------------------------|\nG |--------------------------|\nD |----5-------7-------9-----|\nA |--------------------------|\nE |--------------------------|\n(corde D+e, skip di 2 corde: ogni coppia = 10ª suonata insieme)',
+      tips:['10ª = ottava + terza (es. G→B)','Le due note di ogni coppia si suonano INSIEME (stessa colonna) — non in sequenza','Nota grave su D, la sua 10ª su e','Stira le dita gradualmente'],
       tags:['10e','avanzato'] },
   ],
   dwps: [
@@ -9230,9 +9283,9 @@ function showScalesSubpage(tab) {
     v.classList.toggle('active', v.id==='spage-'+tab));
 }
 function showChordScaleSubpage(tab) {
-  document.querySelectorAll('#page-chord-scale .cpage-tab-btn').forEach(b=>
+  document.querySelectorAll('#page-scales .cpage-tab-btn').forEach(b=>
     b.classList.toggle('active', b.dataset.tab===tab));
-  document.querySelectorAll('#page-chord-scale .cpage-view').forEach(v=>
+  document.querySelectorAll('#page-scales .cpage-view').forEach(v=>
     v.classList.toggle('active', v.id==='cspage-'+tab));
 }
 
