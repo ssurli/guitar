@@ -3351,11 +3351,15 @@ function _autoDisconnect(node, stopTime) {
 // modello fisico della corda: un'eccitazione di rumore filtrata in un anello di
 // ritardo accordato sulla frequenza della nota. Il risultato è renderizzato in un
 // AudioBuffer e poi colorato da filtri (tono, corpo) e dalla distorsione dinamica.
-function playNote(freq, time, duration = 0.8, destOverride = null) {
+function playNote(freq, time, duration = 0.8, destOverride = null, velocity = null) {
   const ctx = getAudioCtx();
   const dest = destOverride || _masterOut;
   const now = time || ctx.currentTime;
   const sr = ctx.sampleRate;
+
+  // Dinamica: se non specificata, umanizza leggermente ogni nota (0.72–0.90)
+  // — velocity modula brillantezza dell'attacco, click del plettro e volume.
+  const vel = velocity != null ? Math.max(0.1, Math.min(1, velocity)) : 0.72 + Math.random() * 0.18;
 
   // Coda di risonanza: le note gravi tengono più a lungo
   const ring = Math.min(4.0, duration * Math.max(1.5, 130 / freq));
@@ -3365,24 +3369,30 @@ function playNote(freq, time, duration = 0.8, destOverride = null) {
   const ksBuf = ctx.createBuffer(1, N, sr);
   const out = ksBuf.getChannelData(0);
 
-  // Eccitazione: rumore passa-basso (pizzicato morbido, non "fizzy")
+  // Eccitazione: rumore passa-basso — più velocity = pizzicata più brillante
   const exc = new Float32Array(L);
+  const excMix = 0.35 + 0.35 * vel; // 0.35 (morbido) → 0.70 (brillante)
   let lp = 0;
   for (let i = 0; i < L; i++) {
     const w = Math.random() * 2 - 1;
-    lp = 0.5 * w + 0.5 * lp;
+    lp = excMix * w + (1 - excMix) * lp;
     exc[i] = lp;
   }
-  // Posizione del plettro (~1/5 della corda): notch che attenua un'armonica → carattere
-  const pp = Math.max(1, Math.round(L * 0.2));
+  // Posizione del plettro variabile per nota (15–27% della corda): ogni pizzicata
+  // ha un timbro leggermente diverso, come una mano vera che non colpisce mai
+  // nello stesso punto esatto
+  const pickPos = 0.15 + Math.random() * 0.12;
+  const pp = Math.max(1, Math.round(L * pickPos));
   for (let i = L - 1; i >= pp; i--) exc[i] -= 0.5 * exc[i - pp];
 
-  // Smorzamento (<1 = decadimento stabile); gli acuti smorzano un filo di più
-  const damping = 0.996 - Math.min(0.012, (freq / 1200) * 0.012);
+  // Smorzamento evolutivo: parte vivo e si scurisce progressivamente verso la
+  // coda (una corda reale perde armonici sempre più in fretta mentre decade)
+  const damp0 = 0.9965 - Math.min(0.012, (freq / 1200) * 0.012);
   let idx = 0, prev = 0;
   for (let n = 0; n < N; n++) {
     const cur = exc[idx];
     out[n] = cur;
+    const damping = damp0 * (1 - 0.006 * (n / N)); // scurimento progressivo
     exc[idx] = (cur + prev) * 0.5 * damping;   // media mobile = perdita di alti della corda
     prev = cur;
     idx = idx + 1 >= L ? 0 : idx + 1;
@@ -3401,10 +3411,10 @@ function playNote(freq, time, duration = 0.8, destOverride = null) {
   const src = ctx.createBufferSource();
   src.buffer = ksBuf;
 
-  // Tono: brillante al pizzico → si scurisce nel tempo
+  // Tono: brillante al pizzico → si scurisce nel tempo; la dinamica apre il filtro
   const lpf = ctx.createBiquadFilter();
   lpf.type = 'lowpass';
-  lpf.frequency.setValueAtTime(Math.min(9000, freq * 18), now);
+  lpf.frequency.setValueAtTime(Math.min(9000, freq * (10 + 10 * vel)), now);
   lpf.frequency.exponentialRampToValueAtTime(Math.max(1000, freq * 4.5), now + ring * 0.5);
   lpf.Q.value = 0.5;
 
@@ -3416,7 +3426,7 @@ function playNote(freq, time, duration = 0.8, destOverride = null) {
   body.gain.value = freq < 250 ? 4.5 : 2;
 
   const amp = ctx.createGain();
-  amp.gain.value = 0.9;
+  amp.gain.value = 0.55 + 0.45 * vel; // la dinamica scala anche il volume
   src.connect(lpf); lpf.connect(body); body.connect(amp);
 
   // Click del plettro: transiente breve per definire l'attacco
@@ -3428,7 +3438,7 @@ function playNote(freq, time, duration = 0.8, destOverride = null) {
   const transBP = ctx.createBiquadFilter();
   transBP.type = 'bandpass'; transBP.frequency.value = Math.min(4500, freq * 4); transBP.Q.value = 0.8;
   const transGain = ctx.createGain();
-  transGain.gain.setValueAtTime(0.16, now);
+  transGain.gain.setValueAtTime(0.08 + 0.14 * vel, now); // click proporzionale alla pennata
   transGain.gain.exponentialRampToValueAtTime(0.001, now + 0.014);
   trans.connect(transBP); transBP.connect(transGain); transGain.connect(body);
 
