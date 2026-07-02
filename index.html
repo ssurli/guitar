@@ -7682,6 +7682,16 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="ex-grid" id="ex-equator-grid"></div>
   </div>
 
+  <!-- DOUBLE STOPS -->
+  <div id="tp-doublestops" class="tech-panel">
+    <div class="notice">
+      <strong>Double Stops:</strong> due note suonate insieme — il suono di Chuck Berry, Hendrix, SRV e John Mayer.
+      Terze per il rock and roll, quarte per il soul-blues, unison bend per il pianto espressivo. Nelle tab,
+      le due note nella <em>stessa colonna</em> si suonano simultaneamente.
+    </div>
+    <div class="ex-grid" id="ex-doublestops-grid"></div>
+  </div>
+
   <!-- I MAESTRI -->
   <div id="tp-masters" class="tech-panel">
     <div class="masters-grid" id="masters-grid"></div>
@@ -8236,14 +8246,14 @@ const TECH_EXERCISES = {
       tags:['tapping','arpeggio'] },
   ],
   skipping: [
-    { title:'Skip di 2 corde (Gilbert pattern)', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
-      tab:'e |--5-7-8-----------|\nB |------------------|\nG |------5-7-9-------|\nD |------------------|\nA |----------5-7-8---|\nE |------------------|',
-      tips:['Salta sempre 1 corda','Ancora la mano sul corpo della chitarra'],
-      tags:['string skipping','Paul Gilbert'] },
     { title:'Ottave skipping', diff:2, bpmSlow:70, bpmMid:100, bpmFast:130,
       tab:'e |--5---7---8---10--|\nB |------------------|\nG |--2---4---5---7---|\nD |------------------|\nA |------------------|\nE |------------------|',
       tips:['Muta con le dita della mano sinistra','Suona le due corde quasi insieme'],
       tags:['ottave','string skipping'] },
+    { title:'Skip di 2 corde (Gilbert pattern)', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
+      tab:'e |--5-7-8-----------|\nB |------------------|\nG |------5-7-9-------|\nD |------------------|\nA |----------5-7-8---|\nE |------------------|',
+      tips:['Salta sempre 1 corda','Ancora la mano sul corpo della chitarra'],
+      tags:['string skipping','Paul Gilbert'] },
     { title:'10e intervalli (Guthrie Govan)', diff:4, bpmSlow:50, bpmMid:75, bpmFast:100,
       tab:'e |----7-------9-------10----|\nB |--------------------------|\nG |--------------------------|\nD |----5-------7-------9-----|\nA |--------------------------|\nE |--------------------------|\n(corde D+e, skip di 2 corde: ogni coppia = 10ª suonata insieme)',
       tips:['10ª = ottava + terza (es. G→B)','Le due note di ogni coppia si suonano INSIEME (stessa colonna) — non in sequenza','Nota grave su D, la sua 10ª su e','Stira le dita gradualmente'],
@@ -8306,6 +8316,28 @@ const TECH_EXERCISES = {
       tab:'e |--5-8-5\\2-5-2----|--2-5-2/5-8-5----|\nB |--5-8-5\\2-5-2----|--2-5-2/5-8------|\nG |--5-7-5\\2-4-2----|--2-4-2/5-7------|\nD |-----------------|-----------------|\nA |-----------------|-----------------|\nE |-----------------|-----------------|',
       tips:['Misura 1: parti SUD (5° tasto) → scivola NORD (2° tasto)','Misura 2: parti NORD → scivola SUD','Il root La (5° tasto, 6ª corda) è la tua bussola: sempre presente nell\'orecchio','Vibrato lento sulle note finali, alla Mayer'],
       tags:['blues','frase lunga','John Mayer','Gravity','equator','avanzato'] },
+  ],
+  doublestops: [
+    { title:'Terze pentatoniche (Chuck Berry, La maggiore)', diff:2, bpmSlow:60, bpmMid:85, bpmFast:110,
+      tab:'e |----------------------|\nB |--2-2--5-5--2-2--5-5--|\nG |--2-2--6-6--2-2--6-6--|\nD |----------------------|\nA |----------------------|\nE |----------------------|',
+      tips:['Barra indice e anulare tenendo le due note perfettamente insieme','Attacca entrambe le corde con la stessa plettrata secca','Muta le corde adiacenti col palmo per un suono pulito rock and roll'],
+      tags:['double stop','terze','La maggiore','Chuck Berry'] },
+    { title:'Quarte alla Hendrix/Mayer (La minore)', diff:2, bpmSlow:65, bpmMid:90, bpmFast:115,
+      tab:'e |--5--8--10--8--5--|\nB |--5--8--10--8--5--|\nG |------------------|\nD |------------------|\nA |------------------|\nE |------------------|',
+      tips:['Stessa barra su corde B ed e: è la forma classica di Little Wing','Sali e scendi la pentatonica mantenendo le due note allineate','Prova hybrid picking (plettro su B, medio su e) per il colore Mayer'],
+      tags:['double stop','quarte','La minore','Hendrix','Mayer'] },
+    { title:'Double stop con slide (Wonderful Tonight / Berry)', diff:3, bpmSlow:55, bpmMid:80, bpmFast:105,
+      tab:'e |--2/5--5\\2--5/7--7\\5--|\nB |--2/5--5\\2--5/7--7\\5--|\nG |----------------------|\nD |----------------------|\nA |----------------------|\nE |----------------------|',
+      tips:['Fai scivolare la forma parallela senza staccare le dita','Lo slide di arrivo va fermato con precisione sul tasto giusto','Lascia respirare la nota finale con un vibrato leggero'],
+      tags:['double stop','slide','La maggiore','ballad'] },
+    { title:'Unison bend (La minore)', diff:3, bpmSlow:50, bpmMid:75, bpmFast:100,
+      tab:'e |--5------10------12-----|\nB |--8b-----13b-----15b----|\nG |------------------------|\nD |------------------------|\nA |------------------------|\nE |------------------------|',
+      tips:['La nota sul cantino è fissa: piega la B finché i due suoni si fondono','Ascolta il battimento sparire = intonazione perfetta','Rinforza il bending con medio e anulare dietro l\'indice'],
+      tags:['double stop','unison bend','La minore','blues'] },
+    { title:'Lick riassuntivo (Mayer/SRV, La minore)', diff:4, bpmSlow:55, bpmMid:75, bpmFast:95,
+      tab:'e |--5/8--8-------8----|\nB |--5/8--8--5----10b--|\nG |----------5---------|\nD |--------------------|\nA |--------------------|\nE |--------------------|',
+      tips:['Unisce quarte in slide, una terza e un unison bend finale','Il bend finale è di una terza minore (3 semitoni): da La a Do, all\'unisono col cantino','Chiudi con vibrato sull\'unison bend, alla John Mayer'],
+      tags:['double stop','lick','La minore','Mayer','SRV'] },
   ]
 };
 
@@ -8390,6 +8422,7 @@ function initTechPage() {
     { id:'dwps',      label:'Downward Pickslanting' },
     { id:'legato-phrasing', label:'Legato Phrasing' },
     { id:'equator',   label:'Equator Trick (Mayer)' },
+    { id:'doublestops', label:'Double Stops' },
     { id:'masters',   label:'I Maestri' },
   ];
   const tabsEl = document.getElementById('tech-tabs');
@@ -8423,7 +8456,7 @@ function initTechPage() {
     return parsed.map(p => p.tab ? `${p.label} |${p.body.padEnd(maxLen, '-')}|` : p.raw).join('\n');
   }
 
-  ['alternate','legato','tapping','skipping','dwps','legato-phrasing','equator'].forEach(key => {
+  ['alternate','legato','tapping','skipping','dwps','legato-phrasing','equator','doublestops'].forEach(key => {
     const grid = document.getElementById('ex-' + key + '-grid');
     if (!grid) return;
     grid.innerHTML = (TECH_EXERCISES[key] || []).map((ex, exIdx) => `
