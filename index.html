@@ -517,6 +517,53 @@
   .csys-cell:hover { border-color: var(--amber-dim); transform: translateY(-2px); }
   .csys-cell svg { display: block; width: 100%; max-width: 150px; }
 
+  /* ── LOOPER ── */
+  .looper-deck {
+    background: linear-gradient(180deg, #202020, #161616);
+    border: 1px solid #333; border-radius: 14px; padding: 22px;
+    max-width: 640px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 20px 40px -24px #000;
+  }
+  .looper-controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .looper-btn {
+    flex: 1; min-width: 110px; min-height: 64px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    background: linear-gradient(180deg, #2a2a2a, #1c1c1c);
+    border: 1px solid #3a3a3a; border-radius: 10px; cursor: pointer;
+    color: var(--text-mid); transition: all .15s;
+    box-shadow: 0 3px 8px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .looper-btn:hover:not(:disabled) { border-color: var(--amber-dim); color: var(--text); transform: translateY(-1px); }
+  .looper-btn:disabled { opacity: .35; cursor: default; }
+  .looper-btn-icon { font-size: 20px; line-height: 1; }
+  .looper-btn-lbl { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 2px; }
+  .looper-btn.rec .looper-btn-icon { color: var(--red); }
+  .looper-btn.recording {
+    border-color: var(--red); color: #fff;
+    background: linear-gradient(180deg, #3a1515, #240d0d);
+    box-shadow: 0 0 18px rgba(239,68,68,.45), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .looper-btn.active-loop {
+    border-color: var(--amber); color: var(--amber);
+    background: var(--amber-glow);
+    box-shadow: 0 0 16px rgba(245,158,11,.35), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .looper-status-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .looper-led {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #2a2a2a; border: 1px solid #3a3a3a;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.6);
+    transition: background .15s, box-shadow .15s;
+  }
+  .looper-led.rec { background: var(--red); box-shadow: 0 0 10px rgba(239,68,68,.9); animation: looper-blink 0.6s step-end infinite; }
+  .looper-led.play { background: var(--green); box-shadow: 0 0 10px rgba(34,197,94,.8); }
+  @keyframes looper-blink { 50% { opacity: 0.25; } }
+  .looper-status { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-mid); }
+  .looper-info-row { display: flex; gap: 22px; align-items: flex-end; flex-wrap: wrap; }
+  .looper-stat { display: flex; flex-direction: column; gap: 4px; }
+  .looper-stat-lbl { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 1px; color: var(--text-dim); }
+  .looper-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1; color: var(--amber); }
+
   /* ── MANICO LIVE DAL MICROFONO ── */
   .micfb-note-display {
     display: flex; align-items: baseline; gap: 12px;
@@ -7321,6 +7368,7 @@ window.addEventListener('DOMContentLoaded', function() {
     <button class="cpage-tab-btn active" data-tab="basi" onclick="showBasiSubpage('basi')">🎸 Basi</button>
     <button class="cpage-tab-btn" data-tab="accordatore" onclick="showBasiSubpage('accordatore')">🎵 Accordatore</button>
     <button class="cpage-tab-btn" data-tab="micfb" onclick="showBasiSubpage('micfb');micFbInit()">🎤 Manico Live</button>
+    <button class="cpage-tab-btn" data-tab="looper" onclick="showBasiSubpage('looper')">🔁 Looper</button>
   </div>
   <div id="bpage-basi" class="cpage-view active">
   <h2>Basi di Accompagnamento</h2>
@@ -7558,6 +7606,50 @@ window.addEventListener('DOMContentLoaded', function() {
       ritrovare la stessa nota lungo il manico. Con gli accordi la rilevazione cattura solo la nota dominante.
     </div>
   </div><!-- /bpage-micfb -->
+  <div id="bpage-looper" class="cpage-view">
+    <h2>Looper</h2>
+    <div class="subtitle">// registra un giro con la tua chitarra e mandalo in loop — poi suonaci sopra o sovraincidi</div>
+
+    <div class="looper-deck">
+      <div class="looper-controls">
+        <button class="looper-btn rec" id="loop-rec-btn" onclick="looperRec()">
+          <span class="looper-btn-icon">●</span><span class="looper-btn-lbl">REC</span>
+        </button>
+        <button class="looper-btn" id="loop-play-btn" onclick="looperTogglePlay()" disabled>
+          <span class="looper-btn-icon">▶</span><span class="looper-btn-lbl">PLAY</span>
+        </button>
+        <button class="looper-btn" id="loop-dub-btn" onclick="looperOverdub()" disabled>
+          <span class="looper-btn-icon">⊕</span><span class="looper-btn-lbl">OVERDUB</span>
+        </button>
+        <button class="looper-btn" id="loop-clear-btn" onclick="looperClear()" disabled>
+          <span class="looper-btn-icon">✕</span><span class="looper-btn-lbl">CLEAR</span>
+        </button>
+      </div>
+
+      <div class="looper-status-row">
+        <div class="looper-led" id="loop-led"></div>
+        <span class="looper-status" id="loop-status">pronto — premi REC e suona</span>
+      </div>
+
+      <div class="looper-info-row">
+        <div class="looper-stat"><span class="looper-stat-lbl">DURATA LOOP</span><span class="looper-stat-val" id="loop-dur">—</span></div>
+        <div class="looper-stat"><span class="looper-stat-lbl">STRATI</span><span class="looper-stat-val" id="loop-layers">0</span></div>
+        <div class="looper-stat" style="flex:1;min-width:140px">
+          <span class="looper-stat-lbl">VOLUME LOOP</span>
+          <input type="range" min="0" max="1.5" step="0.01" value="0.9" id="loop-vol"
+                 oninput="looperSetVol(this.value)" style="width:100%;accent-color:var(--amber)">
+        </div>
+      </div>
+    </div>
+
+    <div class="hint-box" style="font-size:12px;max-width:760px;margin-top:14px">
+      <strong>Come usarlo:</strong> premi <strong>REC</strong> e suona il giro (accordi o riff) — quando lo
+      fermi riparte subito in loop. Con <strong>OVERDUB</strong> registri un altro strato sopra mentre il loop
+      suona: per l'overdub usa le <strong>cuffie</strong>, altrimenti il microfono ricattura anche il loop
+      dagli altoparlanti. La fine dell'overdub viene "avvolta" sulla durata del giro base, come in un
+      loop-station vero.
+    </div>
+  </div><!-- /bpage-looper -->
 </div>
 
 <!-- ═══════════════════════════ AUDIO ENHANCEMENT ═══════════════════════════ -->
@@ -8348,6 +8440,210 @@ async function micFbToggle() {
       : '⚠ errore: ' + (e.message || e.name);
   }
 }
+
+// ─── LOOPER (registra dal microfono → loop → overdub) ────────────────────────
+const LOOPER = {
+  stream: null, recorder: null, chunks: [],
+  buffer: null,          // AudioBuffer del loop (somma di tutti gli strati)
+  source: null, gain: null,
+  playing: false, recording: false, overdubbing: false,
+  layers: 0,
+  startedAt: 0,          // ctx.currentTime a cui è partita la riproduzione (fase 0)
+  dubPhase: 0,           // fase del loop (in secondi) quando è partito l'overdub
+};
+
+function looperGain() {
+  const ctx = getAudioCtx();
+  if (!LOOPER.gain) {
+    LOOPER.gain = ctx.createGain();
+    LOOPER.gain.gain.value = 0.9;
+    LOOPER.gain.connect(ctx.destination); // dry: niente reverb/compressore del synth
+  }
+  return LOOPER.gain;
+}
+
+async function looperMic() {
+  if (LOOPER.stream && LOOPER.stream.getTracks().some(t => t.readyState === 'live')) return LOOPER.stream;
+  LOOPER.stream = await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    video: false
+  });
+  return LOOPER.stream;
+}
+
+function looperUI(status, ledClass) {
+  const st = document.getElementById('loop-status');
+  const led = document.getElementById('loop-led');
+  if (st && status != null) st.textContent = status;
+  if (led) led.className = 'looper-led' + (ledClass ? ' ' + ledClass : '');
+  const has = !!LOOPER.buffer;
+  const btn = (id, dis) => { const b = document.getElementById(id); if (b) b.disabled = dis; };
+  btn('loop-play-btn', !has || LOOPER.recording);
+  btn('loop-dub-btn', !has || LOOPER.recording || !LOOPER.playing);
+  btn('loop-clear-btn', !has || LOOPER.recording || LOOPER.overdubbing);
+  const rec = document.getElementById('loop-rec-btn');
+  if (rec) rec.classList.toggle('recording', LOOPER.recording && !LOOPER.overdubbing);
+  const dub = document.getElementById('loop-dub-btn');
+  if (dub) dub.classList.toggle('recording', LOOPER.overdubbing);
+  const play = document.getElementById('loop-play-btn');
+  if (play) {
+    play.classList.toggle('active-loop', LOOPER.playing);
+    const ic = play.querySelector('.looper-btn-icon'), lb = play.querySelector('.looper-btn-lbl');
+    if (ic) ic.textContent = LOOPER.playing ? '■' : '▶';
+    if (lb) lb.textContent = LOOPER.playing ? 'STOP' : 'PLAY';
+  }
+  const dur = document.getElementById('loop-dur');
+  if (dur) dur.textContent = LOOPER.buffer ? LOOPER.buffer.duration.toFixed(1) + 's' : '—';
+  const lay = document.getElementById('loop-layers');
+  if (lay) lay.textContent = LOOPER.layers;
+}
+
+// Fade brevi ai bordi (anti-click al punto di loop)
+function _looperFadeEdges(buf) {
+  const n = Math.min(buf.length, Math.floor(buf.sampleRate * 0.006));
+  for (let ch = 0; ch < buf.numberOfChannels; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < n; i++) {
+      const g = i / n;
+      d[i] *= g;
+      d[buf.length - 1 - i] *= g;
+    }
+  }
+}
+
+// Taglia il silenzio iniziale (solo prima registrazione)
+function _looperTrim(ctx, buf) {
+  const d = buf.getChannelData(0);
+  const thr = 0.02;
+  let start = 0;
+  while (start < d.length && Math.abs(d[start]) < thr) start++;
+  if (start >= d.length) return buf; // tutto silenzio: lascia com'è
+  start = Math.max(0, start - Math.floor(buf.sampleRate * 0.05)); // 50ms di margine
+  if (start === 0) return buf;
+  const out = ctx.createBuffer(buf.numberOfChannels, buf.length - start, buf.sampleRate);
+  for (let ch = 0; ch < buf.numberOfChannels; ch++) out.getChannelData(ch).set(buf.getChannelData(ch).subarray(start));
+  return out;
+}
+
+function _looperStartSource(phaseSec = 0) {
+  const ctx = getAudioCtx();
+  if (LOOPER.source) { try { LOOPER.source.stop(); LOOPER.source.disconnect(); } catch(e) {} }
+  const src = ctx.createBufferSource();
+  src.buffer = LOOPER.buffer;
+  src.loop = true;
+  src.connect(looperGain());
+  src.start(0, phaseSec % LOOPER.buffer.duration);
+  LOOPER.source = src;
+  LOOPER.startedAt = ctx.currentTime - phaseSec;
+  LOOPER.playing = true;
+}
+
+function _looperPhase() {
+  const ctx = getAudioCtx();
+  if (!LOOPER.playing || !LOOPER.buffer) return 0;
+  return (ctx.currentTime - LOOPER.startedAt) % LOOPER.buffer.duration;
+}
+
+async function looperRec() {
+  if (LOOPER.overdubbing) return;
+  const ctx = getAudioCtx();
+  if (LOOPER.recording) { LOOPER.recorder.stop(); return; }
+  try {
+    const stream = await looperMic();
+    LOOPER.chunks = [];
+    LOOPER.recorder = new MediaRecorder(stream);
+    LOOPER.recorder.ondataavailable = e => { if (e.data.size) LOOPER.chunks.push(e.data); };
+    LOOPER.recorder.onstop = async () => {
+      LOOPER.recording = false;
+      looperUI('elaboro la registrazione…', '');
+      try {
+        const ab = await new Blob(LOOPER.chunks).arrayBuffer();
+        let buf = await ctx.decodeAudioData(ab);
+        buf = _looperTrim(ctx, buf);
+        _looperFadeEdges(buf);
+        LOOPER.buffer = buf;
+        LOOPER.layers = 1;
+        _looperStartSource(0);
+        looperUI('in loop — suonaci sopra, o aggiungi uno strato con OVERDUB', 'play');
+      } catch (e) {
+        looperUI('⚠ errore di decodifica: ' + (e.message || e.name), '');
+      }
+    };
+    // stop dell'eventuale loop mentre registri il giro nuovo
+    if (LOOPER.playing) { try { LOOPER.source.stop(); } catch(e) {} LOOPER.playing = false; }
+    LOOPER.recorder.start();
+    LOOPER.recording = true;
+    looperUI('● REC… premi di nuovo REC per chiudere il giro', 'rec');
+  } catch (e) {
+    looperUI(e.name === 'NotAllowedError' ? '⚠ permesso microfono negato' : '⚠ errore: ' + (e.message || e.name), '');
+  }
+}
+
+function looperTogglePlay() {
+  if (!LOOPER.buffer) return;
+  if (LOOPER.playing) {
+    try { LOOPER.source.stop(); LOOPER.source.disconnect(); } catch(e) {}
+    LOOPER.source = null;
+    LOOPER.playing = false;
+    looperUI('fermo — PLAY per ripartire', '');
+  } else {
+    _looperStartSource(0);
+    looperUI('in loop', 'play');
+  }
+}
+
+async function looperOverdub() {
+  if (!LOOPER.buffer || !LOOPER.playing) return;
+  const ctx = getAudioCtx();
+  if (LOOPER.overdubbing) { LOOPER.recorder.stop(); return; }
+  try {
+    const stream = await looperMic();
+    LOOPER.chunks = [];
+    LOOPER.recorder = new MediaRecorder(stream);
+    LOOPER.recorder.ondataavailable = e => { if (e.data.size) LOOPER.chunks.push(e.data); };
+    LOOPER.recorder.onstart = () => { LOOPER.dubPhase = _looperPhase(); };
+    LOOPER.recorder.onstop = async () => {
+      LOOPER.overdubbing = false; LOOPER.recording = false;
+      looperUI('mixo lo strato…', 'play');
+      try {
+        const ab = await new Blob(LOOPER.chunks).arrayBuffer();
+        const dub = await ctx.decodeAudioData(ab);
+        const base = LOOPER.buffer;
+        // somma il nuovo strato sul giro base, avvolgendolo sulla durata del loop
+        const off = Math.floor(LOOPER.dubPhase * base.sampleRate);
+        for (let ch = 0; ch < base.numberOfChannels; ch++) {
+          const bd = base.getChannelData(ch);
+          const dd = dub.getChannelData(Math.min(ch, dub.numberOfChannels - 1));
+          for (let i = 0; i < dub.length; i++) {
+            const j = (off + i) % base.length;
+            bd[j] = Math.max(-1, Math.min(1, bd[j] + dd[i] * 0.9));
+          }
+        }
+        _looperFadeEdges(base);
+        LOOPER.layers++;
+        const phase = _looperPhase();
+        _looperStartSource(phase); // riavvia con il buffer aggiornato mantenendo la fase
+        looperUI('strato aggiunto — in loop', 'play');
+      } catch (e) {
+        looperUI('⚠ errore overdub: ' + (e.message || e.name), 'play');
+      }
+    };
+    LOOPER.recorder.start();
+    LOOPER.overdubbing = true; LOOPER.recording = true;
+    looperUI('● OVERDUB… premi di nuovo per chiudere lo strato', 'rec');
+  } catch (e) {
+    looperUI('⚠ errore: ' + (e.message || e.name), 'play');
+  }
+}
+
+function looperClear() {
+  if (LOOPER.playing) { try { LOOPER.source.stop(); LOOPER.source.disconnect(); } catch(e) {} }
+  LOOPER.source = null; LOOPER.buffer = null;
+  LOOPER.playing = false; LOOPER.layers = 0;
+  looperUI('pronto — premi REC e suona', '');
+}
+
+function looperSetVol(v) { looperGain().gain.value = parseFloat(v); }
 
 // ─── TECNICA AVANZATA ─────────────────────────────────────────────────────────
 
