@@ -488,6 +488,35 @@
   /* Modalità arpeggio: nasconde del tutto le note fuori dall'accordo corrente */
   #jam-fretboard.arp-mode .note-dot.chord-dim { display: none; }
 
+  /* ── SISTEMA CONNESSO CAGED ── */
+  .csys-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .csys-grid {
+    display: grid;
+    grid-template-columns: 46px repeat(4, minmax(130px, 1fr));
+    gap: 10px;
+    min-width: 620px;
+    align-items: stretch;
+  }
+  .csys-head {
+    font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text-mid);
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 4px; text-align: center;
+  }
+  .csys-shape-badge {
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 24px;
+    border-radius: 10px; border: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .csys-cell {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px; display: flex; align-items: center; justify-content: center;
+    transition: border-color .2s, transform .2s;
+  }
+  .csys-cell:hover { border-color: var(--amber-dim); transform: translateY(-2px); }
+  .csys-cell svg { display: block; width: 100%; max-width: 150px; }
+
   /* ── MANICO LIVE DAL MICROFONO ── */
   .micfb-note-display {
     display: flex; align-items: baseline; gap: 12px;
@@ -2793,6 +2822,7 @@
   <div class="cpage-tabs">
     <button class="cpage-tab-btn active" data-tab="forms" onclick="showCagedSubpage('forms')">Forme CAGED</button>
     <button class="cpage-tab-btn" data-tab="modi" onclick="showCagedSubpage('modi');renderModi();">Modi diatonici</button>
+    <button class="cpage-tab-btn" data-tab="sistema" onclick="showCagedSubpage('sistema');renderCagedSystem();">Sistema Connesso</button>
   </div>
 
   <!-- ── SUB: FORME CAGED ── -->
@@ -2862,6 +2892,46 @@
     <div id="mdx-degree-summary" class="mdx-degree-summary"></div>
     <div class="mdx-sets-grid" id="mdx-sets-grid"></div>
     <div id="mdx-mode-section" class="mdx-mode-section"></div>
+  </div>
+
+  <!-- ── SUB: SISTEMA CONNESSO ── -->
+  <div id="cpage-caged-sistema" class="cpage-view">
+    <div class="notice">
+      <strong>Un solo sistema connesso:</strong> ogni forma CAGED contiene — nella <em>stessa posizione</em> del
+      manico — l'accordo (triade), il suo arpeggio, la pentatonica e la scala completa. Leggi ogni riga da
+      sinistra a destra: stai solo <em>aggiungendo note</em> attorno allo stesso accordo. La tonica è marcata
+      <strong style="color:var(--amber)">R</strong>; terze in blu, quinte in verde.
+    </div>
+
+    <div class="controls" style="margin-bottom:18px">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Tonalità</div>
+        <select id="csys-key" onchange="renderCagedSystem()">
+          <option value="0" selected>C</option><option value="1">C# / Db</option>
+          <option value="2">D</option><option value="3">D# / Eb</option>
+          <option value="4">E</option><option value="5">F</option>
+          <option value="6">F# / Gb</option><option value="7">G</option>
+          <option value="8">G# / Ab</option><option value="9">A</option>
+          <option value="10">A# / Bb</option><option value="11">B</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">Scala / Modo (guida anche accordo e pentatonica)</div>
+        <select id="csys-scale" onchange="renderCagedSystem()">
+          <option value="major" selected>Maggiore (Ionico)</option>
+          <option value="dorian">Dorico</option>
+          <option value="phrygian">Frigio</option>
+          <option value="lydian">Lidio</option>
+          <option value="mixolydian">Misolidio</option>
+          <option value="natural_minor">Eolio (Minore Naturale)</option>
+          <option value="locrian">Locrio</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="csys-wrap">
+      <div class="csys-grid" id="csys-grid"></div>
+    </div>
   </div>
 </div>
 
@@ -5708,6 +5778,164 @@ function cagedFrets(shapeName, rootNote, quality) {
 // Interval display color
 const IV_COLORS = { 0:'#f59e0b', 3:'#3b82f6', 4:'#3b82f6', 7:'#22c55e' };
 const IV_LABELS = { 0:'R', 3:'♭3', 4:'3', 7:'5' };
+
+// ─── SISTEMA CONNESSO: accordo → arpeggio → pentatonica → scala nella stessa
+//     posizione, per tutte e 5 le forme CAGED (griglia stile poster) ──────────
+const CSYS_MAJORISH = new Set(['major', 'lydian', 'mixolydian']);
+
+// Finestra di 5 tasti che contiene la forma (comune a tutte le colonne della riga)
+function csysWindow(shapeName, rootNote, quality) {
+  const played = cagedFrets(shapeName, rootNote, quality).filter(n => !n.muted).map(n => n.fret);
+  const capo = cagedCapo(shapeName, rootNote);
+  let start = (capo === 0) ? 0 : Math.min(...played);
+  const maxF = Math.max(...played);
+  if (maxF > start + 4) start = Math.max(0, maxF - 4);
+  return { start, end: start + 4 };
+}
+
+// Set di intervalli da mostrare per ogni colonna
+function csysTargetIvs(scaleSel, kind) {
+  const quality = CSYS_MAJORISH.has(scaleSel) ? 'major' : 'minor';
+  if (kind === 'arp')   return quality === 'major' ? new Set([0,4,7]) : new Set([0,3,7]);
+  if (kind === 'penta') return new Set(quality === 'major' ? [0,2,4,7,9] : [0,3,5,7,10]);
+  return new Set(SCALES[scaleSel].intervals); // 'scale'
+}
+
+function csysDotColor(iv) {
+  if (iv === 0) return '#f59e0b';
+  if (iv === 3 || iv === 4) return '#3b82f6';
+  if (iv === 7) return '#22c55e';
+  return '#d4d4d4';
+}
+
+function drawCsysCell(shapeName, rootNote, scaleSel, kind) {
+  const quality = CSYS_MAJORISH.has(scaleSel) ? 'major' : 'minor';
+  const win = csysWindow(shapeName, rootNote, quality);
+  const openPos = win.start === 0;
+  const spaces = openPos ? win.end : (win.end - win.start + 1); // righe fra le linee
+  const SX = 26, SY = 24, SH = 24, SW = 22;
+  const W = SX + 5 * SW + 14, H = SY + spaces * SH + 10;
+  const strOrder = [5,4,3,2,1,0]; // E grave a sinistra → e acuta a destra
+
+  // y del pallino per un tasto della finestra
+  const yFor = f => {
+    if (openPos && f === 0) return SY - 9;              // corda a vuoto: sopra il capotasto
+    const idx = openPos ? f - 1 : f - win.start;
+    return SY + idx * SH + SH / 2;
+  };
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<rect width="${W}" height="${H}" fill="#141414" rx="8"/>`;
+  if (openPos) svg += `<rect x="${SX}" y="${SY-3}" width="${5*SW}" height="3.5" fill="#d4af6a" rx="1"/>`;
+  else svg += `<text x="${SX-5}" y="${SY+SH/2+3}" text-anchor="end" font-size="9" fill="#8a8a8a" font-family="monospace" font-weight="bold">${win.start}</text>`;
+
+  for (let i = 0; i <= spaces; i++) {
+    const y = SY + i * SH;
+    svg += `<line x1="${SX}" y1="${y}" x2="${SX+5*SW}" y2="${y}" stroke="#2a2a2a" stroke-width="1"/>`;
+  }
+  for (let c = 0; c < 6; c++) {
+    const x = SX + c * SW;
+    svg += `<line x1="${x}" y1="${SY}" x2="${x}" y2="${SY+spaces*SH}" stroke="#3a3a3a" stroke-width="1"/>`;
+  }
+
+  const dot = (s, f, iv) => {
+    const x = SX + strOrder.indexOf(s) * SW;
+    const y = yFor(f);
+    const col = csysDotColor(iv);
+    const r = (openPos && f === 0) ? 5.5 : 7;
+    let out = `<circle cx="${x}" cy="${y}" r="${r}" fill="${col}"${iv===0?'':' opacity="0.92"'}/>`;
+    if (iv === 0) out += `<text x="${x}" y="${y+3}" text-anchor="middle" font-size="8" font-weight="bold" fill="#000" font-family="monospace">R</text>`;
+    return out;
+  };
+
+  if (kind === 'chord') {
+    cagedFrets(shapeName, rootNote, quality).forEach(n => {
+      const x = SX + strOrder.indexOf(n.s) * SW;
+      if (n.muted) svg += `<text x="${x}" y="${SY-8}" text-anchor="middle" font-size="9" fill="#6b6b6b" font-family="monospace">✕</text>`;
+      else svg += dot(n.s, n.fret, n.iv);
+    });
+  } else {
+    const target = csysTargetIvs(scaleSel, kind);
+    for (let s = 0; s < 6; s++) {
+      for (let f = win.start; f <= win.end; f++) {
+        const iv = (OPEN_STRINGS[s] + f - rootNote + 24) % 12;
+        if (target.has(iv)) svg += dot(s, f, iv);
+      }
+    }
+  }
+  return svg + '</svg>';
+}
+
+// Note MIDI di una cella (per il click-to-play, dal basso verso l'alto)
+function csysCellMidis(shapeName, rootNote, scaleSel, kind) {
+  const quality = CSYS_MAJORISH.has(scaleSel) ? 'major' : 'minor';
+  const win = csysWindow(shapeName, rootNote, quality);
+  const midis = [];
+  if (kind === 'chord') {
+    cagedFrets(shapeName, rootNote, quality).forEach(n => {
+      if (!n.muted) midis.push(OPEN_STRING_MIDI[n.s] + n.fret);
+    });
+  } else {
+    const target = csysTargetIvs(scaleSel, kind);
+    for (let s = 5; s >= 0; s--) {
+      for (let f = win.start; f <= win.end; f++) {
+        const iv = (OPEN_STRINGS[s] + f - rootNote + 24) % 12;
+        if (target.has(iv)) midis.push(OPEN_STRING_MIDI[s] + f);
+      }
+    }
+  }
+  return midis.sort((a, b) => a - b);
+}
+
+function csysPlayCell(shapeName, scaleSel, kind) {
+  const rootNote = parseInt(document.getElementById('csys-key').value);
+  const midis = csysCellMidis(shapeName, rootNote, scaleSel, kind);
+  if (!midis.length) return;
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime + 0.02;
+  const step = kind === 'chord' ? 0.045 : 0.13; // accordo = strum, il resto = sequenza
+  midis.forEach((m, i) => playNote(midiToFreq(m), now + i * step, kind === 'chord' ? 1.6 : 0.5));
+}
+
+function renderCagedSystem() {
+  const grid = document.getElementById('csys-grid');
+  if (!grid) return;
+  const rootNote = parseInt(document.getElementById('csys-key').value);
+  const scaleSel = document.getElementById('csys-scale').value;
+  const quality = CSYS_MAJORISH.has(scaleSel) ? 'major' : 'minor';
+  const keyName = NOTES[rootNote];
+
+  grid.innerHTML = '';
+  const heads = ['', `Accordo ${keyName}${quality==='minor'?'m':''}`, 'Arpeggio (triade)',
+                 quality === 'major' ? 'Pentatonica Magg.' : 'Pentatonica Min.',
+                 SCALES[scaleSel].name];
+  heads.forEach(h => {
+    const d = document.createElement('div');
+    d.className = 'csys-head';
+    d.textContent = h;
+    grid.appendChild(d);
+  });
+
+  CAGED_ORDER.forEach(shape => {
+    const def = CAGED_DEFS[shape];
+    const badge = document.createElement('div');
+    badge.className = 'csys-shape-badge';
+    badge.style.color = def.color;
+    badge.style.borderColor = def.color + '66';
+    badge.textContent = shape;
+    grid.appendChild(badge);
+
+    ['chord','arp','penta','scale'].forEach(kind => {
+      const cell = document.createElement('div');
+      cell.className = 'csys-cell';
+      cell.title = 'Clicca per ascoltare';
+      cell.style.cursor = 'pointer';
+      cell.innerHTML = drawCsysCell(shape, rootNote, scaleSel, kind);
+      cell.onclick = () => csysPlayCell(shape, scaleSel, kind);
+      grid.appendChild(cell);
+    });
+  });
+}
 
 // Draw a vertical chord diagram SVG
 function drawChordDiagram(shapeName, rootNote, quality, highlight) {
