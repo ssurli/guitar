@@ -488,6 +488,36 @@
   /* Modalità arpeggio: nasconde del tutto le note fuori dall'accordo corrente */
   #jam-fretboard.arp-mode .note-dot.chord-dim { display: none; }
 
+  /* ── MANICO LIVE DAL MICROFONO ── */
+  .micfb-note-display {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 6px 18px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--bg3); min-width: 200px;
+  }
+  .micfb-note {
+    font-family: 'Bebas Neue', sans-serif; font-size: 42px; line-height: 1;
+    color: var(--amber); min-width: 64px;
+    text-shadow: 0 0 18px rgba(245,158,11,.35);
+  }
+  .micfb-meta { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); }
+  #micfb-fretboard .note-dot {
+    opacity: 0.16; transform: scale(0.72);
+    transition: opacity .12s, transform .12s, box-shadow .12s;
+    cursor: default;
+  }
+  #micfb-fretboard .note-dot.mic-hit {
+    opacity: 1; transform: scale(1.12); z-index: 5;
+    background: radial-gradient(circle at 35% 30%, #fde68a 0%, var(--amber) 45%, #b45309 100%);
+    color: #000;
+    box-shadow: 0 0 16px rgba(245,158,11,.85), inset 0 2px 4px rgba(255,255,200,.4);
+  }
+  #micfb-fretboard .note-dot.mic-oct {
+    opacity: 0.85; transform: scale(0.95);
+    background: radial-gradient(circle at 35% 30%, #bfdbfe 0%, var(--blue) 45%, #1e3a8a 100%);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(59,130,246,.5);
+  }
+
   .jam-fb-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
   .jam-fb-toggle button {
     font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: .5px;
@@ -2317,6 +2347,82 @@
     box-shadow: 0 16px 36px -20px rgba(0,0,0,.95), 0 0 0 1px rgba(245,158,11,.12), inset 0 1px 0 rgba(255,255,255,.03);
   }
 
+  /* ═══ DESIGN PUSH — materialità del manico e look "hardware" ═══ */
+
+  /* 1. Legno del manico: venatura + profondità (su .strings-container, non sul
+        wrapper, così i numeri dei tasti restano fuori dal legno) */
+  .strings-container {
+    background:
+      linear-gradient(90deg, rgba(0,0,0,.35) 0%, transparent 6%, transparent 94%, rgba(0,0,0,.35) 100%),
+      repeating-linear-gradient(88deg, #241a10 0 3px, #2a1e12 3px 7px, #201509 7px 11px),
+      linear-gradient(180deg, #2e2013, #1d1409);
+    border-radius: 8px;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,.6), inset 0 -3px 8px rgba(0,0,0,.5);
+    padding: 6px 0;
+  }
+
+  /* 2. Tastini metallici (nickel) + ombra della corda sul legno */
+  .fret-cell::after {
+    width: 2px;
+    background: linear-gradient(180deg, #6b6b6b, #c9c9c9 45%, #4a4a4a);
+    box-shadow: 0 0 2px rgba(255,255,255,.15);
+  }
+  .fret-cell::before, .open-col::before {
+    box-shadow: 0 1px 2px rgba(0,0,0,.6);
+  }
+
+  /* 3. Inlay in madreperla */
+  .fret-marker-dot .inner {
+    background: radial-gradient(circle at 35% 30%, #fffbe8, #d9c48a 55%, #8a7233);
+    box-shadow: 0 1px 2px rgba(0,0,0,.5), inset 0 0 3px rgba(255,255,255,.6);
+  }
+  .fret-marker-dot.double .inner { box-shadow: 6px 0 0 #b09a60, 0 1px 2px rgba(0,0,0,.5); }
+
+  /* 4. Player jam: scocca da drum machine + LED reali + play in rilievo */
+  .jam-player {
+    background: linear-gradient(180deg, #202020, #161616);
+    border-color: #333;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 20px 40px -24px #000;
+  }
+  .beat-led {
+    height: 14px; border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.6);
+  }
+  .beat-led.active {
+    box-shadow: 0 0 10px rgba(245,158,11,.9), inset 0 0 4px rgba(255,220,120,.8);
+  }
+  .beat-led.beat-1.active { box-shadow: 0 0 14px rgba(255,106,0,1), inset 0 0 4px rgba(255,200,120,.8); }
+  .btn-play-big {
+    background: radial-gradient(circle at 38% 30%, #fcd34d, var(--amber) 55%, #b45309);
+    box-shadow: 0 6px 14px rgba(0,0,0,.5), 0 0 20px rgba(245,158,11,.4), inset 0 2px 3px rgba(255,255,255,.4);
+  }
+  .btn-play-big.playing {
+    background: radial-gradient(circle at 38% 30%, #fca5a5, var(--red) 55%, #991b1b);
+    box-shadow: 0 6px 14px rgba(0,0,0,.5), 0 0 20px rgba(239,68,68,.5), inset 0 2px 3px rgba(255,255,255,.35);
+  }
+
+  /* 5. Card: lift coerente ovunque */
+  .ex-card, .triad-shape-card { transition: border-color .2s, transform .2s, box-shadow .2s; }
+  .ex-card:hover, .triad-shape-card:hover { transform: translateY(-2px); }
+  .triad-shape-card:hover {
+    box-shadow: 0 16px 36px -20px rgba(0,0,0,.95), 0 0 0 1px rgba(245,158,11,.12);
+  }
+
+  /* 6. Testata di pagina: ritmo verticale */
+  .subtitle { padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+
+  /* 7. Header: firma di brand */
+  header { box-shadow: 0 1px 0 rgba(245,158,11,.12), 0 8px 24px -16px #000; }
+
+  /* 8. Note: glow su hover */
+  .note-dot:hover {
+    box-shadow: 0 0 12px rgba(245,158,11,.5), inset 0 2px 4px rgba(255,255,255,.25);
+    z-index: 3;
+  }
+
+  /* 9. Selezione testo brandizzata */
+  ::selection { background: rgba(245,158,11,.3); color: #fde68a; }
+
   /* Footer */
   .site-footer {
     border-top: 1px solid var(--border);
@@ -3245,11 +3351,15 @@ function _autoDisconnect(node, stopTime) {
 // modello fisico della corda: un'eccitazione di rumore filtrata in un anello di
 // ritardo accordato sulla frequenza della nota. Il risultato è renderizzato in un
 // AudioBuffer e poi colorato da filtri (tono, corpo) e dalla distorsione dinamica.
-function playNote(freq, time, duration = 0.8, destOverride = null) {
+function playNote(freq, time, duration = 0.8, destOverride = null, velocity = null) {
   const ctx = getAudioCtx();
   const dest = destOverride || _masterOut;
   const now = time || ctx.currentTime;
   const sr = ctx.sampleRate;
+
+  // Dinamica: se non specificata, umanizza leggermente ogni nota (0.72–0.90)
+  // — velocity modula brillantezza dell'attacco, click del plettro e volume.
+  const vel = velocity != null ? Math.max(0.1, Math.min(1, velocity)) : 0.72 + Math.random() * 0.18;
 
   // Coda di risonanza: le note gravi tengono più a lungo
   const ring = Math.min(4.0, duration * Math.max(1.5, 130 / freq));
@@ -3259,24 +3369,30 @@ function playNote(freq, time, duration = 0.8, destOverride = null) {
   const ksBuf = ctx.createBuffer(1, N, sr);
   const out = ksBuf.getChannelData(0);
 
-  // Eccitazione: rumore passa-basso (pizzicato morbido, non "fizzy")
+  // Eccitazione: rumore passa-basso — più velocity = pizzicata più brillante
   const exc = new Float32Array(L);
+  const excMix = 0.35 + 0.35 * vel; // 0.35 (morbido) → 0.70 (brillante)
   let lp = 0;
   for (let i = 0; i < L; i++) {
     const w = Math.random() * 2 - 1;
-    lp = 0.5 * w + 0.5 * lp;
+    lp = excMix * w + (1 - excMix) * lp;
     exc[i] = lp;
   }
-  // Posizione del plettro (~1/5 della corda): notch che attenua un'armonica → carattere
-  const pp = Math.max(1, Math.round(L * 0.2));
+  // Posizione del plettro variabile per nota (15–27% della corda): ogni pizzicata
+  // ha un timbro leggermente diverso, come una mano vera che non colpisce mai
+  // nello stesso punto esatto
+  const pickPos = 0.15 + Math.random() * 0.12;
+  const pp = Math.max(1, Math.round(L * pickPos));
   for (let i = L - 1; i >= pp; i--) exc[i] -= 0.5 * exc[i - pp];
 
-  // Smorzamento (<1 = decadimento stabile); gli acuti smorzano un filo di più
-  const damping = 0.996 - Math.min(0.012, (freq / 1200) * 0.012);
+  // Smorzamento evolutivo: parte vivo e si scurisce progressivamente verso la
+  // coda (una corda reale perde armonici sempre più in fretta mentre decade)
+  const damp0 = 0.9965 - Math.min(0.012, (freq / 1200) * 0.012);
   let idx = 0, prev = 0;
   for (let n = 0; n < N; n++) {
     const cur = exc[idx];
     out[n] = cur;
+    const damping = damp0 * (1 - 0.006 * (n / N)); // scurimento progressivo
     exc[idx] = (cur + prev) * 0.5 * damping;   // media mobile = perdita di alti della corda
     prev = cur;
     idx = idx + 1 >= L ? 0 : idx + 1;
@@ -3295,10 +3411,10 @@ function playNote(freq, time, duration = 0.8, destOverride = null) {
   const src = ctx.createBufferSource();
   src.buffer = ksBuf;
 
-  // Tono: brillante al pizzico → si scurisce nel tempo
+  // Tono: brillante al pizzico → si scurisce nel tempo; la dinamica apre il filtro
   const lpf = ctx.createBiquadFilter();
   lpf.type = 'lowpass';
-  lpf.frequency.setValueAtTime(Math.min(9000, freq * 18), now);
+  lpf.frequency.setValueAtTime(Math.min(9000, freq * (10 + 10 * vel)), now);
   lpf.frequency.exponentialRampToValueAtTime(Math.max(1000, freq * 4.5), now + ring * 0.5);
   lpf.Q.value = 0.5;
 
@@ -3310,7 +3426,7 @@ function playNote(freq, time, duration = 0.8, destOverride = null) {
   body.gain.value = freq < 250 ? 4.5 : 2;
 
   const amp = ctx.createGain();
-  amp.gain.value = 0.9;
+  amp.gain.value = 0.55 + 0.45 * vel; // la dinamica scala anche il volume
   src.connect(lpf); lpf.connect(body); body.connect(amp);
 
   // Click del plettro: transiente breve per definire l'attacco
@@ -3322,7 +3438,7 @@ function playNote(freq, time, duration = 0.8, destOverride = null) {
   const transBP = ctx.createBiquadFilter();
   transBP.type = 'bandpass'; transBP.frequency.value = Math.min(4500, freq * 4); transBP.Q.value = 0.8;
   const transGain = ctx.createGain();
-  transGain.gain.setValueAtTime(0.16, now);
+  transGain.gain.setValueAtTime(0.08 + 0.14 * vel, now); // click proporzionale alla pennata
   transGain.gain.exponentialRampToValueAtTime(0.001, now + 0.014);
   trans.connect(transBP); transBP.connect(transGain); transGain.connect(body);
 
@@ -6976,6 +7092,7 @@ window.addEventListener('DOMContentLoaded', function() {
   <div class="cpage-tabs">
     <button class="cpage-tab-btn active" data-tab="basi" onclick="showBasiSubpage('basi')">🎸 Basi</button>
     <button class="cpage-tab-btn" data-tab="accordatore" onclick="showBasiSubpage('accordatore')">🎵 Accordatore</button>
+    <button class="cpage-tab-btn" data-tab="micfb" onclick="showBasiSubpage('micfb');micFbInit()">🎤 Manico Live</button>
   </div>
   <div id="bpage-basi" class="cpage-view active">
   <h2>Basi di Accompagnamento</h2>
@@ -7185,6 +7302,34 @@ window.addEventListener('DOMContentLoaded', function() {
       <div class="tuner-str" onclick="tunerPlayRef(5)" title="Tocca per sentire il tono di riferimento"><div class="str-name">E</div><div class="str-freq">329.6 Hz</div><div class="ctrl-label">1ª</div><div class="str-hint">▶ tono</div></div>
     </div>
   </div><!-- /bpage-accordatore -->
+  <div id="bpage-micfb" class="cpage-view">
+    <h2>Manico Live</h2>
+    <div class="subtitle">// suona la tua chitarra: il manico mostra in tempo reale la nota rilevata dal microfono</div>
+
+    <div class="controls" style="margin-bottom:16px">
+      <button id="micfb-btn" class="tap-btn" onclick="micFbToggle()">🎤 Avvia ascolto</button>
+      <div class="micfb-note-display">
+        <span class="micfb-note" id="micfb-note">—</span>
+        <span class="micfb-meta" id="micfb-meta">in attesa…</span>
+      </div>
+    </div>
+
+    <div class="jam-fb-legend">
+      <span><i class="lg" style="background:var(--amber)"></i>Posizione esatta (stessa ottava)</span>
+      <span><i class="lg" style="background:#3b82f6"></i>Stessa nota, altra ottava</span>
+      <span class="lg-hint">// funziona meglio con note singole e pulite · latenza minima</span>
+    </div>
+
+    <div class="fretboard-wrap">
+      <div class="fretboard" id="micfb-fretboard"></div>
+    </div>
+
+    <div class="hint-box" style="font-size:12px;max-width:720px">
+      <strong>Come usarlo:</strong> suona una nota alla volta sulla chitarra. La posizione con la stessa
+      ottava si accende in ambra, le altre posizioni della stessa nota in blu — utile per scoprire dove
+      ritrovare la stessa nota lungo il manico. Con gli accordi la rilevazione cattura solo la nota dominante.
+    </div>
+  </div><!-- /bpage-micfb -->
 </div>
 
 <!-- ═══════════════════════════ AUDIO ENHANCEMENT ═══════════════════════════ -->
@@ -7537,6 +7682,16 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="ex-grid" id="ex-equator-grid"></div>
   </div>
 
+  <!-- DOUBLE STOPS -->
+  <div id="tp-doublestops" class="tech-panel">
+    <div class="notice">
+      <strong>Double Stops:</strong> due note suonate insieme — il suono di Chuck Berry, Hendrix, SRV e John Mayer.
+      Terze per il rock and roll, quarte per il soul-blues, unison bend per il pianto espressivo. Nelle tab,
+      le due note nella <em>stessa colonna</em> si suonano simultaneamente.
+    </div>
+    <div class="ex-grid" id="ex-doublestops-grid"></div>
+  </div>
+
   <!-- I MAESTRI -->
   <div id="tp-masters" class="tech-panel">
     <div class="masters-grid" id="masters-grid"></div>
@@ -7792,6 +7947,180 @@ async function tunerToggle() {
   }
 }
 
+// ─── MANICO LIVE DAL MICROFONO ────────────────────────────────────────────────
+// Riusa autocorrelate() e la stessa pipeline mic dell'accordatore, ma con stato
+// separato: accordatore e manico live possono essere usati indipendentemente.
+const MICFB = {
+  running: false, stream: null, ctx: null, analyser: null, buf: null,
+  rafId: null, frame: 0, built: false,
+  lastMidi: -1, lastSignalAt: 0,
+};
+const MICFB_HOLD_MS = 1200; // le note restano accese ~1.2s dopo l'ultimo segnale
+
+function micFbInit() {
+  if (MICFB.built) return;
+  const fb = document.getElementById('micfb-fretboard');
+  if (!fb) return;
+  const fretCount = 15;
+  const fretWidths = [0];
+  for (let f = 1; f <= fretCount; f++) fretWidths.push(Math.round(58 - f * 1.1));
+  const OPEN_COL_W = 40, NUT_W = 14;
+
+  // Riga numeri tasto
+  const numRow = document.createElement('div');
+  numRow.className = 'fret-numbers';
+  const openHdr = document.createElement('div');
+  openHdr.className = 'fret-num'; openHdr.style.width = OPEN_COL_W + 'px'; openHdr.textContent = '0';
+  numRow.appendChild(openHdr);
+  const nutHdr = document.createElement('div');
+  nutHdr.className = 'fret-num'; nutHdr.style.width = NUT_W + 'px';
+  numRow.appendChild(nutHdr);
+  for (let f = 1; f <= fretCount; f++) {
+    const d = document.createElement('div');
+    d.className = 'fret-num'; d.style.width = fretWidths[f] + 'px'; d.textContent = f;
+    numRow.appendChild(d);
+  }
+  fb.appendChild(numRow);
+
+  const strContainer = document.createElement('div');
+  strContainer.className = 'strings-container';
+  const STRING_HEIGHTS = ['0.65px', '0.85px', '1.1px', '1.5px', '1.9px', '2.3px'];
+
+  for (let s = 0; s < 6; s++) {
+    const row = document.createElement('div');
+    row.className = 'string-row';
+    row.style.setProperty('--str-h', STRING_HEIGHTS[s]);
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'string-name'; nameDiv.textContent = STRING_NAMES[s];
+    row.appendChild(nameDiv);
+
+    const mkDot = (fret) => {
+      const midi = OPEN_STRING_MIDI[s] + fret;
+      const dot = document.createElement('div');
+      dot.className = 'note-dot other';
+      if (fret === 0) { dot.style.width = '28px'; dot.style.height = '28px'; dot.style.fontSize = '9px'; }
+      dot.textContent = NOTES[midi % 12];
+      dot.dataset.midi = midi;
+      return dot;
+    };
+
+    const openCell = document.createElement('div');
+    openCell.className = 'open-col';
+    openCell.appendChild(mkDot(0));
+    row.appendChild(openCell);
+
+    const nut = document.createElement('div');
+    nut.className = 'nut-col';
+    row.appendChild(nut);
+
+    for (let f = 1; f <= fretCount; f++) {
+      const cell = document.createElement('div');
+      cell.className = 'fret-cell';
+      cell.style.width = fretWidths[f] + 'px';
+      cell.appendChild(mkDot(f));
+      row.appendChild(cell);
+    }
+    strContainer.appendChild(row);
+  }
+  fb.appendChild(strContainer);
+  MICFB.built = true;
+}
+
+function micFbHighlight(midi) {
+  const fb = document.getElementById('micfb-fretboard');
+  if (!fb) return;
+  const pc = ((midi % 12) + 12) % 12;
+  fb.querySelectorAll('.note-dot').forEach(d => {
+    const m = parseInt(d.dataset.midi);
+    d.classList.toggle('mic-hit', m === midi);
+    d.classList.toggle('mic-oct', m !== midi && m % 12 === pc);
+  });
+}
+
+function micFbClear() {
+  const fb = document.getElementById('micfb-fretboard');
+  if (fb) fb.querySelectorAll('.mic-hit, .mic-oct').forEach(d => d.classList.remove('mic-hit', 'mic-oct'));
+  MICFB.lastMidi = -1;
+}
+
+function micFbTick() {
+  if (!MICFB.running) return;
+  MICFB.rafId = requestAnimationFrame(micFbTick);
+  if (++MICFB.frame % 3 !== 0) return; // ~20fps di analisi
+  MICFB.analyser.getFloatTimeDomainData(MICFB.buf);
+  const freq = autocorrelate(MICFB.buf, MICFB.ctx.sampleRate);
+  const noteEl = document.getElementById('micfb-note');
+  const metaEl = document.getElementById('micfb-meta');
+  const now = performance.now();
+
+  if (freq > 0) {
+    const midiF = 12 * Math.log2(freq / TUNER.aRef) + 69;
+    const midi = Math.round(midiF);
+    const cents = Math.round((midiF - midi) * 100);
+    // Range chitarra (E2..~D6); fuori range = rumore, ignora
+    if (midi >= 38 && midi <= 86) {
+      MICFB.lastSignalAt = now;
+      if (midi !== MICFB.lastMidi) {
+        MICFB.lastMidi = midi;
+        micFbHighlight(midi);
+      }
+      const octave = Math.floor(midi / 12) - 1;
+      noteEl.textContent = NOTES[((midi % 12) + 12) % 12] + octave;
+      metaEl.textContent = `${freq.toFixed(1)} Hz · ${cents >= 0 ? '+' : ''}${cents} cent`;
+    }
+  } else if (MICFB.lastMidi !== -1 && now - MICFB.lastSignalAt > MICFB_HOLD_MS) {
+    micFbClear();
+    noteEl.textContent = '—';
+    metaEl.textContent = 'in ascolto…';
+  }
+}
+
+async function micFbToggle() {
+  const btn = document.getElementById('micfb-btn');
+  const metaEl = document.getElementById('micfb-meta');
+  if (MICFB.running) {
+    MICFB.running = false;
+    if (MICFB.rafId) cancelAnimationFrame(MICFB.rafId);
+    if (MICFB.stream) MICFB.stream.getTracks().forEach(t => t.stop());
+    if (MICFB.ctx) { try { MICFB.ctx.close(); } catch(e) {} }
+    MICFB.stream = null; MICFB.ctx = null; MICFB.analyser = null;
+    micFbClear();
+    document.getElementById('micfb-note').textContent = '—';
+    metaEl.textContent = 'in attesa…';
+    btn.textContent = '🎤 Avvia ascolto';
+    return;
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    metaEl.textContent = '⚠ microfono non supportato';
+    return;
+  }
+  btn.textContent = '⏳ …';
+  btn.disabled = true;
+  try {
+    MICFB.stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      video: false
+    });
+    MICFB.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (MICFB.ctx.state === 'suspended') await MICFB.ctx.resume();
+    MICFB.analyser = MICFB.ctx.createAnalyser();
+    MICFB.analyser.fftSize = 2048;
+    MICFB.buf = new Float32Array(MICFB.analyser.fftSize);
+    MICFB.ctx.createMediaStreamSource(MICFB.stream).connect(MICFB.analyser);
+    MICFB.running = true;
+    btn.textContent = '⏹ Ferma ascolto';
+    btn.disabled = false;
+    metaEl.textContent = 'in ascolto…';
+    micFbTick();
+  } catch (e) {
+    btn.textContent = '🎤 Avvia ascolto';
+    btn.disabled = false;
+    metaEl.textContent = e.name === 'NotAllowedError'
+      ? '⚠ permesso microfono negato'
+      : '⚠ errore: ' + (e.message || e.name);
+  }
+}
+
 // ─── TECNICA AVANZATA ─────────────────────────────────────────────────────────
 
 const NOTES_TECH = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -7917,14 +8246,14 @@ const TECH_EXERCISES = {
       tags:['tapping','arpeggio'] },
   ],
   skipping: [
-    { title:'Skip di 2 corde (Gilbert pattern)', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
-      tab:'e |--5-7-8-----------|\nB |------------------|\nG |------5-7-9-------|\nD |------------------|\nA |----------5-7-8---|\nE |------------------|',
-      tips:['Salta sempre 1 corda','Ancora la mano sul corpo della chitarra'],
-      tags:['string skipping','Paul Gilbert'] },
     { title:'Ottave skipping', diff:2, bpmSlow:70, bpmMid:100, bpmFast:130,
       tab:'e |--5---7---8---10--|\nB |------------------|\nG |--2---4---5---7---|\nD |------------------|\nA |------------------|\nE |------------------|',
       tips:['Muta con le dita della mano sinistra','Suona le due corde quasi insieme'],
       tags:['ottave','string skipping'] },
+    { title:'Skip di 2 corde (Gilbert pattern)', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
+      tab:'e |--5-7-8-----------|\nB |------------------|\nG |------5-7-9-------|\nD |------------------|\nA |----------5-7-8---|\nE |------------------|',
+      tips:['Salta sempre 1 corda','Ancora la mano sul corpo della chitarra'],
+      tags:['string skipping','Paul Gilbert'] },
     { title:'10e intervalli (Guthrie Govan)', diff:4, bpmSlow:50, bpmMid:75, bpmFast:100,
       tab:'e |----7-------9-------10----|\nB |--------------------------|\nG |--------------------------|\nD |----5-------7-------9-----|\nA |--------------------------|\nE |--------------------------|\n(corde D+e, skip di 2 corde: ogni coppia = 10ª suonata insieme)',
       tips:['10ª = ottava + terza (es. G→B)','Le due note di ogni coppia si suonano INSIEME (stessa colonna) — non in sequenza','Nota grave su D, la sua 10ª su e','Stira le dita gradualmente'],
@@ -7987,6 +8316,28 @@ const TECH_EXERCISES = {
       tab:'e |--5-8-5\\2-5-2----|--2-5-2/5-8-5----|\nB |--5-8-5\\2-5-2----|--2-5-2/5-8------|\nG |--5-7-5\\2-4-2----|--2-4-2/5-7------|\nD |-----------------|-----------------|\nA |-----------------|-----------------|\nE |-----------------|-----------------|',
       tips:['Misura 1: parti SUD (5° tasto) → scivola NORD (2° tasto)','Misura 2: parti NORD → scivola SUD','Il root La (5° tasto, 6ª corda) è la tua bussola: sempre presente nell\'orecchio','Vibrato lento sulle note finali, alla Mayer'],
       tags:['blues','frase lunga','John Mayer','Gravity','equator','avanzato'] },
+  ],
+  doublestops: [
+    { title:'Terze pentatoniche (Chuck Berry, La maggiore)', diff:2, bpmSlow:60, bpmMid:85, bpmFast:110,
+      tab:'e |----------------------|\nB |--2-2--5-5--2-2--5-5--|\nG |--2-2--6-6--2-2--6-6--|\nD |----------------------|\nA |----------------------|\nE |----------------------|',
+      tips:['Barra indice e anulare tenendo le due note perfettamente insieme','Attacca entrambe le corde con la stessa plettrata secca','Muta le corde adiacenti col palmo per un suono pulito rock and roll'],
+      tags:['double stop','terze','La maggiore','Chuck Berry'] },
+    { title:'Quarte alla Hendrix/Mayer (La minore)', diff:2, bpmSlow:65, bpmMid:90, bpmFast:115,
+      tab:'e |--5--8--10--8--5--|\nB |--5--8--10--8--5--|\nG |------------------|\nD |------------------|\nA |------------------|\nE |------------------|',
+      tips:['Stessa barra su corde B ed e: è la forma classica di Little Wing','Sali e scendi la pentatonica mantenendo le due note allineate','Prova hybrid picking (plettro su B, medio su e) per il colore Mayer'],
+      tags:['double stop','quarte','La minore','Hendrix','Mayer'] },
+    { title:'Double stop con slide (Wonderful Tonight / Berry)', diff:3, bpmSlow:55, bpmMid:80, bpmFast:105,
+      tab:'e |--2/5--5\\2--5/7--7\\5--|\nB |--2/5--5\\2--5/7--7\\5--|\nG |----------------------|\nD |----------------------|\nA |----------------------|\nE |----------------------|',
+      tips:['Fai scivolare la forma parallela senza staccare le dita','Lo slide di arrivo va fermato con precisione sul tasto giusto','Lascia respirare la nota finale con un vibrato leggero'],
+      tags:['double stop','slide','La maggiore','ballad'] },
+    { title:'Unison bend (La minore)', diff:3, bpmSlow:50, bpmMid:75, bpmFast:100,
+      tab:'e |--5------10------12-----|\nB |--8b-----13b-----15b----|\nG |------------------------|\nD |------------------------|\nA |------------------------|\nE |------------------------|',
+      tips:['La nota sul cantino è fissa: piega la B finché i due suoni si fondono','Ascolta il battimento sparire = intonazione perfetta','Rinforza il bending con medio e anulare dietro l\'indice'],
+      tags:['double stop','unison bend','La minore','blues'] },
+    { title:'Lick riassuntivo (Mayer/SRV, La minore)', diff:4, bpmSlow:55, bpmMid:75, bpmFast:95,
+      tab:'e |--5/8--8-------8----|\nB |--5/8--8--5----10b--|\nG |----------5---------|\nD |--------------------|\nA |--------------------|\nE |--------------------|',
+      tips:['Unisce quarte in slide, una terza e un unison bend finale','Il bend finale è di una terza minore (3 semitoni): da La a Do, all\'unisono col cantino','Chiudi con vibrato sull\'unison bend, alla John Mayer'],
+      tags:['double stop','lick','La minore','Mayer','SRV'] },
   ]
 };
 
@@ -8071,6 +8422,7 @@ function initTechPage() {
     { id:'dwps',      label:'Downward Pickslanting' },
     { id:'legato-phrasing', label:'Legato Phrasing' },
     { id:'equator',   label:'Equator Trick (Mayer)' },
+    { id:'doublestops', label:'Double Stops' },
     { id:'masters',   label:'I Maestri' },
   ];
   const tabsEl = document.getElementById('tech-tabs');
@@ -8104,7 +8456,7 @@ function initTechPage() {
     return parsed.map(p => p.tab ? `${p.label} |${p.body.padEnd(maxLen, '-')}|` : p.raw).join('\n');
   }
 
-  ['alternate','legato','tapping','skipping','dwps','legato-phrasing','equator'].forEach(key => {
+  ['alternate','legato','tapping','skipping','dwps','legato-phrasing','equator','doublestops'].forEach(key => {
     const grid = document.getElementById('ex-' + key + '-grid');
     if (!grid) return;
     grid.innerHTML = (TECH_EXERCISES[key] || []).map((ex, exIdx) => `
