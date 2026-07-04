@@ -8478,8 +8478,11 @@ function looperUI(status, ledClass) {
   if (led) led.className = 'looper-led' + (ledClass ? ' ' + ledClass : '');
   const has = !!LOOPER.buffer;
   const btn = (id, dis) => { const b = document.getElementById(id); if (b) b.disabled = dis; };
+  btn('loop-rec-btn', LOOPER.overdubbing); // REC bloccato solo durante un overdub
   btn('loop-play-btn', !has || LOOPER.recording);
-  btn('loop-dub-btn', !has || LOOPER.recording || !LOOPER.playing);
+  // OVERDUB deve restare cliccabile MENTRE si sovraincide (serve per fermarlo!):
+  // disabilitato solo se non c'è un loop, se il loop è fermo, o durante un REC semplice.
+  btn('loop-dub-btn', !has || !LOOPER.playing || (LOOPER.recording && !LOOPER.overdubbing));
   btn('loop-clear-btn', !has || LOOPER.recording || LOOPER.overdubbing);
   const rec = document.getElementById('loop-rec-btn');
   if (rec) rec.classList.toggle('recording', LOOPER.recording && !LOOPER.overdubbing);
