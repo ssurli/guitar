@@ -516,6 +516,7 @@
     background: rgba(239,68,68,0.14); border-color: #ef4444; color: #fca5a5;
     box-shadow: 0 0 12px rgba(239,68,68,0.35);
   }
+  #jam-single-btn.active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
   .jam-live-wrap { display: flex; align-items: center; gap: 8px; }
   .jam-live-note {
     font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1;
@@ -5429,6 +5430,8 @@ function makeJamDot(s, f, noteIndex, keyIndex, scale) {
   dot.dataset.pc = noteIndex;
   const midi = OPEN_STRING_MIDI[s] + f;
   dot.dataset.midi = midi;
+  dot.dataset.string = s;
+  dot.dataset.fret = f;
   dot.onclick = () => {
     playNote(midiToFreq(midi), getAudioCtx().currentTime, 0.6);
     dot.classList.add('playing');
@@ -5557,12 +5560,18 @@ const JLIVE = {
   running: false, stream: null, ctx: null, analyser: null, buf: null,
   rafId: null, frame: 0, lastMidi: -1, lastSignalAt: 0,
   hist: [],  // ultime letture MIDI grezze, per stabilizzare l'ottava (anti-jitter)
+  lastPos: null, // {s, f, at} ultima posizione evidenziata (per la modalità 1 posizione)
   trail: [], // note recenti {midi, at} per la scia di slide / note di passaggio
   showTrail: false, // scia disattivata di default: si evidenzia SOLO la nota suonata
 };
 const JLIVE_HOLD_MS = 900;   // la nota resta cerchiata ~0.9s dopo l'ultimo segnale
 const JLIVE_BEND_CENTS = 22; // scostamento oltre cui segnalo un bend/vibrato marcato
 const JLIVE_TRAIL_MS = 600;  // durata della scia (note di passaggio / slide)
+
+// Una nota (es. G3) vive su più corde in posizione unisona: sono lo STESSO suono,
+// non ottave diverse. Dal microfono non si sa quale corda è stata usata, quindi di
+// default ne evidenziamo UNA SOLA (interruttore per vederle tutte).
+let LIVE_SINGLE = true;
 
 // Anti-jitter d'ottava: il rilevatore su chitarra vera può saltare d'ottava per
 // un frame; restituiamo la nota PIÙ FREQUENTE tra le ultime letture così la
@@ -5577,6 +5586,37 @@ function stabilizePitch(hist, rawMidi) {
     if (counts[m] > bestN) { bestN = counts[m]; best = m; }
   }
   return best;
+}
+
+// Sceglie quali dot accendere per la nota rilevata (per pitch MIDI esatto).
+// In modalità "una posizione": se stai suonando una melodia sceglie l'unisono più
+// vicino alla nota precedente (segue la mano); per una nota isolata sceglie la
+// posizione più bassa (per una corda a vuoto = la corda a vuoto stessa).
+function livePickDots(fb, midi, state) {
+  const cands = [...fb.querySelectorAll('.note-dot')].filter(d => parseInt(d.dataset.midi) === midi);
+  if (!cands.length || !LIVE_SINGLE) return cands;
+  const now = performance.now();
+  const recent = state.lastPos && (now - state.lastPos.at < 1200);
+  let best = cands[0], bestScore = Infinity;
+  for (const d of cands) {
+    const s = parseInt(d.dataset.string), f = parseInt(d.dataset.fret);
+    const score = recent
+      ? Math.abs(f - state.lastPos.f) + Math.abs(s - state.lastPos.s) * 2 // segui la mano
+      : f * 10 + s;                                                       // nota isolata → più bassa
+    if (score < bestScore) { bestScore = score; best = d; }
+  }
+  state.lastPos = { s: parseInt(best.dataset.string), f: parseInt(best.dataset.fret), at: now };
+  return [best];
+}
+
+// Interruttore: 1 posizione ↔ tutte le posizioni unisone della nota
+function liveToggleSingle() {
+  LIVE_SINGLE = !LIVE_SINGLE;
+  const b = document.getElementById('jam-single-btn');
+  if (b) { b.textContent = LIVE_SINGLE ? '1 posizione' : 'Tutte'; b.classList.toggle('active', LIVE_SINGLE); }
+  JLIVE.lastPos = null; MICFB.lastPos = null;
+  if (JLIVE.running && JLIVE.lastMidi !== -1) jamLiveHighlight(JLIVE.lastMidi);
+  if (MICFB.running && MICFB.lastMidi !== -1) micFbHighlight(MICFB.lastMidi);
 }
 
 async function jamLiveToggle() {
@@ -5676,14 +5716,14 @@ function jamLiveTick() {
   if (JLIVE.showTrail) jamLiveRenderTrail(now); // aggiorna/decade la scia (se attiva)
 }
 
-// Cerchia sul manico jam SOLO la nota suonata (tutte le posizioni di quel pitch esatto,
-// non le altre ottave). Su chitarra lo stesso suono vive su più corde: sono unisoni,
-// non ottave diverse.
+// Cerchia sul manico jam la nota suonata: di default una sola posizione
+// (livePickDots), oppure tutti gli unisoni se LIVE_SINGLE è disattivato.
 function jamLiveHighlight(midi) {
   const fb = document.getElementById('jam-fretboard');
   if (!fb) return;
+  const chosen = new Set(livePickDots(fb, midi, JLIVE));
   fb.querySelectorAll('.note-dot').forEach(d => {
-    d.classList.toggle('live-exact', parseInt(d.dataset.midi) === midi);
+    d.classList.toggle('live-exact', chosen.has(d));
   });
 }
 
@@ -5706,6 +5746,7 @@ function jamLiveClear() {
   JLIVE.lastMidi = -1;
   JLIVE.trail = [];
   JLIVE.hist = [];
+  JLIVE.lastPos = null;
 }
 
 function jamInit() {
@@ -8067,6 +8108,7 @@ window.addEventListener('DOMContentLoaded', function() {
       <button data-fbmode="arp" onclick="jamSetFbMode('arp')">ARPEGGIO ACCORDO</button>
     </div>
     <button class="jam-live-btn" id="jam-live-btn" onclick="jamLiveToggle()">🎤 Suona live</button>
+    <button class="jam-live-btn active" id="jam-single-btn" onclick="liveToggleSingle()" title="Mostra una sola posizione della nota, invece di tutti i punti dove si può suonare">1 posizione</button>
     <div class="jam-now-wrap">
       <span class="jam-now-lbl">Ora suona</span>
       <span class="jam-now-chord" id="jam-now-chord">—</span>
@@ -8083,7 +8125,7 @@ window.addEventListener('DOMContentLoaded', function() {
     <span><i class="lg lg-seventh"></i>7ª</span>
     <span><i class="lg lg-live"></i>Nota che suoni (mic)</span>
     <span class="lg-hint">// attiva <strong>🎤 Suona live</strong>: la nota che suoni dal microfono si cerchia sul manico — vedi insieme scala e note reali</span>
-    <span class="lg-hint" style="color:var(--amber);font-weight:700">build v6 · 05-07 16:40</span>
+    <span class="lg-hint" style="color:var(--amber);font-weight:700">build v7 · 05-07 17:00</span>
   </div>
   <div class="fretboard-wrap">
     <div class="fretboard" id="jam-fretboard"></div>
@@ -8876,6 +8918,7 @@ const MICFB = {
   rafId: null, frame: 0, built: false,
   lastMidi: -1, lastSignalAt: 0,
   hist: [], // stabilizzazione d'ottava (anti-jitter), come JLIVE
+  lastPos: null, // ultima posizione evidenziata (modalità 1 posizione)
 };
 const MICFB_HOLD_MS = 1200; // le note restano accese ~1.2s dopo l'ultimo segnale
 
@@ -8923,6 +8966,8 @@ function micFbInit() {
       if (fret === 0) { dot.style.width = '28px'; dot.style.height = '28px'; dot.style.fontSize = '9px'; }
       dot.textContent = NOTES[midi % 12];
       dot.dataset.midi = midi;
+      dot.dataset.string = s;
+      dot.dataset.fret = fret;
       return dot;
     };
 
@@ -8951,9 +8996,10 @@ function micFbInit() {
 function micFbHighlight(midi) {
   const fb = document.getElementById('micfb-fretboard');
   if (!fb) return;
-  // Solo la nota suonata (posizione/i esatte), niente le altre ottave.
+  // Di default una sola posizione (livePickDots); niente le altre ottave.
+  const chosen = new Set(livePickDots(fb, midi, MICFB));
   fb.querySelectorAll('.note-dot').forEach(d => {
-    d.classList.toggle('mic-hit', parseInt(d.dataset.midi) === midi);
+    d.classList.toggle('mic-hit', chosen.has(d));
     d.classList.remove('mic-oct');
   });
 }
@@ -8963,6 +9009,7 @@ function micFbClear() {
   if (fb) fb.querySelectorAll('.mic-hit, .mic-oct').forEach(d => d.classList.remove('mic-hit', 'mic-oct'));
   MICFB.lastMidi = -1;
   MICFB.hist = [];
+  MICFB.lastPos = null;
 }
 
 function micFbTick() {
