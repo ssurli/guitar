@@ -501,7 +501,28 @@
   .jam-fb-legend .lg-third { background: var(--blue); }
   .jam-fb-legend .lg-fifth { background: var(--green); }
   .jam-fb-legend .lg-seventh { background: var(--purple); }
+  .jam-fb-legend .lg-live { background: transparent; box-shadow: 0 0 0 2px #fff, 0 0 8px #fff; }
   .jam-fb-legend .lg-hint { color: var(--text-dim); }
+
+  /* Pulsante mic "Suona live" + readout della nota suonata */
+  .jam-live-btn {
+    background: transparent; border: 1px solid var(--amber-dim); border-radius: 8px;
+    color: var(--text-mid); font-family: 'Space Mono', monospace; font-size: 12px;
+    padding: 7px 12px; cursor: pointer; white-space: nowrap;
+    transition: background .12s, color .12s, border-color .12s, box-shadow .12s;
+  }
+  .jam-live-btn:hover { color: var(--amber); border-color: var(--amber); }
+  .jam-live-btn.live-on {
+    background: rgba(239,68,68,0.14); border-color: #ef4444; color: #fca5a5;
+    box-shadow: 0 0 12px rgba(239,68,68,0.35);
+  }
+  .jam-live-wrap { display: flex; align-items: center; gap: 8px; }
+  .jam-live-note {
+    font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1;
+    color: #fff; min-width: 54px; text-align: center;
+    padding: 5px 14px; border: 1px solid rgba(255,255,255,0.4); border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+  }
 
   /* chord-aware highlighting: dim non-chord scale tones, light up chord tones */
   #jam-fretboard .note-dot {
@@ -517,6 +538,29 @@
   }
   /* Modalità arpeggio: nasconde del tutto le note fuori dall'accordo corrente */
   #jam-fretboard.arp-mode .note-dot.chord-dim { display: none; }
+
+  /* ── MANICO LIVE integrato: la nota rilevata dal microfono ──
+     live-pc  = stessa nota, altra ottava (cerchio bianco sottile)
+     live-exact = posizione esatta suonata (cerchio bianco pulsante)
+     Restano visibili anche se attenuate/nascoste da arp-mode/chord-dim. */
+  #jam-fretboard .note-dot.live-pc,
+  #jam-fretboard .note-dot.live-exact {
+    display: flex !important; opacity: 1 !important; filter: none !important;
+    z-index: 8;
+  }
+  #jam-fretboard .note-dot.live-pc {
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.85);
+    transform: scale(1.02);
+  }
+  #jam-fretboard .note-dot.live-exact {
+    box-shadow: 0 0 0 3px #fff, 0 0 14px 2px rgba(255,255,255,0.8);
+    transform: scale(1.16);
+    animation: jamLivePulse 0.7s ease-in-out infinite;
+  }
+  @keyframes jamLivePulse {
+    0%,100% { box-shadow: 0 0 0 3px #fff, 0 0 12px 1px rgba(255,255,255,0.7); }
+    50%     { box-shadow: 0 0 0 3px #fff, 0 0 20px 4px rgba(255,255,255,0.95); }
+  }
 
   /* ── SISTEMA CONNESSO CAGED ── */
   .csys-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -5364,6 +5408,7 @@ function makeJamDot(s, f, noteIndex, keyIndex, scale) {
   dot.textContent = NOTES[noteIndex];
   dot.dataset.pc = noteIndex;
   const midi = OPEN_STRING_MIDI[s] + f;
+  dot.dataset.midi = midi;
   dot.onclick = () => {
     playNote(midiToFreq(midi), getAudioCtx().currentTime, 0.6);
     dot.classList.add('playing');
@@ -5451,6 +5496,8 @@ function renderJamFretboard() {
     const badge = document.getElementById('jam-now-chord');
     if (badge) badge.textContent = '—';
   }
+  // Manico live attivo: i dot sono stati ricreati → forza il re-highlight al prossimo tick
+  if (JLIVE.running) JLIVE.lastMidi = -1;
 }
 
 // Accende i toni dell'accordo corrente, attenua le altre note della scala
@@ -5479,6 +5526,109 @@ function jamClearChordHighlight() {
   const badge = document.getElementById('jam-now-chord');
   if (badge) badge.textContent = '—';
   _jamChordIdx = -1;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MANICO LIVE INTEGRATO — sovrappone al manico jam la nota suonata dal microfono,
+// così vedi allo stesso tempo le note consigliate (scala/arpeggio) e quello che
+// stai realmente suonando. Riusa autocorrelate() (rilevatore YIN condiviso).
+// ═══════════════════════════════════════════════════════════════════════════════
+const JLIVE = {
+  running: false, stream: null, ctx: null, analyser: null, buf: null,
+  rafId: null, frame: 0, lastMidi: -1, lastSignalAt: 0,
+};
+const JLIVE_HOLD_MS = 900; // la nota resta cerchiata ~0.9s dopo l'ultimo segnale
+
+async function jamLiveToggle() {
+  const btn = document.getElementById('jam-live-btn');
+  const wrap = document.getElementById('jam-live-wrap');
+  const noteEl = document.getElementById('jam-live-note');
+  if (JLIVE.running) {
+    JLIVE.running = false;
+    if (JLIVE.rafId) cancelAnimationFrame(JLIVE.rafId);
+    if (JLIVE.stream) JLIVE.stream.getTracks().forEach(t => t.stop());
+    if (JLIVE.ctx) { try { JLIVE.ctx.close(); } catch (e) {} }
+    JLIVE.stream = JLIVE.ctx = JLIVE.analyser = null;
+    jamLiveClear();
+    btn.textContent = '🎤 Suona live';
+    btn.classList.remove('live-on');
+    if (wrap) wrap.style.display = 'none';
+    if (noteEl) noteEl.textContent = '—';
+    return;
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    btn.textContent = '⚠ mic non supportato';
+    return;
+  }
+  btn.textContent = '⏳ …';
+  btn.disabled = true;
+  try {
+    JLIVE.stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true },
+      video: false
+    });
+    JLIVE.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (JLIVE.ctx.state === 'suspended') await JLIVE.ctx.resume();
+    JLIVE.analyser = JLIVE.ctx.createAnalyser();
+    JLIVE.analyser.fftSize = 2048;
+    JLIVE.buf = new Float32Array(JLIVE.analyser.fftSize);
+    JLIVE.ctx.createMediaStreamSource(JLIVE.stream).connect(JLIVE.analyser);
+    JLIVE.running = true;
+    JLIVE.lastMidi = -1;
+    btn.textContent = '⏹ Stop live';
+    btn.classList.add('live-on');
+    btn.disabled = false;
+    if (wrap) wrap.style.display = 'flex';
+    if (noteEl) noteEl.textContent = '…';
+    jamLiveTick();
+  } catch (e) {
+    btn.textContent = '🎤 Suona live';
+    btn.disabled = false;
+    if (noteEl) noteEl.textContent = e.name === 'NotAllowedError' ? '⚠ negato' : '⚠';
+  }
+}
+
+function jamLiveTick() {
+  if (!JLIVE.running) return;
+  JLIVE.rafId = requestAnimationFrame(jamLiveTick);
+  if (++JLIVE.frame % 3 !== 0) return; // ~20fps di analisi
+  JLIVE.analyser.getFloatTimeDomainData(JLIVE.buf);
+  const freq = autocorrelate(JLIVE.buf, JLIVE.ctx.sampleRate);
+  const noteEl = document.getElementById('jam-live-note');
+  const now = performance.now();
+  if (freq > 0) {
+    const midi = Math.round(12 * Math.log2(freq / TUNER.aRef) + 69);
+    if (midi >= 38 && midi <= 86) { // range chitarra
+      JLIVE.lastSignalAt = now;
+      if (midi !== JLIVE.lastMidi) {
+        JLIVE.lastMidi = midi;
+        jamLiveHighlight(midi);
+        const octave = Math.floor(midi / 12) - 1;
+        if (noteEl) noteEl.textContent = NOTES[((midi % 12) + 12) % 12] + octave;
+      }
+    }
+  } else if (JLIVE.lastMidi !== -1 && now - JLIVE.lastSignalAt > JLIVE_HOLD_MS) {
+    jamLiveClear();
+    if (noteEl) noteEl.textContent = '—';
+  }
+}
+
+// Cerchia sul manico jam: posizione esatta (live-exact) + stessa nota altre ottave (live-pc)
+function jamLiveHighlight(midi) {
+  const fb = document.getElementById('jam-fretboard');
+  if (!fb) return;
+  const pc = ((midi % 12) + 12) % 12;
+  fb.querySelectorAll('.note-dot').forEach(d => {
+    const m = parseInt(d.dataset.midi);
+    d.classList.toggle('live-exact', m === midi);
+    d.classList.toggle('live-pc', m !== midi && parseInt(d.dataset.pc) === pc);
+  });
+}
+
+function jamLiveClear() {
+  const fb = document.getElementById('jam-fretboard');
+  if (fb) fb.querySelectorAll('.live-exact, .live-pc').forEach(d => d.classList.remove('live-exact', 'live-pc'));
+  JLIVE.lastMidi = -1;
 }
 
 function jamInit() {
@@ -7833,15 +7983,20 @@ window.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 
-  <!-- ── MANICO LIVE: scala suggerita + toni dell'accordo in tempo reale ── -->
+  <!-- ── MANICO LIVE: scala suggerita + toni dell'accordo + nota suonata dal mic ── -->
   <div class="jam-fb-header">
     <div class="jam-fb-toggle" id="jam-fb-toggle">
       <button class="active" data-fbmode="scale" onclick="jamSetFbMode('scale')">SCALA</button>
       <button data-fbmode="arp" onclick="jamSetFbMode('arp')">ARPEGGIO ACCORDO</button>
     </div>
+    <button class="jam-live-btn" id="jam-live-btn" onclick="jamLiveToggle()">🎤 Suona live</button>
     <div class="jam-now-wrap">
       <span class="jam-now-lbl">Ora suona</span>
       <span class="jam-now-chord" id="jam-now-chord">—</span>
+    </div>
+    <div class="jam-live-wrap" id="jam-live-wrap" style="display:none">
+      <span class="jam-now-lbl">Stai suonando</span>
+      <span class="jam-live-note" id="jam-live-note">—</span>
     </div>
   </div>
   <div class="jam-fb-legend">
@@ -7849,7 +8004,8 @@ window.addEventListener('DOMContentLoaded', function() {
     <span><i class="lg lg-third"></i>3ª</span>
     <span><i class="lg lg-fifth"></i>5ª</span>
     <span><i class="lg lg-seventh"></i>7ª</span>
-    <span class="lg-hint">// con la base in play, le note dell'<strong>accordo corrente</strong> si illuminano — punta quelle</span>
+    <span><i class="lg lg-live"></i>Nota che suoni (mic)</span>
+    <span class="lg-hint">// attiva <strong>🎤 Suona live</strong>: la nota che suoni dal microfono si cerchia sul manico — vedi insieme scala e note reali</span>
   </div>
   <div class="fretboard-wrap">
     <div class="fretboard" id="jam-fretboard"></div>
