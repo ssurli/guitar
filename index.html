@@ -8124,8 +8124,7 @@ window.addEventListener('DOMContentLoaded', function() {
     </div>
 
     <div class="jam-fb-legend">
-      <span><i class="lg" style="background:var(--amber)"></i>Posizione esatta (stessa ottava)</span>
-      <span><i class="lg" style="background:#3b82f6"></i>Stessa nota, altra ottava</span>
+      <span><i class="lg" style="background:var(--amber)"></i>La nota che stai suonando</span>
       <span class="lg-hint">// funziona meglio con note singole e pulite · latenza minima</span>
     </div>
 
@@ -8134,9 +8133,9 @@ window.addEventListener('DOMContentLoaded', function() {
     </div>
 
     <div class="hint-box" style="font-size:12px;max-width:720px">
-      <strong>Come usarlo:</strong> suona una nota alla volta sulla chitarra. La posizione con la stessa
-      ottava si accende in ambra, le altre posizioni della stessa nota in blu — utile per scoprire dove
-      ritrovare la stessa nota lungo il manico. Con gli accordi la rilevazione cattura solo la nota dominante.
+      <strong>Come usarlo:</strong> suona una nota alla volta sulla chitarra: si accende in ambra la
+      posizione (o le posizioni unisone) della nota che stai suonando — solo quella, non le altre ottave.
+      Con gli accordi la rilevazione cattura solo la nota dominante.
     </div>
   </div><!-- /bpage-micfb -->
   <div id="bpage-looper" class="cpage-view">
@@ -8927,11 +8926,10 @@ function micFbInit() {
 function micFbHighlight(midi) {
   const fb = document.getElementById('micfb-fretboard');
   if (!fb) return;
-  const pc = ((midi % 12) + 12) % 12;
+  // Solo la nota suonata (posizione/i esatte), niente le altre ottave.
   fb.querySelectorAll('.note-dot').forEach(d => {
-    const m = parseInt(d.dataset.midi);
-    d.classList.toggle('mic-hit', m === midi);
-    d.classList.toggle('mic-oct', m !== midi && m % 12 === pc);
+    d.classList.toggle('mic-hit', parseInt(d.dataset.midi) === midi);
+    d.classList.remove('mic-oct');
   });
 }
 
