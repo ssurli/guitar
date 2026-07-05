@@ -5556,12 +5556,28 @@ function jamClearChordHighlight() {
 const JLIVE = {
   running: false, stream: null, ctx: null, analyser: null, buf: null,
   rafId: null, frame: 0, lastMidi: -1, lastSignalAt: 0,
+  hist: [],  // ultime letture MIDI grezze, per stabilizzare l'ottava (anti-jitter)
   trail: [], // note recenti {midi, at} per la scia di slide / note di passaggio
   showTrail: false, // scia disattivata di default: si evidenzia SOLO la nota suonata
 };
 const JLIVE_HOLD_MS = 900;   // la nota resta cerchiata ~0.9s dopo l'ultimo segnale
 const JLIVE_BEND_CENTS = 22; // scostamento oltre cui segnalo un bend/vibrato marcato
 const JLIVE_TRAIL_MS = 600;  // durata della scia (note di passaggio / slide)
+
+// Anti-jitter d'ottava: il rilevatore su chitarra vera può saltare d'ottava per
+// un frame; restituiamo la nota PIÙ FREQUENTE tra le ultime letture così la
+// posizione evidenziata resta stabile e non "lampeggia" su più ottave.
+function stabilizePitch(hist, rawMidi) {
+  hist.push(rawMidi);
+  if (hist.length > 5) hist.shift();
+  const counts = {};
+  let best = rawMidi, bestN = 0;
+  for (const m of hist) {
+    counts[m] = (counts[m] || 0) + 1;
+    if (counts[m] > bestN) { bestN = counts[m]; best = m; }
+  }
+  return best;
+}
 
 async function jamLiveToggle() {
   const btn = document.getElementById('jam-live-btn');
@@ -5624,9 +5640,10 @@ function jamLiveTick() {
   const now = performance.now();
   if (freq > 0) {
     const midiF = 12 * Math.log2(freq / TUNER.aRef) + 69;
-    const midi = Math.round(midiF);
-    const cents = Math.round((midiF - midi) * 100);
-    if (midi >= 38 && midi <= 86) { // range chitarra
+    const rawMidi = Math.round(midiF);
+    if (rawMidi >= 38 && rawMidi <= 86) { // range chitarra
+      const midi = stabilizePitch(JLIVE.hist, rawMidi); // nota stabilizzata (anti salto d'ottava)
+      const cents = Math.round((midiF - midi) * 100);
       JLIVE.lastSignalAt = now;
       if (midi !== JLIVE.lastMidi) {
         // Nota cambiata: la precedente diventa "scia" (slide / nota di passaggio) — solo se attiva
@@ -5637,11 +5654,13 @@ function jamLiveTick() {
         JLIVE.lastMidi = midi;
         jamLiveHighlight(midi);
       }
-      // Readout: nota + eventuale bend (scostamento marcato dalla nota temperata)
+      // Readout: nota + eventuale bend. Il bend si mostra solo se il pitch grezzo è
+      // vicino alla nota stabilizzata (durante un salto d'ottava lo scostamento è
+      // enorme e va ignorato).
       if (noteEl) {
         const octave = Math.floor(midi / 12) - 1;
         const name = NOTES[((midi % 12) + 12) % 12] + octave;
-        if (Math.abs(cents) >= JLIVE_BEND_CENTS) {
+        if (Math.abs(cents) >= JLIVE_BEND_CENTS && Math.abs(cents) <= 70) {
           noteEl.textContent = `${name} ${cents > 0 ? '↗' : '↘'}${Math.abs(cents)}¢`;
           noteEl.classList.add('bending');
         } else {
@@ -5686,6 +5705,7 @@ function jamLiveClear() {
   if (fb) fb.querySelectorAll('.live-exact, .live-trail').forEach(d => d.classList.remove('live-exact', 'live-trail'));
   JLIVE.lastMidi = -1;
   JLIVE.trail = [];
+  JLIVE.hist = [];
 }
 
 function jamInit() {
@@ -8063,6 +8083,7 @@ window.addEventListener('DOMContentLoaded', function() {
     <span><i class="lg lg-seventh"></i>7ª</span>
     <span><i class="lg lg-live"></i>Nota che suoni (mic)</span>
     <span class="lg-hint">// attiva <strong>🎤 Suona live</strong>: la nota che suoni dal microfono si cerchia sul manico — vedi insieme scala e note reali</span>
+    <span class="lg-hint" style="color:var(--amber);font-weight:700">build v6 · 05-07 16:40</span>
   </div>
   <div class="fretboard-wrap">
     <div class="fretboard" id="jam-fretboard"></div>
@@ -8854,6 +8875,7 @@ const MICFB = {
   running: false, stream: null, ctx: null, analyser: null, buf: null,
   rafId: null, frame: 0, built: false,
   lastMidi: -1, lastSignalAt: 0,
+  hist: [], // stabilizzazione d'ottava (anti-jitter), come JLIVE
 };
 const MICFB_HOLD_MS = 1200; // le note restano accese ~1.2s dopo l'ultimo segnale
 
@@ -8940,6 +8962,7 @@ function micFbClear() {
   const fb = document.getElementById('micfb-fretboard');
   if (fb) fb.querySelectorAll('.mic-hit, .mic-oct').forEach(d => d.classList.remove('mic-hit', 'mic-oct'));
   MICFB.lastMidi = -1;
+  MICFB.hist = [];
 }
 
 function micFbTick() {
@@ -8954,10 +8977,11 @@ function micFbTick() {
 
   if (freq > 0) {
     const midiF = 12 * Math.log2(freq / TUNER.aRef) + 69;
-    const midi = Math.round(midiF);
-    const cents = Math.round((midiF - midi) * 100);
+    const rawMidi = Math.round(midiF);
     // Range chitarra (E2..~D6); fuori range = rumore, ignora
-    if (midi >= 38 && midi <= 86) {
+    if (rawMidi >= 38 && rawMidi <= 86) {
+      const midi = stabilizePitch(MICFB.hist, rawMidi); // anti salto d'ottava
+      const cents = Math.round((midiF - midi) * 100);
       MICFB.lastSignalAt = now;
       if (midi !== MICFB.lastMidi) {
         MICFB.lastMidi = midi;
@@ -8965,7 +8989,7 @@ function micFbTick() {
       }
       const octave = Math.floor(midi / 12) - 1;
       noteEl.textContent = NOTES[((midi % 12) + 12) % 12] + octave;
-      metaEl.textContent = `${freq.toFixed(1)} Hz · ${cents >= 0 ? '+' : ''}${cents} cent`;
+      metaEl.textContent = `${freq.toFixed(1)} Hz · ${Math.abs(cents) <= 60 ? (cents >= 0 ? '+' : '') + cents + ' cent' : '…'}`;
     }
   } else if (MICFB.lastMidi !== -1 && now - MICFB.lastSignalAt > MICFB_HOLD_MS) {
     micFbClear();
