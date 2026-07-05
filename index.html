@@ -5557,6 +5557,7 @@ const JLIVE = {
   running: false, stream: null, ctx: null, analyser: null, buf: null,
   rafId: null, frame: 0, lastMidi: -1, lastSignalAt: 0,
   trail: [], // note recenti {midi, at} per la scia di slide / note di passaggio
+  showTrail: false, // scia disattivata di default: si evidenzia SOLO la nota suonata
 };
 const JLIVE_HOLD_MS = 900;   // la nota resta cerchiata ~0.9s dopo l'ultimo segnale
 const JLIVE_BEND_CENTS = 22; // scostamento oltre cui segnalo un bend/vibrato marcato
@@ -5628,9 +5629,11 @@ function jamLiveTick() {
     if (midi >= 38 && midi <= 86) { // range chitarra
       JLIVE.lastSignalAt = now;
       if (midi !== JLIVE.lastMidi) {
-        // Nota cambiata: la precedente diventa "scia" (slide / nota di passaggio)
-        if (JLIVE.lastMidi !== -1) JLIVE.trail.push({ midi: JLIVE.lastMidi, at: now });
-        if (JLIVE.trail.length > 6) JLIVE.trail.shift();
+        // Nota cambiata: la precedente diventa "scia" (slide / nota di passaggio) — solo se attiva
+        if (JLIVE.showTrail && JLIVE.lastMidi !== -1) {
+          JLIVE.trail.push({ midi: JLIVE.lastMidi, at: now });
+          if (JLIVE.trail.length > 6) JLIVE.trail.shift();
+        }
         JLIVE.lastMidi = midi;
         jamLiveHighlight(midi);
       }
@@ -5651,7 +5654,7 @@ function jamLiveTick() {
     jamLiveClear();
     if (noteEl) { noteEl.textContent = '—'; noteEl.classList.remove('bending'); }
   }
-  jamLiveRenderTrail(now); // aggiorna/decade la scia a ogni tick
+  if (JLIVE.showTrail) jamLiveRenderTrail(now); // aggiorna/decade la scia (se attiva)
 }
 
 // Cerchia sul manico jam SOLO la nota suonata (tutte le posizioni di quel pitch esatto,
