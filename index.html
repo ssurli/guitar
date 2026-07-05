@@ -540,27 +540,47 @@
   #jam-fretboard.arp-mode .note-dot.chord-dim { display: none; }
 
   /* ── MANICO LIVE integrato: la nota rilevata dal microfono ──
-     live-pc  = stessa nota, altra ottava (cerchio bianco sottile)
-     live-exact = posizione esatta suonata (cerchio bianco pulsante)
+     live-exact = la nota che stai suonando (cerchio bianco pulsante; su chitarra
+                  lo stesso pitch vive su più corde → più posizioni unisone)
+     live-trail = scia breve delle note appena suonate (slide / note di passaggio)
      Restano visibili anche se attenuate/nascoste da arp-mode/chord-dim. */
-  #jam-fretboard .note-dot.live-pc,
-  #jam-fretboard .note-dot.live-exact {
-    display: flex !important; opacity: 1 !important; filter: none !important;
+  /* Quando il mic è attivo, le note SUGGERITE passano in secondo piano così la
+     nota che stai suonando domina visivamente. */
+  #jam-fretboard.live-active .note-dot { opacity: 0.4; filter: saturate(0.7); }
+  #jam-fretboard.live-active .note-dot.chord-tone { opacity: 0.62; }
+
+  #jam-fretboard .note-dot.live-exact,
+  #jam-fretboard .note-dot.live-trail {
+    display: flex !important; filter: none !important;
     z-index: 8;
   }
-  #jam-fretboard .note-dot.live-pc {
-    box-shadow: 0 0 0 2px rgba(255,255,255,0.85);
-    transform: scale(1.02);
-  }
+  /* LA NOTA CHE SUONI — la più prominente in assoluto: grande, cerchio bianco
+     spesso, alone luminoso pulsante, testo nitido sopra ogni suggerimento. */
   #jam-fretboard .note-dot.live-exact {
-    box-shadow: 0 0 0 3px #fff, 0 0 14px 2px rgba(255,255,255,0.8);
-    transform: scale(1.16);
+    opacity: 1 !important;
+    color: #fff !important;
+    box-shadow: 0 0 0 4px #fff, 0 0 22px 5px rgba(255,255,255,0.95);
+    transform: scale(1.42);
+    z-index: 10;
     animation: jamLivePulse 0.7s ease-in-out infinite;
   }
   @keyframes jamLivePulse {
-    0%,100% { box-shadow: 0 0 0 3px #fff, 0 0 12px 1px rgba(255,255,255,0.7); }
-    50%     { box-shadow: 0 0 0 3px #fff, 0 0 20px 4px rgba(255,255,255,0.95); }
+    0%,100% { box-shadow: 0 0 0 4px #fff, 0 0 16px 3px rgba(255,255,255,0.8); transform: scale(1.36); }
+    50%     { box-shadow: 0 0 0 4px #fff, 0 0 30px 7px rgba(255,255,255,1);   transform: scale(1.46); }
   }
+  /* scia: cerchio sottile che sfuma via — traccia il movimento di slide/passaggio */
+  #jam-fretboard .note-dot.live-trail {
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.55);
+    transform: scale(1.02);
+    opacity: 0.7 !important;
+    animation: jamTrailFade var(--jlive-trail, 0.6s) linear forwards;
+  }
+  @keyframes jamTrailFade {
+    from { box-shadow: 0 0 0 2px rgba(255,255,255,0.7); opacity: 0.85; }
+    to   { box-shadow: 0 0 0 2px rgba(255,255,255,0);   opacity: 0.25; }
+  }
+  /* readout "Stai suonando" durante un bend */
+  .jam-live-note.bending { color: #67e8f9; border-color: #22d3ee; background: rgba(34,211,238,0.12); }
 
   /* ── SISTEMA CONNESSO CAGED ── */
   .csys-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -5536,8 +5556,11 @@ function jamClearChordHighlight() {
 const JLIVE = {
   running: false, stream: null, ctx: null, analyser: null, buf: null,
   rafId: null, frame: 0, lastMidi: -1, lastSignalAt: 0,
+  trail: [], // note recenti {midi, at} per la scia di slide / note di passaggio
 };
-const JLIVE_HOLD_MS = 900; // la nota resta cerchiata ~0.9s dopo l'ultimo segnale
+const JLIVE_HOLD_MS = 900;   // la nota resta cerchiata ~0.9s dopo l'ultimo segnale
+const JLIVE_BEND_CENTS = 22; // scostamento oltre cui segnalo un bend/vibrato marcato
+const JLIVE_TRAIL_MS = 600;  // durata della scia (note di passaggio / slide)
 
 async function jamLiveToggle() {
   const btn = document.getElementById('jam-live-btn');
@@ -5550,6 +5573,7 @@ async function jamLiveToggle() {
     if (JLIVE.ctx) { try { JLIVE.ctx.close(); } catch (e) {} }
     JLIVE.stream = JLIVE.ctx = JLIVE.analyser = null;
     jamLiveClear();
+    document.getElementById('jam-fretboard')?.classList.remove('live-active');
     btn.textContent = '🎤 Suona live';
     btn.classList.remove('live-on');
     if (wrap) wrap.style.display = 'none';
@@ -5575,6 +5599,7 @@ async function jamLiveToggle() {
     JLIVE.ctx.createMediaStreamSource(JLIVE.stream).connect(JLIVE.analyser);
     JLIVE.running = true;
     JLIVE.lastMidi = -1;
+    document.getElementById('jam-fretboard')?.classList.add('live-active');
     btn.textContent = '⏹ Stop live';
     btn.classList.add('live-on');
     btn.disabled = false;
@@ -5597,38 +5622,67 @@ function jamLiveTick() {
   const noteEl = document.getElementById('jam-live-note');
   const now = performance.now();
   if (freq > 0) {
-    const midi = Math.round(12 * Math.log2(freq / TUNER.aRef) + 69);
+    const midiF = 12 * Math.log2(freq / TUNER.aRef) + 69;
+    const midi = Math.round(midiF);
+    const cents = Math.round((midiF - midi) * 100);
     if (midi >= 38 && midi <= 86) { // range chitarra
       JLIVE.lastSignalAt = now;
       if (midi !== JLIVE.lastMidi) {
+        // Nota cambiata: la precedente diventa "scia" (slide / nota di passaggio)
+        if (JLIVE.lastMidi !== -1) JLIVE.trail.push({ midi: JLIVE.lastMidi, at: now });
+        if (JLIVE.trail.length > 6) JLIVE.trail.shift();
         JLIVE.lastMidi = midi;
         jamLiveHighlight(midi);
+      }
+      // Readout: nota + eventuale bend (scostamento marcato dalla nota temperata)
+      if (noteEl) {
         const octave = Math.floor(midi / 12) - 1;
-        if (noteEl) noteEl.textContent = NOTES[((midi % 12) + 12) % 12] + octave;
+        const name = NOTES[((midi % 12) + 12) % 12] + octave;
+        if (Math.abs(cents) >= JLIVE_BEND_CENTS) {
+          noteEl.textContent = `${name} ${cents > 0 ? '↗' : '↘'}${Math.abs(cents)}¢`;
+          noteEl.classList.add('bending');
+        } else {
+          noteEl.textContent = name;
+          noteEl.classList.remove('bending');
+        }
       }
     }
   } else if (JLIVE.lastMidi !== -1 && now - JLIVE.lastSignalAt > JLIVE_HOLD_MS) {
     jamLiveClear();
-    if (noteEl) noteEl.textContent = '—';
+    if (noteEl) { noteEl.textContent = '—'; noteEl.classList.remove('bending'); }
   }
+  jamLiveRenderTrail(now); // aggiorna/decade la scia a ogni tick
 }
 
-// Cerchia sul manico jam: posizione esatta (live-exact) + stessa nota altre ottave (live-pc)
+// Cerchia sul manico jam SOLO la nota suonata (tutte le posizioni di quel pitch esatto,
+// non le altre ottave). Su chitarra lo stesso suono vive su più corde: sono unisoni,
+// non ottave diverse.
 function jamLiveHighlight(midi) {
   const fb = document.getElementById('jam-fretboard');
   if (!fb) return;
-  const pc = ((midi % 12) + 12) % 12;
+  fb.querySelectorAll('.note-dot').forEach(d => {
+    d.classList.toggle('live-exact', parseInt(d.dataset.midi) === midi);
+  });
+}
+
+// Scia delle note appena suonate → visualizza slide e note di passaggio brevi
+function jamLiveRenderTrail(now) {
+  const fb = document.getElementById('jam-fretboard');
+  if (!fb) return;
+  JLIVE.trail = JLIVE.trail.filter(t => now - t.at < JLIVE_TRAIL_MS);
+  const trailMidis = new Set(JLIVE.trail.map(t => t.midi));
   fb.querySelectorAll('.note-dot').forEach(d => {
     const m = parseInt(d.dataset.midi);
-    d.classList.toggle('live-exact', m === midi);
-    d.classList.toggle('live-pc', m !== midi && parseInt(d.dataset.pc) === pc);
+    const isTrail = trailMidis.has(m) && !d.classList.contains('live-exact');
+    d.classList.toggle('live-trail', isTrail);
   });
 }
 
 function jamLiveClear() {
   const fb = document.getElementById('jam-fretboard');
-  if (fb) fb.querySelectorAll('.live-exact, .live-pc').forEach(d => d.classList.remove('live-exact', 'live-pc'));
+  if (fb) fb.querySelectorAll('.live-exact, .live-trail').forEach(d => d.classList.remove('live-exact', 'live-trail'));
   JLIVE.lastMidi = -1;
+  JLIVE.trail = [];
 }
 
 function jamInit() {
