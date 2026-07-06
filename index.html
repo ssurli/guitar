@@ -2655,6 +2655,85 @@
   /* 9. Selezione testo brandizzata */
   ::selection { background: rgba(245,158,11,.3); color: #fde68a; }
 
+  /* ═══ DIPINGI NOTE — tela, strumenti, tavolozza ═══ */
+  #paint-canvas { position: absolute; z-index: 5; touch-action: none; cursor: crosshair; }
+  #paint-fretboard .note-dot { pointer-events: none; cursor: default; }
+  #paint-fretboard .note-dot:hover { transform: none; }
+  /* layer scala in versione "ghost": leggibile ma recessivo, la pittura deve emergere */
+  #page-paint .paint-sdot { opacity: .45; filter: saturate(.65); box-shadow: none; }
+  #page-paint.paint-hide-scale .paint-sdot { visibility: hidden; }
+
+  .paint-panel {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 9px;
+  }
+  .paint-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .paint-row-label {
+    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 1px; flex: 0 0 auto; min-width: 72px;
+  }
+  .ptool-btn {
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text-mid);
+    border-radius: 8px; padding: 7px 10px; font-family: 'Space Mono', monospace;
+    font-size: 11px; cursor: pointer; display: inline-flex; align-items: center;
+    gap: 5px; min-height: 36px; transition: border-color .15s, color .15s, background .15s, box-shadow .15s;
+    white-space: nowrap;
+  }
+  .ptool-btn:hover { border-color: var(--amber-dim); color: var(--text); }
+  .ptool-btn.active {
+    background: var(--amber-glow); border-color: var(--amber); color: var(--amber);
+    box-shadow: 0 0 10px rgba(245,158,11,.22);
+  }
+  .ptool-btn:disabled { opacity: .35; cursor: default; box-shadow: none; }
+  .pswatch {
+    width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,.14);
+    cursor: pointer; padding: 0; flex: 0 0 auto; transition: transform .12s;
+    box-shadow: inset 0 2px 3px rgba(255,255,255,.3), inset 0 -2px 3px rgba(0,0,0,.4);
+  }
+  .pswatch:hover { transform: scale(1.18); }
+  #paint-color {
+    width: 36px; height: 32px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--bg3); cursor: pointer; padding: 2px;
+  }
+  #paint-size { accent-color: var(--amber); width: 90px; }
+  .paint-presets {
+    display: flex; gap: 6px; overflow-x: auto; padding-bottom: 3px;
+    -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+    scrollbar-color: var(--amber-dim) transparent; flex: 1 1 auto; min-width: 0;
+  }
+  #paint-name {
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 8px 9px; font-family: 'Space Mono', monospace;
+    font-size: 11px; min-width: 110px; flex: 1 1 110px; max-width: 190px;
+  }
+  #paint-saved { max-width: 170px; }
+  .paint-hint {
+    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim);
+    margin-top: 10px; line-height: 1.8;
+  }
+  .paint-hint strong { color: var(--text-mid); }
+
+  /* Tema "tela a olio": trama di lino + cornice da quadro attorno al manico */
+  #page-paint.paint-oil .fretboard-wrap {
+    background:
+      repeating-linear-gradient(0deg, rgba(255,252,240,.022) 0 2px, transparent 2px 4px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 2px, transparent 2px 4px),
+      radial-gradient(120% 90% at 50% 0%, #2a231a, #17130e);
+    border: 1px solid #4a3a22;
+    box-shadow:
+      inset 0 0 46px rgba(0,0,0,.55),
+      0 0 0 5px #201812, 0 0 0 7px #574323, 0 0 0 8px #2b2115,
+      0 14px 34px -16px #000;
+  }
+  @media (max-width: 560px) {
+    #page-paint.paint-oil .fretboard-wrap {
+      box-shadow: inset 0 0 30px rgba(0,0,0,.5),
+        0 0 0 3px #201812, 0 0 0 5px #574323, 0 10px 24px -14px #000;
+    }
+    .paint-row-label { min-width: 100%; }
+    .ptool-btn { padding: 7px 8px; }
+  }
+
   /* Footer */
   .site-footer {
     border-top: 1px solid var(--border);
@@ -2715,6 +2794,7 @@
   <!-- Riga 2: nav sempre sotto, scrollabile -->
   <nav>
     <button class="nav-btn active" onclick="showPage('fretboard')">Fretboard</button>
+    <button class="nav-btn" onclick="showPage('paint');paintInit()">🎨 Dipingi</button>
     <button class="nav-btn" onclick="showPage('scales')">Scale &amp; Accordi</button>
     <button class="nav-btn" onclick="showPage('caged')">CAGED</button>
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
@@ -2850,6 +2930,150 @@
       <span style="color:#4ade80;font-size:15px;font-family:monospace">~</span> Vibrato &nbsp;
       <span style="color:#a78bfa;font-size:13px;font-family:monospace">/</span> Slide
     </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ DIPINGI NOTE PAGE ═════════════════════════════ -->
+<div id="page-paint" class="page paint-oil">
+  <h2>Dipingi Note</h2>
+  <div class="subtitle">// il manico è la tua tela: pennella note, glow e pigmenti sopra la scala — annotazioni libere che non sporcano la visualizzazione</div>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Tonalità</div>
+      <select id="paint-key" onchange="paintOnScaleChange()">
+        <option value="0">C</option><option value="1">C# / Db</option><option value="2">D</option>
+        <option value="3">D# / Eb</option><option value="4">E</option><option value="5">F</option>
+        <option value="6">F# / Gb</option><option value="7">G</option><option value="8">G# / Ab</option>
+        <option value="9" selected>A</option><option value="10">A# / Bb</option><option value="11">B</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Scala / Modo</div>
+      <select id="paint-scale" onchange="paintOnScaleChange()">
+        <optgroup label="Maggiore">
+          <option value="major">Maggiore (Ionia)</option>
+          <option value="penta_major">Pentatonica Maggiore</option>
+          <option value="lydian">Lidia</option>
+          <option value="mixolydian">Misolidia</option>
+        </optgroup>
+        <optgroup label="Minore">
+          <option value="natural_minor">Minore Naturale (Eolia)</option>
+          <option value="harmonic_minor">Minore Armonica</option>
+          <option value="melodic_minor">Minore Melodica</option>
+          <option value="penta_minor" selected>Pentatonica Minore</option>
+          <option value="blues">Blues</option>
+          <option value="dorian">Dorica</option>
+          <option value="phrygian">Frigia</option>
+        </optgroup>
+        <optgroup label="Altro">
+          <option value="locrian">Locria</option>
+        </optgroup>
+        <optgroup label="⚡ Scale Ibride">
+          <option value="penta_hybrid">Pentatonica Ibrida (Maj+Min)</option>
+          <option value="miso_penta">Misolidia + Penta Minore</option>
+          <option value="blues_maj">Blues + Penta Maggiore</option>
+          <option value="lydian_dom">Lidia Dominante (♭7)</option>
+          <option value="phrygian_dom">Frigia Dominante</option>
+          <option value="bebop_dom">Bebop Dominante</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Frets</div>
+      <select id="paint-frets" onchange="paintOnLayoutChange()">
+        <option value="12">12 tasti</option>
+        <option value="15" selected>15 tasti</option>
+        <option value="22">22 tasti</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Etichetta</div>
+      <select id="paint-label" onchange="paintOnScaleChange()">
+        <option value="name">Nome nota</option>
+        <option value="interval">Intervallo</option>
+        <option value="degree">Grado</option>
+        <option value="none">Nessuna</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="paint-panel">
+    <div class="paint-row" role="toolbar" aria-label="Strumenti di pittura">
+      <span class="paint-row-label">Strumento</span>
+      <button id="ptool-brush" class="ptool-btn active" onclick="paintSetTool('brush')" title="Pennello — dipingi le note">🖌️<span>Pennello</span></button>
+      <button id="ptool-eraser" class="ptool-btn" onclick="paintSetTool('eraser')" title="Gomma — cancella">🧽<span>Gomma</span></button>
+      <button id="ptool-fill" class="ptool-btn" onclick="paintSetTool('fill')" title="Secchiello — tocca una nota per dipingerla su tutto il manico, il vuoto per la scala intera">🪣<span>Secchiello</span></button>
+      <button id="ptool-picker" class="ptool-btn" onclick="paintSetTool('picker')" title="Contagocce — preleva un colore già dipinto">💧<span>Preleva</span></button>
+      <button id="ptool-pan" class="ptool-btn" onclick="paintSetTool('pan')" title="Sposta — scorri il manico senza dipingere">✋<span>Sposta</span></button>
+    </div>
+    <div class="paint-row">
+      <span class="paint-row-label">Tratto</span>
+      <button id="paint-snap-on" class="ptool-btn active" onclick="paintSetSnap(true)" title="Il pennello si aggancia alla posizione esatta della nota">🎯 Snap nota</button>
+      <button id="paint-snap-off" class="ptool-btn" onclick="paintSetSnap(false)" title="Pennellate libere sul manico">✍️ Libero</button>
+      <label class="paint-row-label" for="paint-size" style="margin-left:6px">Pennello</label>
+      <input type="range" id="paint-size" min="0.6" max="1.7" step="0.1" value="1" oninput="paintSetSize(this.value)">
+      <span style="flex:1"></span>
+      <button id="paint-undo-btn" class="ptool-btn" onclick="paintUndo()" title="Annulla (Ctrl+Z)" disabled>↩︎</button>
+      <button id="paint-redo-btn" class="ptool-btn" onclick="paintRedo()" title="Ripristina (Ctrl+Shift+Z)" disabled>↪︎</button>
+      <button class="ptool-btn" onclick="paintClear()" title="Pulisci la tela">🗑 Pulisci</button>
+    </div>
+    <div class="paint-row">
+      <span class="paint-row-label">Colore</span>
+      <button id="pmode-note" class="ptool-btn" onclick="paintSetColorMode('note')" title="Un pigmento per ogni nota">Nota</button>
+      <button id="pmode-interval" class="ptool-btn active" onclick="paintSetColorMode('interval')" title="Colori per ruolo: tonica, terza, quinta, settima">Intervallo</button>
+      <button id="pmode-degree" class="ptool-btn" onclick="paintSetColorMode('degree')" title="Un colore per grado della scala">Grado</button>
+      <button id="pmode-custom" class="ptool-btn" onclick="paintSetColorMode('custom')" title="Colore libero">Custom</button>
+      <input type="color" id="paint-color" value="#e0509b" oninput="paintSetCustomColor(this.value)" title="Scegli un pigmento">
+      <div id="paint-swatches" class="paint-row" style="gap:5px"></div>
+    </div>
+    <div class="paint-row">
+      <span class="paint-row-label">Livelli</span>
+      <button id="paint-layer-scale" class="ptool-btn active" onclick="paintToggleScale()" title="Mostra/nascondi le note della scala">👁 Scala</button>
+      <button id="paint-layer-paint" class="ptool-btn active" onclick="paintTogglePaint()" title="Mostra/nascondi le tue pennellate">👁 Pittura</button>
+      <button id="paint-oil-btn" class="ptool-btn active" onclick="paintToggleOil()" title="Texture a tela e cornice da quadro">🖼 Tela a olio</button>
+    </div>
+    <div class="paint-row">
+      <span class="paint-row-label">Preset</span>
+      <div class="paint-presets">
+        <button class="ptool-btn" onclick="paintPreset('box1')">Box 1</button>
+        <button class="ptool-btn" onclick="paintPreset('box2')">Box 2</button>
+        <button class="ptool-btn" onclick="paintPreset('box3')">Box 3</button>
+        <button class="ptool-btn" onclick="paintPreset('box4')">Box 4</button>
+        <button class="ptool-btn" onclick="paintPreset('box5')">Box 5</button>
+        <button class="ptool-btn" onclick="paintPreset('triad')">Triade</button>
+        <button class="ptool-btn" onclick="paintPreset('arp7')">Arpeggio 7ª</button>
+        <button class="ptool-btn" onclick="paintPreset('scale')">Scala intera</button>
+      </div>
+    </div>
+    <div class="paint-row">
+      <span class="paint-row-label">Pattern</span>
+      <input type="text" id="paint-name" placeholder="nome pattern…" maxlength="40">
+      <button class="ptool-btn" onclick="paintSavePattern()" title="Salva nel browser">💾 Salva</button>
+      <select id="paint-saved" onchange="paintLoadSelected()"></select>
+      <button class="ptool-btn" onclick="paintDeleteSelected()" title="Elimina il pattern selezionato">✕</button>
+      <span style="flex:1"></span>
+      <button class="ptool-btn" onclick="paintExportJSON()" title="Scarica il pattern come file JSON">⤓ JSON</button>
+      <button class="ptool-btn" onclick="document.getElementById('paint-import-file').click()" title="Carica un pattern da file JSON">⤒ JSON</button>
+      <button class="ptool-btn" onclick="paintExportPNG()" title="Esporta il manico dipinto come immagine PNG">🖼 PNG</button>
+      <input type="file" id="paint-import-file" accept=".json,application/json" style="display:none" onchange="paintImportJSON(this)">
+    </div>
+  </div>
+
+  <div class="fretboard-wrap" id="paint-wrap">
+    <div class="fretboard-rel">
+      <div id="paint-fretboard" class="fretboard"></div>
+      <canvas id="paint-canvas" aria-label="Tela di pittura sul manico"></canvas>
+    </div>
+  </div>
+
+  <div class="paint-hint">
+    🖌️ <strong>Pennello + Snap</strong>: tocca o trascina sulle posizioni — ogni nota dipinta suona ·
+    ✍️ <strong>Libero</strong>: pennellate a mano libera ·
+    🪣 <strong>Secchiello</strong>: tocca una nota per colorarla su tutto il manico, tocca il vuoto per l'intera scala ·
+    💧 <strong>Preleva</strong>: tocca una pennellata per rubarne il colore ·
+    ✋ <strong>Sposta</strong>: scorri il manico senza dipingere (utile su telefono).
+    I pattern restano salvati in questo browser; con ⤓/⤒ JSON li porti ovunque.
   </div>
 </div>
 
@@ -10856,6 +11080,797 @@ function showChordScaleSubpage(tab) {
     b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('#page-scales .cpage-view').forEach(v=>
     v.classList.toggle('active', v.id==='cspage-'+tab));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DIPINGI NOTE — annotazione pittorica del manico
+// Layer scala = dot DOM (ghost, togglabile) · Layer pittura = canvas sovrapposto.
+// Ogni gesto è un'operazione vettoriale ({dab|str|ers}) con seed deterministico:
+// il replay identico rende possibili undo/redo, salvataggio e ridisegno.
+// ═══════════════════════════════════════════════════════════════════════════════
+const PAINT_LS_KEY  = 'gil_paint_patterns_v1';
+const PAINT_LS_AUTO = 'gil_paint_autosave_v1';
+
+// Tavolozza "pigmenti a olio" per pitch-class (C..B)
+const PAINT_NOTE_COLORS = ['#e3a857','#c65f3a','#5b8bd0','#7fb069','#d94f4f','#9a6fb8',
+                           '#4fb3bf','#e08e45','#8a9a5b','#cf5c78','#5a6fae','#c9b458'];
+// Un colore per grado della scala (I..VII)
+const PAINT_DEGREE_COLORS = ['#f59e0b','#4fb3bf','#3b82f6','#22c55e','#e08e45','#cf5c78','#a855f7'];
+// Ruoli intervallo → colore, coerente con la legenda del visualizzatore
+const PAINT_ROLE_COLORS = { root:'#f59e0b', third:'#3b82f6', fifth:'#22c55e', seventh:'#a855f7', other:'#9c8f74' };
+// Swatch rapidi
+const PAINT_SWATCHES = ['#e0509b','#d94f4f','#e08e45','#e3a857','#7fb069','#4fb3bf','#5b8bd0','#9a6fb8','#f2ede3'];
+// Scale a sesta/settima maggiore → i preset box usano i box pentatonici maggiori
+const PAINT_MAJORISH = new Set(['major','penta_major','lydian','mixolydian','blues_maj','lydian_dom','bebop_dom']);
+
+const PAINT = {
+  inited:false, ops:[], undoStack:[], redoStack:[],
+  tool:'brush', snap:true, colorMode:'interval', customColor:'#e0509b',
+  size:1, showScale:true, showPaint:true, oil:true, seed:1,
+  geom:null, dpr:1, drawing:false, gestureChanged:false,
+  pendingPts:null, lastCell:null, strokeColor:'#e0509b',
+  panning:false, panStart:null,
+};
+
+function $pt(id){ return document.getElementById(id); }
+function paintMulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+// ── colori: helper ──
+function paintHexRgb(h){
+  h = String(h).replace('#','');
+  if (h.length === 3) h = h.split('').map(c=>c+c).join('');
+  return [parseInt(h.slice(0,2),16)||0, parseInt(h.slice(2,4),16)||0, parseInt(h.slice(4,6),16)||0];
+}
+function paintMix(c, to, amt){ // to: 'w' schiarisce verso bianco caldo, 'k' scurisce
+  const a = paintHexRgb(c), b = to==='w' ? [255,250,235] : [22,12,4];
+  return `rgb(${a.map((v,i)=>Math.round(v+(b[i]-v)*amt)).join(',')})`;
+}
+function paintAlpha(c, al){ const [r,g,b] = paintHexRgb(c); return `rgba(${r},${g},${b},${al})`; }
+function paintIsLight(c){ const [r,g,b] = paintHexRgb(c); return (0.299*r+0.587*g+0.114*b)/255 > 0.6; }
+
+// ── init ──
+function paintInit(){
+  if (PAINT.inited){ if (!PAINT.geom) paintBuildNeck(); else paintSizeCanvas(); return; }
+  PAINT.inited = true;
+  const cv = $pt('paint-canvas');
+  cv.addEventListener('pointerdown', paintPointerDown);
+  cv.addEventListener('pointermove', paintPointerMove);
+  cv.addEventListener('pointerup', paintPointerUp);
+  cv.addEventListener('pointercancel', paintPointerUp);
+  document.addEventListener('keydown', e => {
+    if (!$pt('page-paint').classList.contains('active')) return;
+    if (e.target && /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+    if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z'){ e.preventDefault(); e.shiftKey ? paintRedo() : paintUndo(); }
+    else if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='y'){ e.preventDefault(); paintRedo(); }
+  });
+  paintBuildSwatches();
+  paintRefreshSavedList();
+  paintRestoreAutosave();
+  paintBuildNeck();
+  paintSyncUI();
+}
+
+function paintBuildSwatches(){
+  const wrap = $pt('paint-swatches'); if (!wrap) return;
+  wrap.innerHTML = '';
+  PAINT_SWATCHES.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'pswatch'; b.style.background = `radial-gradient(circle at 35% 30%, ${paintMix(c,'w',0.3)}, ${c} 55%, ${paintMix(c,'k',0.35)})`;
+    b.title = c;
+    b.onclick = () => paintSetCustomColor(c);
+    wrap.appendChild(b);
+  });
+}
+
+// ── costruzione manico (stessa geometria di renderFretboard) ──
+function paintBuildNeck(){
+  const fb = $pt('paint-fretboard'); if (!fb) return;
+  const fretCount = parseInt($pt('paint-frets').value);
+  const keyIndex  = parseInt($pt('paint-key').value);
+  const scale     = SCALES[$pt('paint-scale').value];
+  const labelMode = $pt('paint-label').value;
+  const scaleSet  = new Set(scale.intervals.map(i => (keyIndex+i)%12));
+  const fw = [0];
+  for (let f=1; f<=fretCount; f++) fw.push(Math.round(58 - f*1.1));
+  const OPEN_W=40, NUT_W=14, NAME_W=26;
+
+  fb.innerHTML = '';
+  const numRow = document.createElement('div'); numRow.className = 'fret-numbers';
+  const oh = document.createElement('div'); oh.className='fret-num'; oh.style.width=OPEN_W+'px'; oh.textContent='0'; numRow.appendChild(oh);
+  const nh = document.createElement('div'); nh.className='fret-num'; nh.style.width=NUT_W+'px'; numRow.appendChild(nh);
+  for (let f=1; f<=fretCount; f++){
+    const d=document.createElement('div'); d.className='fret-num'; d.style.width=fw[f]+'px'; d.textContent=f; numRow.appendChild(d);
+  }
+  fb.appendChild(numRow);
+
+  const STRING_HEIGHTS = ['0.65px','0.85px','1.1px','1.5px','1.9px','2.3px'];
+  const sc = document.createElement('div'); sc.className = 'strings-container';
+  for (let s=0; s<6; s++){
+    const row = document.createElement('div'); row.className='string-row';
+    row.style.setProperty('--str-h', STRING_HEIGHTS[s]);
+    const nm = document.createElement('div'); nm.className='string-name'; nm.textContent=STRING_NAMES[s]; row.appendChild(nm);
+
+    const oc = document.createElement('div'); oc.className='open-col';
+    const openPc = OPEN_STRINGS[s]%12;
+    if (scaleSet.has(openPc)) oc.appendChild(paintScaleDot(openPc, (openPc-keyIndex+12)%12, scale, labelMode, true));
+    row.appendChild(oc);
+
+    const nut = document.createElement('div'); nut.className='nut-col'; row.appendChild(nut);
+
+    for (let f=1; f<=fretCount; f++){
+      const cell = document.createElement('div'); cell.className='fret-cell'; cell.style.width=fw[f]+'px';
+      const pc = (OPEN_STRINGS[s]+f)%12;
+      if (scaleSet.has(pc)) cell.appendChild(paintScaleDot(pc, (pc-keyIndex+12)%12, scale, labelMode, false));
+      row.appendChild(cell);
+    }
+    sc.appendChild(row);
+  }
+  fb.appendChild(sc);
+
+  const markerFrets = { 3:false, 5:false, 7:false, 9:false, 12:true, 15:false, 17:false, 19:false, 21:false };
+  const mr = document.createElement('div'); mr.className='fret-markers';
+  const m0 = document.createElement('div'); m0.style.cssText=`width:${OPEN_W}px;flex-shrink:0`; mr.appendChild(m0);
+  const m1 = document.createElement('div'); m1.style.cssText=`width:${NUT_W}px;flex-shrink:0`; mr.appendChild(m1);
+  for (let f=1; f<=fretCount; f++){
+    const d = document.createElement('div');
+    d.className = 'fret-marker-dot' + (markerFrets[f]===true ? ' double':'');
+    d.style.width = fw[f]+'px'; d.style.height='12px';
+    if (markerFrets[f] !== undefined){ const i=document.createElement('div'); i.className='inner'; d.appendChild(i); }
+    mr.appendChild(d);
+  }
+  fb.appendChild(mr);
+
+  // geometria: centri x per fret (0 = corda a vuoto), relativi alla strings-container
+  const xc = [NAME_W + OPEN_W/2];
+  let x = NAME_W + OPEN_W + NUT_W;
+  for (let f=1; f<=fretCount; f++){ xc.push(x + fw[f]/2); x += fw[f]; }
+  PAINT.geom = { xc, fw, fretCount, W:x, H:276, padTop:6, rowH:44, nameW:NAME_W };
+  requestAnimationFrame(paintSizeCanvas);
+}
+
+function paintScaleDot(pc, iv, scale, labelMode, isOpen){
+  const dot = document.createElement('div');
+  dot.className = 'note-dot paint-sdot ' + getIntervalRole(iv, scale.intervals);
+  if (isOpen){ dot.style.width='26px'; dot.style.height='26px'; dot.style.fontSize='9px'; }
+  if (labelMode==='name') dot.textContent = NOTES[pc];
+  else if (labelMode==='interval') dot.textContent = INTERVAL_NAMES[iv];
+  else if (labelMode==='degree') dot.textContent = DEGREE_NAMES[iv];
+  return dot;
+}
+
+function paintSizeCanvas(){
+  const fb = $pt('paint-fretboard');
+  const sc = fb && fb.querySelector('.strings-container');
+  const cv = $pt('paint-canvas');
+  if (!sc || !cv || !PAINT.geom) return;
+  const w = sc.offsetWidth, h = sc.offsetHeight;
+  if (!w){ requestAnimationFrame(paintSizeCanvas); return; }
+  PAINT.dpr = Math.min(window.devicePixelRatio||1, 2);
+  cv.style.top = sc.offsetTop+'px'; cv.style.left = sc.offsetLeft+'px';
+  cv.style.width = w+'px'; cv.style.height = h+'px';
+  cv.width = Math.round(w*PAINT.dpr); cv.height = Math.round(h*PAINT.dpr);
+  PAINT.geom.H = h;
+  paintRender();
+}
+
+function paintYc(s){ return PAINT.geom.padTop + s*PAINT.geom.rowH + PAINT.geom.rowH/2; }
+
+function paintHit(x, y){
+  const g = PAINT.geom; if (!g) return null;
+  if (x < g.nameW - 6) return null;
+  const s = Math.max(0, Math.min(5, Math.floor((y - g.padTop) / g.rowH)));
+  let best = 0, bd = Infinity;
+  for (let f=0; f<g.xc.length; f++){ const d = Math.abs(x - g.xc[f]); if (d < bd){ bd = d; best = f; } }
+  return { s, f: best };
+}
+
+// ── risoluzione colore ──
+function paintResolveColor(pc, iv){
+  if (PAINT.colorMode==='custom') return PAINT.customColor;
+  if (PAINT.colorMode==='note')   return PAINT_NOTE_COLORS[pc];
+  const scale = SCALES[$pt('paint-scale').value];
+  if (PAINT.colorMode==='degree'){
+    const di = scale.intervals.indexOf(iv);
+    return di >= 0 ? PAINT_DEGREE_COLORS[di % 7] : PAINT_ROLE_COLORS.other;
+  }
+  return PAINT_ROLE_COLORS[getIntervalRole(iv, scale.intervals)];
+}
+
+// ── ops ──
+function paintPushUndo(){
+  PAINT.undoStack.push(JSON.stringify(PAINT.ops));
+  if (PAINT.undoStack.length > 60) PAINT.undoStack.shift();
+  PAINT.redoStack.length = 0;
+  paintSyncUndoBtns();
+}
+function paintUndo(){
+  if (!PAINT.undoStack.length) return;
+  PAINT.redoStack.push(JSON.stringify(PAINT.ops));
+  PAINT.ops = JSON.parse(PAINT.undoStack.pop());
+  paintRender(); paintAutosave(); paintSyncUndoBtns();
+}
+function paintRedo(){
+  if (!PAINT.redoStack.length) return;
+  PAINT.undoStack.push(JSON.stringify(PAINT.ops));
+  PAINT.ops = JSON.parse(PAINT.redoStack.pop());
+  paintRender(); paintAutosave(); paintSyncUndoBtns();
+}
+function paintClear(){
+  if (!PAINT.ops.length) return;
+  paintPushUndo(); PAINT.ops = [];
+  paintRender(); paintAutosave();
+}
+function paintSyncUndoBtns(){
+  const u = $pt('paint-undo-btn'), r = $pt('paint-redo-btn');
+  if (u) u.disabled = !PAINT.undoStack.length;
+  if (r) r.disabled = !PAINT.redoStack.length;
+}
+
+function paintAddDab(s, f, forcedColor){
+  const keyIndex = parseInt($pt('paint-key').value);
+  const pc = (OPEN_STRINGS[s]+f)%12, iv = (pc-keyIndex+12)%12;
+  const c = forcedColor || paintResolveColor(pc, iv);
+  PAINT.ops = PAINT.ops.filter(o => !(o.t==='dab' && o.s===s && o.f===f));
+  PAINT.ops.push({ t:'dab', s, f, c, n:pc, iv, sz:PAINT.size, seed:PAINT.seed++ });
+}
+
+// ── pointer ──
+function paintEvPos(e){
+  const r = $pt('paint-canvas').getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+function paintPointerDown(e){
+  const cv = $pt('paint-canvas');
+  if (PAINT.tool==='pan'){
+    if (e.pointerType === 'mouse'){
+      PAINT.panning = true;
+      PAINT.panStart = [e.clientX, $pt('paint-wrap').scrollLeft];
+      try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+      e.preventDefault();
+    }
+    return; // touch: lascia scorrere nativamente (touch-action)
+  }
+  e.preventDefault();
+  try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+  if (!PAINT.showPaint) paintTogglePaint();
+  const { x, y } = paintEvPos(e);
+  if (PAINT.tool==='picker'){ paintPick(x, y); return; }
+  if (PAINT.tool==='fill'){ paintFill(x, y); return; }
+  PAINT.drawing = true; PAINT.lastCell = null; PAINT.gestureChanged = false;
+  if (PAINT.snap){
+    paintPushUndo();
+    paintCellAction(x, y);
+  } else {
+    // colore del tratto libero: la nota sotto il punto di partenza (o il custom)
+    const hit = paintHit(x, y);
+    if (hit && PAINT.colorMode !== 'custom'){
+      const keyIndex = parseInt($pt('paint-key').value);
+      const pc = (OPEN_STRINGS[hit.s]+hit.f)%12;
+      PAINT.strokeColor = paintResolveColor(pc, (pc-keyIndex+12)%12);
+    } else PAINT.strokeColor = PAINT.customColor;
+    PAINT.pendingPts = [[x, y]];
+    paintStampSeg([x,y], [x,y]);
+  }
+}
+
+function paintPointerMove(e){
+  if (PAINT.panning){
+    $pt('paint-wrap').scrollLeft = PAINT.panStart[1] - (e.clientX - PAINT.panStart[0]);
+    return;
+  }
+  if (!PAINT.drawing) return;
+  e.preventDefault();
+  const { x, y } = paintEvPos(e);
+  if (PAINT.snap){ paintCellAction(x, y); return; }
+  const pts = PAINT.pendingPts;
+  const last = pts[pts.length-1];
+  if (Math.hypot(x-last[0], y-last[1]) < 2) return;
+  pts.push([x, y]);
+  paintStampSeg(last, [x, y]);
+}
+
+function paintPointerUp(){
+  if (PAINT.panning){ PAINT.panning = false; return; }
+  if (!PAINT.drawing) return;
+  PAINT.drawing = false;
+  if (PAINT.snap){
+    // gesto a vuoto (es. gomma su cella vuota): non lasciare un undo fantasma
+    if (!PAINT.gestureChanged && PAINT.undoStack.length) PAINT.undoStack.pop();
+    PAINT.gestureChanged = false;
+    paintAutosave(); paintSyncUndoBtns();
+    return;
+  }
+  const pts = PAINT.pendingPts || []; PAINT.pendingPts = null;
+  if (!pts.length) return;
+  const g = PAINT.geom;
+  const norm = pts.map(p => [ +(p[0]/g.W).toFixed(4), +(p[1]/g.H).toFixed(4) ]);
+  paintPushUndo();
+  PAINT.ops.push(PAINT.tool==='eraser'
+    ? { t:'ers', sz:PAINT.size, pts:norm }
+    : { t:'str', c:PAINT.strokeColor, sz:PAINT.size, pts:norm });
+  paintRender(); paintAutosave();
+}
+
+function paintCellAction(x, y){
+  const hit = paintHit(x, y); if (!hit) return;
+  const ck = hit.s+','+hit.f;
+  if (PAINT.lastCell === ck) return;
+  PAINT.lastCell = ck;
+  if (PAINT.tool==='eraser'){
+    const n = PAINT.ops.length;
+    PAINT.ops = PAINT.ops.filter(o => !(o.t==='dab' && o.s===hit.s && o.f===hit.f));
+    if (PAINT.ops.length !== n){ PAINT.gestureChanged = true; paintRender(); }
+    return;
+  }
+  paintAddDab(hit.s, hit.f);
+  PAINT.gestureChanged = true;
+  paintRender();
+  try{
+    const ctx = getAudioCtx();
+    playNote(midiToFreq(OPEN_STRING_MIDI[hit.s]+hit.f), ctx.currentTime, 0.3);
+  }catch(_){}
+}
+
+function paintFill(x, y){
+  const hit = paintHit(x, y); if (!hit) return;
+  const keyIndex = parseInt($pt('paint-key').value);
+  const scale = SCALES[$pt('paint-scale').value];
+  const scaleSet = new Set(scale.intervals.map(i => (keyIndex+i)%12));
+  const pc = (OPEN_STRINGS[hit.s]+hit.f)%12;
+  const g = PAINT.geom;
+  const targets = scaleSet.has(pc) ? new Set([pc]) : scaleSet;
+  paintPushUndo();
+  for (let s=0; s<6; s++) for (let f=0; f<=g.fretCount; f++){
+    if (targets.has((OPEN_STRINGS[s]+f)%12)) paintAddDab(s, f);
+  }
+  paintRender(); paintAutosave();
+}
+
+function paintPick(x, y){
+  const g = PAINT.geom;
+  for (let i=PAINT.ops.length-1; i>=0; i--){
+    const o = PAINT.ops[i];
+    if (o.t!=='dab' || o.f > g.fretCount) continue;
+    if (Math.hypot(x - g.xc[o.f], y - paintYc(o.s)) < 16){
+      paintSetCustomColor(o.c);
+      paintSetTool('brush');
+      return;
+    }
+  }
+}
+
+// ── rendering pittorico ──
+const PAINT_STAMPS = {};
+function paintGetStamp(color, rad, erase){
+  const key = color+'|'+Math.round(rad*4)+(erase?'|e':'');
+  if (PAINT_STAMPS[key]) return PAINT_STAMPS[key];
+  const d = Math.max(8, Math.ceil(rad*2));
+  const cv = document.createElement('canvas'); cv.width = cv.height = d;
+  const c = cv.getContext('2d'); const r = d/2;
+  const gr = c.createRadialGradient(r,r,0, r,r,r);
+  if (erase){
+    gr.addColorStop(0,'rgba(0,0,0,0.55)'); gr.addColorStop(0.7,'rgba(0,0,0,0.3)'); gr.addColorStop(1,'rgba(0,0,0,0)');
+  } else {
+    gr.addColorStop(0, paintAlpha(color,0.30)); gr.addColorStop(0.55, paintAlpha(color,0.20)); gr.addColorStop(1, paintAlpha(color,0));
+  }
+  c.fillStyle = gr; c.fillRect(0,0,d,d);
+  PAINT_STAMPS[key] = cv;
+  return cv;
+}
+
+function paintStrokeSegment(ctx, a, b, color, sz, erase){
+  const rad = 9*sz;
+  const stamp = paintGetStamp(erase ? '#fff' : color, rad, erase);
+  const step = Math.max(1.5, rad*0.35);
+  const dx = b[0]-a[0], dy = b[1]-a[1], dist = Math.hypot(dx,dy);
+  ctx.globalCompositeOperation = erase ? 'destination-out' : 'source-over';
+  const n = Math.max(1, Math.round(dist/step));
+  for (let i=0; i<=n; i++){
+    ctx.drawImage(stamp, a[0]+dx*i/n-rad, a[1]+dy*i/n-rad, rad*2, rad*2);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+function paintStampSeg(a, b){ // stamp live durante il gesto (senza texture: arriva al commit)
+  const cv = $pt('paint-canvas'), ctx = cv.getContext('2d');
+  ctx.save();
+  ctx.setTransform(PAINT.dpr,0,0,PAINT.dpr,0,0);
+  paintStrokeSegment(ctx, a, b, PAINT.strokeColor, PAINT.size, PAINT.tool==='eraser');
+  ctx.restore();
+}
+
+function paintDrawStroke(ctx, op, erase){
+  const g = PAINT.geom;
+  const pts = op.pts.map(p => [p[0]*g.W, p[1]*g.H]);
+  if (pts.length === 1) pts.push(pts[0]);
+  for (let i=1; i<pts.length; i++) paintStrokeSegment(ctx, pts[i-1], pts[i], op.c||'#fff', op.sz, erase);
+}
+
+function paintDrawDab(ctx, x, y, op){
+  const rnd = paintMulberry((op.seed*9301+49297)>>>0);
+  const R = 12.5*op.sz, c = op.c;
+  ctx.save();
+  ctx.translate(x, y);
+  // alone morbido attorno alla pennellata
+  const gl = ctx.createRadialGradient(0,0,R*0.35, 0,0,R*2);
+  gl.addColorStop(0, paintAlpha(c,0.4)); gl.addColorStop(1, paintAlpha(c,0));
+  ctx.fillStyle = gl;
+  ctx.beginPath(); ctx.arc(0,0,R*2,0,6.2832); ctx.fill();
+  // strati di pigmento sovrapposti, leggermente sfalsati (seed deterministico)
+  for (let i=0; i<4; i++){
+    const a = rnd()*6.2832, d = rnd()*R*0.26;
+    const ox = Math.cos(a)*d, oy = Math.sin(a)*d;
+    const rx = R*(0.8+rnd()*0.3), ry = R*(0.7+rnd()*0.32), rot = rnd()*3.1416;
+    const gr = ctx.createRadialGradient(ox-rx*0.3, oy-ry*0.35, rx*0.08, ox, oy, Math.max(rx,ry));
+    gr.addColorStop(0, paintMix(c,'w',0.35)); gr.addColorStop(0.55, c); gr.addColorStop(1, paintMix(c,'k',0.4));
+    ctx.fillStyle = gr; ctx.globalAlpha = 0.5 + rnd()*0.3;
+    ctx.beginPath(); ctx.ellipse(ox, oy, rx, ry, rot, 0, 6.2832); ctx.fill();
+  }
+  // impasto: riflesso di luce in alto a sinistra
+  ctx.globalAlpha = 1;
+  const hl = ctx.createRadialGradient(-R*0.34,-R*0.4,0, -R*0.34,-R*0.4,R*0.75);
+  hl.addColorStop(0,'rgba(255,252,238,0.5)'); hl.addColorStop(1,'rgba(255,252,238,0)');
+  ctx.fillStyle = hl;
+  ctx.beginPath(); ctx.arc(-R*0.34,-R*0.4,R*0.75,0,6.2832); ctx.fill();
+  // ombra sotto il bordo della pennellata
+  ctx.strokeStyle = 'rgba(15,8,2,0.35)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.arc(0, R*0.08, R*0.92, 0.4, 2.75); ctx.stroke();
+  ctx.restore();
+}
+
+function paintLabelTxt(op, mode){
+  if (mode==='name') return NOTES[op.n];
+  if (mode==='interval') return INTERVAL_NAMES[op.iv];
+  if (mode==='degree') return DEGREE_NAMES[op.iv];
+  return '';
+}
+
+function paintDrawLabel(ctx, x, y, txt, c, sz){
+  if (!txt) return;
+  ctx.save();
+  const fs = Math.max(9, Math.round(10*sz));
+  ctx.font = '700 '+fs+'px "Space Mono",monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (paintIsLight(c)){ ctx.fillStyle = '#241505'; ctx.shadowColor = 'rgba(255,250,230,0.55)'; }
+  else { ctx.fillStyle = '#fff6e6'; ctx.shadowColor = 'rgba(10,5,0,0.8)'; }
+  ctx.shadowBlur = 3;
+  ctx.fillText(txt, x, y+0.5);
+  ctx.restore();
+}
+
+// trama di tela applicata solo dove c'è pigmento (source-atop)
+let PAINT_TEX = null;
+function paintTexTile(){
+  if (PAINT_TEX) return PAINT_TEX;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 44;
+  const c = cv.getContext('2d');
+  const rnd = paintMulberry(7);
+  for (let y=0; y<44; y+=3){ c.fillStyle = (y/3)%2 ? 'rgba(255,255,255,0.055)' : 'rgba(0,0,0,0.06)'; c.fillRect(0,y,44,1.4); }
+  for (let x=0; x<44; x+=3){ c.fillStyle = (x/3)%2 ? 'rgba(0,0,0,0.045)' : 'rgba(255,255,255,0.04)'; c.fillRect(x,0,1.4,44); }
+  for (let i=0; i<90; i++){ c.fillStyle = rnd()>0.5 ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'; c.fillRect(rnd()*44, rnd()*44, 1.2, 1.2); }
+  PAINT_TEX = cv;
+  return cv;
+}
+function paintApplyTexture(ctx, cv){
+  if (!PAINT.oil) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.fillStyle = ctx.createPattern(paintTexTile(), 'repeat');
+  ctx.globalAlpha = 0.55;
+  ctx.fillRect(0, 0, cv.width/PAINT.dpr, cv.height/PAINT.dpr);
+  ctx.restore();
+}
+
+function paintRender(){
+  const cv = $pt('paint-canvas'); if (!cv || !PAINT.geom) return;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,cv.width,cv.height);
+  if (!PAINT.showPaint) return;
+  ctx.setTransform(PAINT.dpr,0,0,PAINT.dpr,0,0);
+  const g = PAINT.geom;
+  for (const op of PAINT.ops){
+    if (op.t==='dab'){ if (op.f <= g.fretCount) paintDrawDab(ctx, g.xc[op.f], paintYc(op.s), op); }
+    else if (op.t==='str') paintDrawStroke(ctx, op, false);
+    else if (op.t==='ers') paintDrawStroke(ctx, op, true);
+  }
+  paintApplyTexture(ctx, cv);
+  const lm = $pt('paint-label').value;
+  if (lm !== 'none') for (const op of PAINT.ops){
+    if (op.t==='dab' && op.f <= g.fretCount)
+      paintDrawLabel(ctx, g.xc[op.f], paintYc(op.s), paintLabelTxt(op, lm), op.c, op.sz);
+  }
+}
+
+// ── UI ──
+function paintSetTool(t){
+  PAINT.tool = t;
+  ['brush','eraser','fill','picker','pan'].forEach(k => {
+    const b = $pt('ptool-'+k); if (b) b.classList.toggle('active', k===t);
+  });
+  const cv = $pt('paint-canvas');
+  cv.style.touchAction = t==='pan' ? 'auto' : 'none';
+  cv.style.cursor = t==='pan' ? 'grab' : (t==='picker' ? 'copy' : (t==='fill' ? 'cell' : 'crosshair'));
+}
+function paintSetSnap(v){
+  PAINT.snap = v;
+  $pt('paint-snap-on').classList.toggle('active', v);
+  $pt('paint-snap-off').classList.toggle('active', !v);
+}
+function paintSetSize(v){ PAINT.size = parseFloat(v) || 1; }
+function paintSetColorMode(m){ PAINT.colorMode = m; paintSyncUI(); }
+function paintSetCustomColor(c){
+  PAINT.customColor = c; PAINT.colorMode = 'custom';
+  paintSyncUI();
+}
+function paintSyncUI(){
+  ['note','interval','degree','custom'].forEach(k => {
+    const b = $pt('pmode-'+k); if (b) b.classList.toggle('active', k===PAINT.colorMode);
+  });
+  const inp = $pt('paint-color');
+  if (inp && /^#[0-9a-fA-F]{6}$/.test(PAINT.customColor)) inp.value = PAINT.customColor;
+}
+function paintToggleScale(){
+  PAINT.showScale = !PAINT.showScale;
+  $pt('page-paint').classList.toggle('paint-hide-scale', !PAINT.showScale);
+  $pt('paint-layer-scale').classList.toggle('active', PAINT.showScale);
+}
+function paintTogglePaint(){
+  PAINT.showPaint = !PAINT.showPaint;
+  $pt('paint-layer-paint').classList.toggle('active', PAINT.showPaint);
+  paintRender();
+}
+function paintToggleOil(){
+  PAINT.oil = !PAINT.oil;
+  $pt('page-paint').classList.toggle('paint-oil', PAINT.oil);
+  $pt('paint-oil-btn').classList.toggle('active', PAINT.oil);
+  paintRender();
+}
+function paintOnScaleChange(){ paintBuildNeck(); paintAutosave(); }
+function paintOnLayoutChange(){ paintBuildNeck(); paintAutosave(); }
+
+// ── preset 1-tap ──
+function paintPreset(p){
+  if (!PAINT.geom) return;
+  const keyIndex = parseInt($pt('paint-key').value);
+  const scaleKey = $pt('paint-scale').value, scale = SCALES[scaleKey];
+  const g = PAINT.geom;
+  paintPushUndo();
+  if (p.slice(0,3) === 'box'){
+    const n = Math.min(4, Math.max(0, parseInt(p.slice(3))-1));
+    const boxes = PAINT_MAJORISH.has(scaleKey) ? P5_MAJOR_BOXES : P5_MINOR_BOXES;
+    p5BoxFrets(boxes[n], keyIndex).forEach((frets, s) =>
+      frets.forEach(f => { if (f >= 0 && f <= g.fretCount) paintAddDab(s, f); }));
+  } else {
+    const has = i => scale.intervals.includes(i);
+    const third = has(4) ? 4 : (has(3) ? 3 : scale.intervals[1]);
+    const fifth = has(7) ? 7 : (has(6) ? 6 : 7);
+    const seventh = has(10) ? 10 : (has(11) ? 11 : 10);
+    let ivs;
+    if (p==='triad') ivs = [0, third, fifth];
+    else if (p==='arp7') ivs = [0, third, fifth, seventh];
+    else ivs = scale.intervals;
+    const set = new Set(ivs.map(i => (keyIndex+i)%12));
+    for (let s=0; s<6; s++) for (let f=0; f<=g.fretCount; f++){
+      if (set.has((OPEN_STRINGS[s]+f)%12)) paintAddDab(s, f);
+    }
+  }
+  paintRender(); paintAutosave();
+}
+
+// ── persistenza: autosave + pattern nominati + JSON ──
+function paintAutosave(){
+  try{
+    localStorage.setItem(PAINT_LS_AUTO, JSON.stringify({
+      key:$pt('paint-key').value, scale:$pt('paint-scale').value,
+      frets:$pt('paint-frets').value, ops:PAINT.ops, seed:PAINT.seed
+    }));
+  }catch(_){}
+}
+function paintRestoreAutosave(){
+  try{
+    const d = JSON.parse(localStorage.getItem(PAINT_LS_AUTO) || 'null');
+    if (!d || !Array.isArray(d.ops)) return;
+    if (d.key != null) $pt('paint-key').value = d.key;
+    if (d.scale && SCALES[d.scale]) $pt('paint-scale').value = d.scale;
+    if (d.frets) $pt('paint-frets').value = d.frets;
+    PAINT.ops = d.ops; PAINT.seed = d.seed || PAINT.ops.length+1;
+  }catch(_){}
+}
+function paintGetStore(){ try{ return JSON.parse(localStorage.getItem(PAINT_LS_KEY) || '{}'); }catch(_){ return {}; } }
+function paintSetStore(o){ try{ localStorage.setItem(PAINT_LS_KEY, JSON.stringify(o)); }catch(_){ alert('localStorage non disponibile in questo browser.'); } }
+
+function paintSavePattern(){
+  let name = ($pt('paint-name').value || '').trim();
+  if (!name) name = 'Pattern ' + new Date().toLocaleDateString('it-IT') + ' ' +
+    new Date().toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'});
+  const store = paintGetStore();
+  store[name] = {
+    key:$pt('paint-key').value, scale:$pt('paint-scale').value,
+    frets:$pt('paint-frets').value, ops:PAINT.ops, seed:PAINT.seed, savedAt:Date.now()
+  };
+  paintSetStore(store);
+  $pt('paint-name').value = name;
+  paintRefreshSavedList(name);
+}
+function paintRefreshSavedList(sel){
+  const s = $pt('paint-saved'); if (!s) return;
+  const names = Object.keys(paintGetStore()).sort();
+  s.innerHTML = '<option value="">— salvati —</option>' +
+    names.map(n => `<option${n===sel?' selected':''}>${n.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</option>`).join('');
+}
+function paintLoadSelected(){
+  const name = $pt('paint-saved').value; if (!name) return;
+  const d = paintGetStore()[name]; if (!d) return;
+  paintPushUndo();
+  if (d.key != null) $pt('paint-key').value = d.key;
+  if (d.scale && SCALES[d.scale]) $pt('paint-scale').value = d.scale;
+  if (d.frets) $pt('paint-frets').value = d.frets;
+  PAINT.ops = d.ops || []; PAINT.seed = d.seed || PAINT.ops.length+1;
+  $pt('paint-name').value = name;
+  paintBuildNeck(); paintAutosave();
+}
+function paintDeleteSelected(){
+  const name = $pt('paint-saved').value; if (!name) return;
+  const store = paintGetStore();
+  delete store[name];
+  paintSetStore(store);
+  paintRefreshSavedList();
+}
+
+function paintExportJSON(){
+  const name = (($pt('paint-name').value || '').trim()) || 'pattern';
+  const data = {
+    app:'guitar-improv-lab', type:'paint-pattern', version:1, name,
+    key:$pt('paint-key').value, scale:$pt('paint-scale').value,
+    frets:$pt('paint-frets').value, ops:PAINT.ops, seed:PAINT.seed
+  };
+  const blob = new Blob([JSON.stringify(data, null, 1)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'dipingi-' + name.replace(/[^\w\-]+/g,'_') + '.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function paintImportJSON(input){
+  const file = input.files && input.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const d = JSON.parse(r.result);
+      if (!d || !Array.isArray(d.ops)) throw new Error('bad');
+      paintPushUndo();
+      if (d.key != null) $pt('paint-key').value = d.key;
+      if (d.scale && SCALES[d.scale]) $pt('paint-scale').value = d.scale;
+      if (d.frets) $pt('paint-frets').value = d.frets;
+      PAINT.ops = d.ops; PAINT.seed = d.seed || PAINT.ops.length+1;
+      if (d.name) $pt('paint-name').value = d.name;
+      paintBuildNeck(); paintAutosave();
+    }catch(_){ alert('File non valido: serve un JSON esportato da Dipingi Note.'); }
+    input.value = '';
+  };
+  r.readAsText(file);
+}
+
+// ── export PNG: manico sintetico + layer compositati, 2x per stampa ──
+function paintExportPNG(){
+  const g = PAINT.geom; if (!g) return;
+  const keyIndex = parseInt($pt('paint-key').value);
+  const scaleKey = $pt('paint-scale').value, scale = SCALES[scaleKey];
+  const pcv = $pt('paint-canvas');
+  const cw = pcv.width/PAINT.dpr, ch = pcv.height/PAINT.dpr;
+  const M = 24, headH = 24, SC = 2;
+  const W = Math.max(g.W, cw) + M*2, H = headH + g.H + 46;
+  const cv = document.createElement('canvas'); cv.width = W*SC; cv.height = H*SC;
+  const ctx = cv.getContext('2d'); ctx.scale(SC, SC);
+
+  // fondo tela
+  ctx.fillStyle = '#161310'; ctx.fillRect(0,0,W,H);
+  if (PAINT.oil){
+    ctx.save(); ctx.globalAlpha = 0.5;
+    ctx.fillStyle = ctx.createPattern(paintTexTile(), 'repeat');
+    ctx.fillRect(0,0,W,H); ctx.restore();
+  }
+  const ox = M, oy = headH;
+
+  // numeri dei tasti
+  ctx.fillStyle = '#8a8a8a'; ctx.font = '10px "Space Mono",monospace'; ctx.textAlign = 'center';
+  for (let f=0; f<g.xc.length; f++) ctx.fillText(f===0 ? '0' : String(f), ox+g.xc[f], oy-8);
+
+  // legno del manico
+  const nx = ox + g.nameW, nw = g.W - g.nameW;
+  const wood = ctx.createLinearGradient(0, oy, 0, oy+g.H);
+  wood.addColorStop(0,'#2e2013'); wood.addColorStop(1,'#1d1409');
+  ctx.fillStyle = wood;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(nx, oy, nw, g.H, 8); else ctx.rect(nx, oy, nw, g.H);
+  ctx.fill();
+  // venature
+  ctx.save();
+  ctx.beginPath(); ctx.rect(nx, oy, nw, g.H); ctx.clip();
+  const rnd = paintMulberry(12);
+  ctx.globalAlpha = 0.15; ctx.strokeStyle = '#000';
+  for (let i=0; i<40; i++){
+    const yy = oy + rnd()*g.H;
+    ctx.lineWidth = 0.6 + rnd();
+    ctx.beginPath(); ctx.moveTo(nx, yy);
+    ctx.bezierCurveTo(nx+nw*0.3, yy+rnd()*6-3, nx+nw*0.6, yy+rnd()*6-3, nx+nw, yy+rnd()*8-4);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // capotasto + barrette
+  ctx.fillStyle = '#d4af6a'; ctx.fillRect(ox+g.nameW+40, oy+2, 14, g.H-4);
+  ctx.fillStyle = '#8f8f8f';
+  let bx = g.nameW + 40 + 14;
+  for (let f=1; f<=g.fretCount; f++){ bx += g.fw[f]; ctx.fillRect(ox+bx-1, oy+4, 2, g.H-8); }
+  // segnatasti (inlay) al centro del legno
+  ctx.fillStyle = 'rgba(217,196,138,0.8)';
+  [3,5,7,9,12,15,17,19,21].forEach(mf => {
+    if (mf > g.fretCount) return;
+    const x = ox + g.xc[mf], y = oy + g.H/2;
+    if (mf===12){
+      ctx.beginPath(); ctx.arc(x, y-g.rowH, 4, 0, 6.2832); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y+g.rowH, 4, 0, 6.2832); ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, 6.2832); ctx.fill();
+    }
+  });
+
+  // corde + nomi
+  const strH = [0.8, 1, 1.2, 1.6, 2, 2.4];
+  for (let s=0; s<6; s++){
+    const y = oy + paintYc(s);
+    const gr = ctx.createLinearGradient(0, y-1.2, 0, y+1.4);
+    gr.addColorStop(0,'rgba(255,220,120,0.9)'); gr.addColorStop(1,'rgba(100,70,20,0.8)');
+    ctx.fillStyle = gr; ctx.fillRect(ox+g.nameW, y-strH[s]/2, nw, strH[s]);
+    ctx.fillStyle = '#c8a84b'; ctx.font = '12px "Bebas Neue",sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(STRING_NAMES[s], ox+12, y+4);
+  }
+
+  // layer scala (ghost)
+  if (PAINT.showScale){
+    const lm = $pt('paint-label').value;
+    const scaleSet = new Set(scale.intervals.map(i => (keyIndex+i)%12));
+    for (let s=0; s<6; s++) for (let f=0; f<=g.fretCount; f++){
+      const pc = (OPEN_STRINGS[s]+f)%12;
+      if (!scaleSet.has(pc)) continue;
+      const iv = (pc-keyIndex+12)%12, role = getIntervalRole(iv, scale.intervals);
+      const c = PAINT_ROLE_COLORS[role];
+      const x = ox+g.xc[f], y = oy+paintYc(s), r = f===0 ? 9.5 : 11;
+      const dg = ctx.createRadialGradient(x-r*0.3, y-r*0.35, r*0.15, x, y, r);
+      dg.addColorStop(0, paintMix(c,'w',0.35)); dg.addColorStop(0.55, c); dg.addColorStop(1, paintMix(c,'k',0.4));
+      ctx.globalAlpha = role==='other' ? 0.3 : 0.5;
+      ctx.fillStyle = dg;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill();
+      if (lm !== 'none'){
+        ctx.globalAlpha = role==='other' ? 0.45 : 0.7;
+        ctx.font = '700 8px "Space Mono",monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = paintIsLight(c) ? '#241505' : '#fff6e6';
+        const txt = lm==='name' ? NOTES[pc] : (lm==='interval' ? INTERVAL_NAMES[iv] : DEGREE_NAMES[iv]);
+        ctx.fillText(txt, x, y+0.5);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // layer pittura
+  if (PAINT.showPaint) ctx.drawImage(pcv, ox, oy, cw, ch);
+
+  // didascalia
+  const keyName = NOTES[keyIndex];
+  ctx.fillStyle = '#8a8a8a'; ctx.font = '11px "Space Mono",monospace'; ctx.textAlign = 'left';
+  ctx.fillText('GUITAR IMPROV LAB — Dipingi note · ' + keyName + ' ' + scale.name, ox, oy+g.H+28);
+
+  cv.toBlob(b => {
+    if (!b) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = 'manico-dipinto-' + keyName.replace('#','s') + '-' + scaleKey + '.png';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }, 'image/png');
 }
 
 </script>
