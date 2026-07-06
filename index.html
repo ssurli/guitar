@@ -468,6 +468,31 @@
   }
   .note-dot.hidden { display: none; }
 
+  /* Note fuori scala (toggle): presenti ma tenui e desaturate, per contesto */
+  .note-dot.outside {
+    opacity: 0.30; filter: saturate(0.25);
+    transform: scale(0.82);
+  }
+  .note-dot.outside:hover { opacity: 0.75; transform: scale(1.05); }
+
+  /* ── MANCINO: manico specchiato (headstock a destra) ──
+     row-reverse inverte l'ordine visivo di celle/numeri/marker; il testo delle
+     etichette resta normale e leggibile. */
+  .fretboard.lefty .fret-numbers,
+  .fretboard.lefty .string-row,
+  .fretboard.lefty .fret-markers { flex-direction: row-reverse; }
+  .fretboard.lefty .fret-numbers,
+  .fretboard.lefty .fret-markers { margin-left: 0; margin-right: 26px; }
+
+  /* ── CAPOTASTO: barra sopra il tasto scelto ── */
+  .capo-bar {
+    position: absolute; top: -5px; bottom: -5px; width: 11px;
+    border-radius: 6px; z-index: 3; pointer-events: none;
+    background: linear-gradient(90deg, #2b2b2b, #6e6e6e 40%, #1f1f1f);
+    border: 1px solid #8a8a8a;
+    box-shadow: 0 0 10px rgba(0,0,0,0.65), inset 0 1px 2px rgba(255,255,255,0.25);
+  }
+
   /* ── JAM: MANICO LIVE (scala + accordo in tempo reale) ── */
   .jam-fb-header {
     display: flex; align-items: center; justify-content: space-between;
@@ -2822,6 +2847,33 @@
         <option value="12">12 tasti</option>
         <option value="15" selected>15 tasti</option>
         <option value="22">22 tasti</option>
+        <option value="24">24 tasti</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Accordatura</div>
+      <select id="fb-tuning" onchange="fbSetTuning(this.value)">
+        <option value="standard">Standard (E A D G B E)</option>
+        <option value="drop_d">Drop D</option>
+        <option value="dadgad">DADGAD</option>
+        <option value="open_g">Open G</option>
+        <option value="open_d">Open D</option>
+        <option value="open_e">Open E</option>
+        <option value="open_a">Open A</option>
+        <option value="drop_c">Drop C</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Capotasto</div>
+      <select id="fb-capo" onchange="fbSetCapo(this.value)">
+        <option value="0">Nessuno</option>
+        <option value="1">1° tasto</option>
+        <option value="2">2° tasto</option>
+        <option value="3">3° tasto</option>
+        <option value="4">4° tasto</option>
+        <option value="5">5° tasto</option>
+        <option value="6">6° tasto</option>
+        <option value="7">7° tasto</option>
       </select>
     </div>
     <div class="ctrl-group">
@@ -2860,10 +2912,18 @@
     </div>
   </div>
 
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;flex-wrap:wrap">
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">
       <input type="checkbox" id="toggle-pattern-lines" onchange="drawPatternLines()" style="accent-color:var(--amber);width:16px;height:16px">
       Mostra linee pattern
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">
+      <input type="checkbox" id="fb-lefty" onchange="fbSetLefty(this.checked)" style="accent-color:var(--amber);width:16px;height:16px">
+      Mancino
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">
+      <input type="checkbox" id="fb-outside" onchange="fbSetOutside(this.checked)" style="accent-color:var(--amber);width:16px;height:16px">
+      Note fuori scala
     </label>
   </div>
   <div class="fretboard-wrap">
@@ -4042,6 +4102,33 @@ const FRET_WIDTHS = []; // will be computed
 // NPS state
 const FB_STATE = { mode: 'all', npsPosition: 0 };
 
+// Configurazione del manico (solo pagina Fretboard: le altre pagine — CAGED,
+// triadi, jam — ragionano in accordatura standard e non vengono toccate).
+// tuning: MIDI delle corde a vuoto, indice 0 = cantino (come OPEN_STRING_MIDI).
+const FB_CONFIG = {
+  tuning: OPEN_STRING_MIDI.slice(),
+  lefty: false,
+  capo: 0,
+  showOutside: false,
+};
+
+function fbSetTuning(key) {
+  if (key === 'standard' || typeof TUNER_PRESETS === 'undefined' || !TUNER_PRESETS[key]) {
+    FB_CONFIG.tuning = OPEN_STRING_MIDI.slice();
+  } else {
+    // I preset dell'accordatore sono ordinati 6ª→1ª (grave→acuto): convertiamo
+    // le frequenze in MIDI e invertiamo per avere il cantino all'indice 0.
+    FB_CONFIG.tuning = TUNER_PRESETS[key].freqs
+      .map(f => Math.round(69 + 12 * Math.log2(f / 440)))
+      .reverse();
+  }
+  FB_STATE.npsPosition = 0;
+  renderFretboard();
+}
+function fbSetCapo(v) { FB_CONFIG.capo = parseInt(v) || 0; FB_STATE.npsPosition = 0; renderFretboard(); }
+function fbSetLefty(on) { FB_CONFIG.lefty = !!on; renderFretboard(); }
+function fbSetOutside(on) { FB_CONFIG.showOutside = !!on; renderFretboard(); }
+
 function toggleTech() {
   const active = document.body.classList.toggle('show-tech');
   const btn = document.getElementById('tech-btn');
@@ -4066,16 +4153,27 @@ function setFbMode(mode) {
 // Compute all NPS positions for current scale.
 // Returns array of positions, each = array of 6 elements (one per string),
 // each element = array of fret numbers to highlight on that string.
-function computeNpsPositions(keyIndex, scaleIntervals, fretMax) {
-  // OPEN_STRINGS: semitone of open string (high e first)
+function computeNpsPositions(keyIndex, scaleIntervals, fretMax, tuningMidi, minFret) {
+  // tuningMidi (opzionale): MIDI corde a vuoto, cantino all'indice 0 — default standard.
+  // minFret (opzionale): primo tasto utilizzabile (capotasto).
+  const midis = tuningMidi || OPEN_STRING_MIDI;
+  const fret0 = minFret || 0;
+  const isStdTuning = midis.every((m, i) => m === OPEN_STRING_MIDI[i]);
+  // Compensazione del salto d'accordatura tra corde adiacenti (5 semitoni = nessun
+  // aggiustamento): la finestra si ALLARGA verso il basso della deviazione cumulata
+  // — le note buone restano dentro e i doppioni più bassi vengono comunque scartati
+  // da usedMidi. In standard riproduce l'aggiustamento storico della sola corda B.
+  const winOff = [0, 0, 0, 0, 0, 0];
+  if (isStdTuning) winOff[1] = 1;
+  else for (let s = 4; s >= 0; s--) winOff[s] = winOff[s + 1] + Math.abs(midis[s] - midis[s + 1] - 5);
   // Build sorted list of all scale notes on the fretboard per string (with MIDI)
   const scaleSet = new Set(scaleIntervals.map(i => (keyIndex + i) % 12));
   const notesPerString = [];
   for (let s = 0; s < 6; s++) {
-    const open = OPEN_STRINGS[s];
-    const openMidi = OPEN_STRING_MIDI[s];
+    const open = midis[s] % 12;
+    const openMidi = midis[s];
     const notes = [];
-    for (let f = 0; f <= fretMax; f++) {
+    for (let f = fret0; f <= fretMax; f++) {
       if (scaleSet.has((open + f) % 12)) notes.push({ fret: f, midi: openMidi + f });
     }
     notesPerString.push(notes);
@@ -4096,8 +4194,8 @@ function computeNpsPositions(keyIndex, scaleIntervals, fretMax) {
     const usedMidi = new Set();
 
     for (let s = 5; s >= 0; s--) { // low E → high e
-      // B string (s=1): shift window 1 fret lower — compensates G→B tuning gap (4 semitones not 5)
-      const wStart = (s === 1) ? Math.max(0, windowStart - 1) : windowStart;
+      // Finestra spostata di winOff[s] per compensare i salti d'accordatura ≠ 5 semitoni
+      const wStart = Math.max(fret0, windowStart - winOff[s]);
       // Filter by fret window AND exclude MIDI pitches already used on previous strings
       const available = notesPerString[s].filter(n =>
         n.fret >= wStart && n.fret <= windowStart + 6 && !usedMidi.has(n.midi)
@@ -4128,12 +4226,12 @@ function computeNpsPositions(keyIndex, scaleIntervals, fretMax) {
   if (positions.length > 1) {
     const rootNote = keyIndex % 12;
     let rotIdx = positions.findIndex(p =>
-      (OPEN_STRINGS[5] + p.fretsByString[5][0]) % 12 === rootNote
+      (midis[5] + p.fretsByString[5][0]) % 12 === rootNote
     );
     if (rotIdx < 0) {
       // Fallback: first window that contains root anywhere on low E
       rotIdx = positions.findIndex(p =>
-        p.fretsByString[5].some(f => (OPEN_STRINGS[5] + f) % 12 === rootNote)
+        p.fretsByString[5].some(f => (midis[5] + f) % 12 === rootNote)
       );
     }
     if (rotIdx > 0) {
@@ -4150,7 +4248,7 @@ function playNpsPattern() {
   const keyIndex = parseInt(document.getElementById('fb-key').value);
   const scaleKey = document.getElementById('fb-scale').value;
   const scale = SCALES[scaleKey];
-  const positions = computeNpsPositions(keyIndex, scale.intervals, 22);
+  const positions = computeNpsPositions(keyIndex, scale.intervals, 22, FB_CONFIG.tuning, FB_CONFIG.capo);
   if (!positions.length) return;
   const pos = positions[FB_STATE.npsPosition] || positions[0];
   const ctx = getAudioCtx();
@@ -4160,7 +4258,7 @@ function playNpsPattern() {
   for (let s = 5; s >= 0; s--) {
     const fretsOnStr = pos.fretsByString[s] || [];
     fretsOnStr.forEach(f => {
-      playNote(midiToFreq(OPEN_STRING_MIDI[s] + f), t, 0.35);
+      playNote(midiToFreq(FB_CONFIG.tuning[s] + f), t, 0.35);
       const delay = (t - ctx.currentTime) * 1000;
       setTimeout(() => {
         const dot = document.querySelector(
@@ -4198,13 +4296,15 @@ function renderFretboard() {
   const labelMode = document.getElementById('fb-label').value;
   const scale = SCALES[scaleKey];
   const scaleSet = new Set(scale.intervals.map(i => (keyIndex + i) % 12));
+  const tuning = FB_CONFIG.tuning;                       // MIDI corde a vuoto (cantino = indice 0)
+  const capo = Math.min(FB_CONFIG.capo, fretCount - 1);  // il capo non può superare il manico
 
   // ── NPS mode ──
   let npsPositions = [];
   let npsActiveSet = null;
 
   if (FB_STATE.mode === 'nps') {
-    npsPositions = computeNpsPositions(keyIndex, scale.intervals, fretCount);
+    npsPositions = computeNpsPositions(keyIndex, scale.intervals, fretCount, tuning, capo);
     if (FB_STATE.npsPosition >= npsPositions.length) FB_STATE.npsPosition = 0;
 
     const tabsWrap = document.getElementById('nps-pos-tabs');
@@ -4248,6 +4348,9 @@ function renderFretboard() {
 
   const fb = document.getElementById('fretboard');
   fb.innerHTML = '';
+  // Mancino: specchia il manico via row-reverse (headstock a destra); le
+  // etichette restano leggibili perché il testo non viene trasformato.
+  fb.classList.toggle('lefty', FB_CONFIG.lefty);
 
   // ── Fret numbers row ──
   // Layout: [open 40px]["0"] [nut 14px][""] [fret1 label] [fret2 label] ...
@@ -4289,39 +4392,45 @@ function renderFretboard() {
     row.className = 'string-row';
     row.style.setProperty('--str-h', STRING_HEIGHTS[s]);
 
-    // String name
+    // String name (derivato dall'accordatura; cantino in minuscolo)
     const nameDiv = document.createElement('div');
     nameDiv.className = 'string-name';
-    nameDiv.textContent = STRING_NAMES[s];
+    const strNoteName = NOTES[tuning[s] % 12];
+    nameDiv.textContent = s === 0 ? strNoteName.toLowerCase() : strNoteName;
     row.appendChild(nameDiv);
 
-    const openNote = OPEN_STRINGS[s]; // semitone of open string
+    const openNote = tuning[s] % 12; // semitone of open string
 
     // ── Open string column (before nut) ──
+    // Col capotasto le corde a vuoto non esistono: la colonna resta vuota e la
+    // nota "a vuoto" diventa quella al tasto del capo (gestita nel loop tasti).
     const openCell = document.createElement('div');
     openCell.className = 'open-col';
     const openNoteIndex = openNote % 12;
     const openInterval = (openNoteIndex - keyIndex + 12) % 12;
     const openInScale = scaleSet.has(openNoteIndex);
     const openInNps = npsActiveSet ? npsActiveSet.has(s + ',0') : false;
-    const openShouldShow = FB_STATE.mode === 'all' ? openInScale : openInNps;
-    const openIsDimmed = FB_STATE.mode === 'nps' && openInScale && !openInNps;
+    const openShouldShow = capo === 0 && (FB_STATE.mode === 'all' ? openInScale : openInNps);
+    const openIsDimmed = capo === 0 && FB_STATE.mode === 'nps' && openInScale && !openInNps;
+    const openIsOutside = capo === 0 && !openShouldShow && !openIsDimmed &&
+                          FB_STATE.mode === 'all' && FB_CONFIG.showOutside;
 
-    if (openShouldShow) {
+    if (openShouldShow || openIsOutside) {
       const dot = document.createElement('div');
       const role = getIntervalRole(openInterval, scale.intervals);
-      dot.className = `note-dot ${role}`;
+      dot.className = openIsOutside ? 'note-dot other outside' : `note-dot ${role}`;
       dot.style.width = '28px'; dot.style.height = '28px'; dot.style.fontSize = '9px';
       dot.title = '○ corda a vuoto';
       if (labelMode === 'name') dot.textContent = NOTES[openNoteIndex];
       else if (labelMode === 'interval') dot.textContent = INTERVAL_NAMES[openInterval];
       else dot.textContent = DEGREE_NAMES[openInterval];
       dot.dataset.note = openNoteIndex;
+      dot.dataset.midi = tuning[s];
       dot.dataset.string = s;
       dot.dataset.fret = 'open';
       dot.onclick = () => {
         const ctx = getAudioCtx();
-        playNote(midiToFreq(OPEN_STRING_MIDI[s]), ctx.currentTime, 0.6);
+        playNote(midiToFreq(tuning[s]), ctx.currentTime, 0.6);
         dot.classList.add('playing');
         setTimeout(() => dot.classList.remove('playing'), 550);
       };
@@ -4346,33 +4455,41 @@ function renderFretboard() {
       cell.className = 'fret-cell';
       cell.style.width = fretWidths[f] + 'px';
 
+      // Dietro il capotasto la corda non suona: nessuna nota.
+      if (f < capo) { row.appendChild(cell); continue; }
+
       const noteIndex = (openNote + f) % 12;
       const inScale = scaleSet.has(noteIndex);
       const interval = (noteIndex - keyIndex + 12) % 12;
       const inNps = npsActiveSet ? npsActiveSet.has(s + ',' + f) : false;
       const shouldShow = FB_STATE.mode === 'all' ? inScale : inNps;
       const isDimmed = FB_STATE.mode === 'nps' && inScale && !inNps;
+      const isOutside = !shouldShow && !isDimmed && FB_STATE.mode === 'all' && FB_CONFIG.showOutside;
 
-      if (shouldShow) {
+      if (shouldShow || isOutside) {
         const dot = document.createElement('div');
         const role = getIntervalRole(interval, scale.intervals);
-        dot.className = `note-dot ${role}`;
+        dot.className = isOutside ? 'note-dot other outside' : `note-dot ${role}`;
         if (labelMode === 'name') dot.textContent = NOTES[noteIndex];
         else if (labelMode === 'interval') dot.textContent = INTERVAL_NAMES[interval];
-        else dot.textContent = DEGREE_NAMES[interval];
-        // Tecniche: assegnate per intervallo e posizione
-        if (interval === 3 || interval === 10) dot.dataset.tech = 'bend';
-        else if (interval === 0)               dot.dataset.tech = 'vibrato';
-        else if (interval === 2 || interval === 5) dot.dataset.tech = 'slide';
-        else if ((interval === 4 || interval === 11) && f >= 7) dot.dataset.tech = 'tap';
-        else if (interval === 7 && s <= 2)     dot.dataset.tech = 'whammy';
-        else if (interval === 1 || interval === 6) dot.dataset.tech = 'legato';
+        else dot.textContent = isOutside ? INTERVAL_NAMES[interval] : DEGREE_NAMES[interval];
+        // Tecniche: assegnate per intervallo e posizione (solo note in scala)
+        if (!isOutside) {
+          if (interval === 3 || interval === 10) dot.dataset.tech = 'bend';
+          else if (interval === 0)               dot.dataset.tech = 'vibrato';
+          else if (interval === 2 || interval === 5) dot.dataset.tech = 'slide';
+          else if ((interval === 4 || interval === 11) && f >= 7) dot.dataset.tech = 'tap';
+          else if (interval === 7 && s <= 2)     dot.dataset.tech = 'whammy';
+          else if (interval === 1 || interval === 6) dot.dataset.tech = 'legato';
+        }
         dot.dataset.note = noteIndex;
+        dot.dataset.midi = tuning[s] + f;
         dot.dataset.string = s;
         dot.dataset.fret = f;
+        if (f === capo && capo > 0) dot.title = '○ corda a vuoto (capotasto)';
         dot.onclick = () => {
           const ctx = getAudioCtx();
-          playNote(midiToFreq(OPEN_STRING_MIDI[s] + f), ctx.currentTime, 0.6);
+          playNote(midiToFreq(tuning[s] + f), ctx.currentTime, 0.6);
           dot.classList.add('playing');
           setTimeout(() => dot.classList.remove('playing'), 550);
         };
@@ -4395,16 +4512,27 @@ function renderFretboard() {
   // ── Dashed position lines (every 3 frets) ──
   // Add vertical dashed lines overlaid on the strings-container
   strContainer.style.position = 'relative';
-  const dashFrets = [3,5,7,9,12,15,17,19,21];
-  let xAccum = OPEN_COL_W + NUT_W;
+  const dashFrets = [3,5,7,9,12,15,17,19,21,24];
+  const sideProp = FB_CONFIG.lefty ? 'right' : 'left'; // specchia le linee per i mancini
+  let xAccum = 26 + OPEN_COL_W + NUT_W; // 26 = colonna nomi corda (prima erano fuori asse)
   for (let f = 1; f <= fretCount; f++) {
     xAccum += fretWidths[f];
     if (dashFrets.includes(f)) {
       const dash = document.createElement('div');
-      dash.style.cssText = `position:absolute;top:0;bottom:0;left:${xAccum}px;width:0;
+      dash.style.cssText = `position:absolute;top:0;bottom:0;${sideProp}:${xAccum}px;width:0;
         border-left:2px dashed rgba(245,158,11,0.18);pointer-events:none;z-index:1`;
       strContainer.appendChild(dash);
     }
+  }
+
+  // ── Barra del capotasto (all'inizio della cella del tasto del capo) ──
+  if (capo > 0) {
+    let capoX = 26 + OPEN_COL_W + NUT_W; // 26 = colonna nomi corda
+    for (let f = 1; f < capo; f++) capoX += fretWidths[f];
+    const bar = document.createElement('div');
+    bar.className = 'capo-bar';
+    bar.style[sideProp] = (capoX + 2) + 'px';
+    strContainer.appendChild(bar);
   }
 
   // ── NPS mini diagrams (shown below fretboard when in NPS mode) ──
