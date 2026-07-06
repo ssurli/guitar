@@ -826,6 +826,43 @@
     display: flex; gap: 12px; justify-content: center; margin-bottom: 24px;
   }
 
+  /* ── PANNELLO INPUT AUDIO (profilo strumento + sorgente) ── */
+  .pitch-panel {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 16px;
+    display: flex; flex-direction: column; gap: 10px; max-width: 760px;
+  }
+  .pp-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pp-lbl {
+    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text-dim); min-width: 76px;
+  }
+  .pp-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pp-chip {
+    background: transparent; border: 1px solid var(--border); border-radius: 20px;
+    color: var(--text-mid); font-family: 'Space Mono', monospace; font-size: 12px;
+    padding: 7px 14px; cursor: pointer; min-height: 34px;
+    transition: color .12s, border-color .12s, background .12s;
+  }
+  .pp-chip:hover { color: var(--amber); border-color: var(--amber-dim); }
+  .pp-chip.active {
+    background: var(--amber-glow); border-color: var(--amber); color: var(--amber); font-weight: 700;
+  }
+  .pp-device {
+    flex: 1; min-width: 160px; max-width: 340px;
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 8px; font-family: 'Space Mono', monospace; font-size: 12px;
+  }
+  .pp-refresh {
+    background: transparent; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text-mid); cursor: pointer; padding: 6px 10px; font-size: 13px;
+    min-width: 34px; min-height: 34px;
+  }
+  .pp-refresh:hover { color: var(--amber); border-color: var(--amber-dim); }
+  .pp-desc { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+  .pp-desc strong { color: var(--text-mid); }
+  .pp-warn { color: #fca5a5; font-family: 'Space Mono', monospace; font-size: 11px; }
+
   /* ══════════════════════════════ TECNICA AVANZATA ══════════════════════════════ */
   /* Stile allineato a .cpage-tab-btn (usato da tutte le altre sezioni) per coerenza visiva */
   .tech-tabs {
@@ -5568,7 +5605,7 @@ function jamClearChordHighlight() {
 // stai realmente suonando. Riusa autocorrelate() (rilevatore YIN condiviso).
 // ═══════════════════════════════════════════════════════════════════════════════
 const JLIVE = {
-  running: false, stream: null, ctx: null, analyser: null, buf: null,
+  running: false,               // mic/analyser condivisi: vedi PITCH
   rafId: null, frame: 0, lastMidi: -1, lastSignalAt: 0,
   hist: [],  // ultime letture MIDI grezze, per stabilizzare l'ottava (anti-jitter)
   lastPos: null, // {s, f, at} ultima posizione evidenziata (per la modalità 1 posizione)
@@ -5660,9 +5697,7 @@ async function jamLiveToggle() {
   if (JLIVE.running) {
     JLIVE.running = false;
     if (JLIVE.rafId) cancelAnimationFrame(JLIVE.rafId);
-    if (JLIVE.stream) JLIVE.stream.getTracks().forEach(t => t.stop());
-    if (JLIVE.ctx) { try { JLIVE.ctx.close(); } catch (e) {} }
-    JLIVE.stream = JLIVE.ctx = JLIVE.analyser = null;
+    PITCH.release('jlive');
     jamLiveClear();
     document.getElementById('jam-fretboard')?.classList.remove('live-active');
     btn.textContent = '🎤 Suona live';
@@ -5671,23 +5706,10 @@ async function jamLiveToggle() {
     if (noteEl) noteEl.textContent = '—';
     return;
   }
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    btn.textContent = '⚠ mic non supportato';
-    return;
-  }
   btn.textContent = '⏳ …';
   btn.disabled = true;
   try {
-    JLIVE.stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true },
-      video: false
-    });
-    JLIVE.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (JLIVE.ctx.state === 'suspended') await JLIVE.ctx.resume();
-    JLIVE.analyser = JLIVE.ctx.createAnalyser();
-    JLIVE.analyser.fftSize = 2048;
-    JLIVE.buf = new Float32Array(JLIVE.analyser.fftSize);
-    JLIVE.ctx.createMediaStreamSource(JLIVE.stream).connect(JLIVE.analyser);
+    await PITCH.acquire('jlive'); // pipeline condivisa: gain/highpass/gate dal profilo strumento
     JLIVE.running = true;
     JLIVE.lastMidi = -1;
     document.getElementById('jam-fretboard')?.classList.add('live-active');
@@ -5707,9 +5729,8 @@ async function jamLiveToggle() {
 function jamLiveTick() {
   if (!JLIVE.running) return;
   JLIVE.rafId = requestAnimationFrame(jamLiveTick);
-  if (++JLIVE.frame % 3 !== 0) return; // ~20fps di analisi
-  JLIVE.analyser.getFloatTimeDomainData(JLIVE.buf);
-  const freq = autocorrelate(JLIVE.buf, JLIVE.ctx.sampleRate);
+  if (++JLIVE.frame % 2 !== 0) return; // ~30fps di analisi (feedback più reattivo)
+  const freq = PITCH.detect().freq;
   const noteEl = document.getElementById('jam-live-note');
   const now = performance.now();
   if (freq > 0) {
@@ -8173,6 +8194,8 @@ window.addEventListener('DOMContentLoaded', function() {
     <h2>Accordatore</h2>
     <div class="subtitle">// usa il microfono per accordare la chitarra · A = 440 Hz</div>
 
+    <div class="pitch-panel" data-pitch-panel></div>
+
     <div class="controls" style="margin-bottom:16px">
       <div class="ctrl-group">
         <div class="ctrl-label">Accordatura</div>
@@ -8218,6 +8241,8 @@ window.addEventListener('DOMContentLoaded', function() {
   <div id="bpage-micfb" class="cpage-view">
     <h2>Manico Live</h2>
     <div class="subtitle">// suona la tua chitarra: il manico mostra in tempo reale la nota rilevata dal microfono</div>
+
+    <div class="pitch-panel" data-pitch-panel></div>
 
     <div class="controls" style="margin-bottom:16px">
       <button id="micfb-btn" class="tap-btn" onclick="micFbToggle()">🎤 Avvia ascolto</button>
@@ -8656,6 +8681,255 @@ window.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// PITCH ENGINE CONDIVISO — un solo stream microfono + AudioContext per accordatore,
+// manico live e jam live. Catena: sorgente → gain (profilo/calibrazione) → highpass
+// (taglia risonanza cassa e rumore di manipolazione) → analyser.
+// Reference-counted: parte col primo consumatore, si spegne con l'ultimo — così
+// accordatore e manico live non aprono più stream duplicati.
+//
+// NOTA LATENZA (AudioWorklet valutato): l'analisi YIN richiede comunque una finestra
+// di 2048 campioni (~46ms @44.1kHz); il polling dell'AnalyserNode a ~30Hz aggiunge
+// al massimo ~33ms. Un AudioWorklet sposterebbe solo il punto di lettura, non la
+// finestra: guadagno reale <20ms a fronte di un percorso di codice separato da
+// mantenere anche su Safari vecchi. Restiamo su AnalyserNode con polling più fitto.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Profili strumento: timbri diversi → parametri di cattura e detection diversi.
+// · Elettrica: fondamentale forte e segnale pulito (specie via interfaccia/line-in):
+//   soglia YIN severa, poco highpass, nessun hold sull'attacco.
+// · Acustica: tante armoniche + risonanza della cassa: highpass più alto per il
+//   rimbombo, soglia YIN più permissiva, breve hold sul transiente della plettrata.
+// · Classica: attacco morbido del nylon ma tanto rumore di dita sui bassi avvolti:
+//   gain maggiore (segnale debole), hold più lungo sui transienti, range più stretto
+//   (le classiche non si suonano oltre il ~12° tasto della cantina).
+const PITCH_PROFILES = {
+  electric: {
+    label: '🎸 Elettrica',
+    desc: 'Fondamentale forte, segnale pulito. <strong>Consiglio:</strong> collega la chitarra a un’interfaccia audio/line-in e selezionala come sorgente — il segnale diretto è molto più affidabile del microfono.',
+    gain: 1.0, gate: 0.008, fMin: 70, fMax: 1320, yinThresh: 0.12,
+    highpass: 50, attackHoldMs: 0,
+  },
+  acoustic: {
+    label: '🪕 Acustica',
+    desc: 'Ricca di armoniche e risonanza della cassa: filtro sul rimbombo e soglia più permissiva. Suona a ~30–50cm dal microfono, evitando di puntarlo sulla buca.',
+    gain: 1.25, gate: 0.006, fMin: 70, fMax: 1100, yinThresh: 0.15,
+    highpass: 72, attackHoldMs: 40,
+  },
+  classical: {
+    label: '🎼 Classica',
+    desc: 'Attacco morbido del nylon e rumore di dita sui bassi avvolti: gain maggiorato e pausa sui transienti per ignorare lo squeak delle dita.',
+    gain: 1.5, gate: 0.006, fMin: 70, fMax: 900, yinThresh: 0.17,
+    highpass: 75, attackHoldMs: 60,
+  },
+};
+
+const PITCH = {
+  ctx: null, stream: null, source: null, gainNode: null, hpNode: null, analyser: null,
+  buf: null,
+  users: new Set(),        // consumatori attivi: 'tuner' | 'micfb' | 'jlive' | ...
+  starting: null,          // promise di avvio in corso (acquire concorrenti)
+  profileKey: 'electric',
+  deviceId: '',            // '' = default di sistema
+  calibGain: 1,            // moltiplicatore dal flusso di calibrazione
+  calibGate: 0,            // gate assoluto dalla calibrazione (0 = usa profilo)
+  _lastRms: 0, _attackHoldUntil: 0,
+
+  get profile() { return PITCH_PROFILES[this.profileKey] || PITCH_PROFILES.electric; },
+
+  loadPrefs() {
+    try {
+      const p = localStorage.getItem('pitch-profile');
+      if (p && PITCH_PROFILES[p]) this.profileKey = p;
+      this.deviceId = localStorage.getItem('pitch-device') || '';
+      const c = JSON.parse(localStorage.getItem('pitch-calib-' + this.profileKey) || 'null');
+      if (c) { this.calibGain = c.gain || 1; this.calibGate = c.gate || 0; }
+    } catch (e) {}
+  },
+
+  // Avvia (o riusa) la pipeline microfono. Ritorna true se attiva.
+  // Lancia Error con .code ∈ {https, unsupported} o l'errore getUserMedia originale.
+  async acquire(user) {
+    this.users.add(user);
+    if (this.analyser) return true;
+    if (this.starting) { await this.starting; return !!this.analyser; }
+    this.starting = this._start();
+    try { await this.starting; }
+    catch (e) { this.users.delete(user); throw e; }
+    finally { this.starting = null; }
+    return !!this.analyser;
+  },
+
+  async _start() {
+    // iOS Safari: getUserMedia esiste solo in contesto sicuro (HTTPS o localhost)
+    if (!window.isSecureContext) {
+      const e = new Error('Serve HTTPS per usare il microfono'); e.code = 'https'; throw e;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      const e = new Error('Microfono non supportato'); e.code = 'unsupported'; throw e;
+    }
+    // AGC/echo/noise OFF: alterano l'inviluppo e sporcano il pitch — il gain lo
+    // gestiamo noi (profilo + calibrazione).
+    const audio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+    if (this.deviceId) audio.deviceId = { exact: this.deviceId };
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio, video: false });
+    } catch (err) {
+      // Device salvato scomparso (interfaccia scollegata) → riprova col default
+      if (this.deviceId && (err.name === 'OverconstrainedError' || err.name === 'NotFoundError')) {
+        this.deviceId = '';
+        try { localStorage.setItem('pitch-device', ''); } catch (e) {}
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, video: false });
+      } else throw err;
+    }
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // iOS Safari: l'AudioContext parte 'suspended' finché non c'è una gesture —
+    // acquire() è sempre chiamato da un click, quindi il resume qui è legittimo.
+    if (this.ctx.state === 'suspended') await this.ctx.resume();
+    this.source = this.ctx.createMediaStreamSource(this.stream);
+    this.gainNode = this.ctx.createGain();
+    this.hpNode = this.ctx.createBiquadFilter();
+    this.hpNode.type = 'highpass';
+    this.analyser = this.ctx.createAnalyser();
+    this.analyser.fftSize = 2048;
+    this.analyser.smoothingTimeConstant = 0;
+    this.buf = new Float32Array(this.analyser.fftSize);
+    this.source.connect(this.gainNode);
+    this.gainNode.connect(this.hpNode);
+    this.hpNode.connect(this.analyser);
+    this._applyProfile();
+    this._refreshDeviceLists();
+  },
+
+  release(user) {
+    this.users.delete(user);
+    if (this.users.size) return;
+    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+    if (this.ctx) { try { this.ctx.close(); } catch (e) {} }
+    this.stream = this.ctx = this.source = this.gainNode = this.hpNode = this.analyser = null;
+    this._lastRms = 0; this._attackHoldUntil = 0;
+  },
+
+  _applyProfile() {
+    const p = this.profile;
+    if (this.gainNode) this.gainNode.gain.value = p.gain * this.calibGain;
+    if (this.hpNode) { this.hpNode.frequency.value = p.highpass; this.hpNode.Q.value = 0.7; }
+  },
+
+  setProfile(key) {
+    if (!PITCH_PROFILES[key]) return;
+    this.profileKey = key;
+    try {
+      localStorage.setItem('pitch-profile', key);
+      const c = JSON.parse(localStorage.getItem('pitch-calib-' + key) || 'null');
+      this.calibGain = c && c.gain || 1;
+      this.calibGate = c && c.gate || 0;
+    } catch (e) {}
+    this._applyProfile();
+    renderPitchPanels();
+  },
+
+  async setDevice(id) {
+    this.deviceId = id || '';
+    try { localStorage.setItem('pitch-device', this.deviceId); } catch (e) {}
+    if (!this.analyser) return; // non attivo: verrà usato al prossimo acquire
+    // Hot-swap della sorgente senza buttare giù i consumatori
+    const old = this.stream;
+    const audio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+    if (this.deviceId) audio.deviceId = { exact: this.deviceId };
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio, video: false });
+      this.source.disconnect();
+      if (old) old.getTracks().forEach(t => t.stop());
+      this.stream = stream;
+      this.source = this.ctx.createMediaStreamSource(stream);
+      this.source.connect(this.gainNode);
+    } catch (e) { console.warn('setDevice fallito:', e); }
+  },
+
+  gateLevel() { return this.calibGate > 0 ? this.calibGate : this.profile.gate; },
+
+  // Legge una finestra e rileva il pitch secondo il profilo attivo.
+  // Ritorna { freq, rms } — freq = -1 se nessun tono affidabile.
+  detect() {
+    if (!this.analyser) return { freq: -1, rms: 0 };
+    this.analyser.getFloatTimeDomainData(this.buf);
+    const p = this.profile;
+    let sum = 0;
+    for (let i = 0; i < this.buf.length; i++) sum += this.buf[i] * this.buf[i];
+    const rms = Math.sqrt(sum / this.buf.length);
+    const now = performance.now();
+    // Gate sui transienti: la plettrata/il tocco produce un salto d'energia con
+    // spettro inarmonico (critico su classica/acustica) → ignora i primi ms.
+    if (p.attackHoldMs > 0) {
+      if (rms > this._lastRms * 3 && rms > this.gateLevel() * 2) this._attackHoldUntil = now + p.attackHoldMs;
+      this._lastRms = rms;
+      if (now < this._attackHoldUntil) return { freq: -1, rms };
+    } else this._lastRms = rms;
+    if (rms < this.gateLevel()) return { freq: -1, rms };
+    const freq = autocorrelate(this.buf, this.ctx.sampleRate, {
+      gate: this.gateLevel(), fMin: p.fMin, fMax: p.fMax, yinThresh: p.yinThresh,
+    });
+    return { freq, rms };
+  },
+
+  async listInputs() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return [];
+    try {
+      const devs = await navigator.mediaDevices.enumerateDevices();
+      return devs.filter(d => d.kind === 'audioinput');
+    } catch (e) { return []; }
+  },
+
+  _refreshDeviceLists() { renderPitchPanels(); },
+};
+PITCH.loadPrefs();
+
+// Messaggio utente per gli errori del microfono (condiviso dai tre consumatori)
+function pitchErrorMsg(e) {
+  if (e && e.code === 'https') return '⚠ il microfono richiede HTTPS — apri il sito da https://';
+  if (e && e.code === 'unsupported') return '⚠ microfono non supportato in questo browser';
+  if (e && e.name === 'NotAllowedError') return '⚠ permesso microfono negato — abilitalo nelle impostazioni del browser';
+  if (e && e.name === 'NotFoundError') return '⚠ nessun microfono trovato';
+  return '⚠ errore microfono: ' + (e && (e.message || e.name) || e);
+}
+
+// ── Pannelli "input audio": profilo strumento + sorgente. Un solo stato (PITCH),
+//    N istanze del pannello (accordatore, manico live) sempre sincronizzate. ──
+async function renderPitchPanels() {
+  const panels = document.querySelectorAll('[data-pitch-panel]');
+  if (!panels.length) return;
+  const inputs = await PITCH.listInputs();
+  const haveLabels = inputs.some(d => d.label);
+  panels.forEach(panel => {
+    const chips = Object.entries(PITCH_PROFILES).map(([k, p]) =>
+      `<button type="button" class="pp-chip${k === PITCH.profileKey ? ' active' : ''}"
+               onclick="PITCH.setProfile('${k}')">${p.label}</button>`).join('');
+    const opts = ['<option value="">Microfono predefinito</option>'].concat(
+      inputs.filter(d => d.deviceId && d.deviceId !== 'default').map(d =>
+        `<option value="${d.deviceId}"${d.deviceId === PITCH.deviceId ? ' selected' : ''}>${
+          d.label ? d.label.replace(/</g, '&lt;') : 'Ingresso audio'}</option>`)).join('');
+    const secureWarn = window.isSecureContext ? '' :
+      '<div class="pp-warn">⚠ serve HTTPS per accedere al microfono (su iPhone/iPad apri il sito da https://)</div>';
+    const deviceHint = haveLabels ? '' :
+      '<span class="pp-desc">// i nomi delle sorgenti compaiono dopo il primo permesso microfono</span>';
+    panel.innerHTML = `
+      <div class="pp-row"><span class="pp-lbl">Strumento</span><div class="pp-chips">${chips}</div></div>
+      <div class="pp-row"><span class="pp-lbl">Sorgente</span>
+        <select class="pp-device" onchange="PITCH.setDevice(this.value)">${opts}</select>
+        <button type="button" class="pp-refresh" title="Aggiorna elenco sorgenti" onclick="renderPitchPanels()">↻</button>
+        ${deviceHint}
+      </div>
+      <div class="pp-desc">${PITCH.profile.desc}</div>
+      ${secureWarn}`;
+  });
+}
+if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+  navigator.mediaDevices.addEventListener('devicechange', () => renderPitchPanels());
+}
+document.addEventListener('DOMContentLoaded', () => renderPitchPanels());
+
 // ─── ACCORDATORE (Pitch Detection via Autocorrelazione) ──────────────────────
 const TUNER_PRESETS = {
   standard: { name:'Standard (E A D G B E)', notes:['E','A','D','G','B','E'], notesFull:['E2','A2','D3','G3','B3','E4'], freqs:[82.41,110.00,146.83,196.00,246.94,329.63] },
@@ -8669,8 +8943,7 @@ const TUNER_PRESETS = {
 };
 
 const TUNER = {
-  running: false, stream: null, ctx: null,
-  analyser: null, buf: null, rafId: null,
+  running: false, rafId: null,   // mic/analyser condivisi: vedi PITCH
   aRef: 440,
   activeTuning: null  // set after TUNER_PRESETS declared
 };
@@ -8727,16 +9000,18 @@ function freqToNote(freq) {
 // funzione differenza e sceglie il primo minimo sotto soglia, eliminando gli
 // errori di ottava e agganciando correttamente anche le corde basse.
 // Ritorna la frequenza in Hz, o -1 se non c'è un tono affidabile.
-function autocorrelate(buf, sampleRate) {
+// opts (facoltativi, dal profilo strumento): gate RMS, range Hz, soglia YIN.
+function autocorrelate(buf, sampleRate, opts) {
+  const o = opts || {};
   const n = buf.length;
   // Gate RMS: ignora silenzio / rumore di fondo. Soglia bassa per acustiche non forti.
   let rms = 0;
   for (let i = 0; i < n; i++) rms += buf[i] * buf[i];
-  if (Math.sqrt(rms / n) < 0.006) return -1;
+  if (Math.sqrt(rms / n) < (o.gate || 0.006)) return -1;
 
   // Range chitarra ~70–1320 Hz (dal Do#2 al ~Mi6, con margine per le armoniche utili)
-  const minLag = Math.max(2, Math.floor(sampleRate / 1320));
-  const maxLag = Math.min((n >> 1) - 1, Math.ceil(sampleRate / 70));
+  const minLag = Math.max(2, Math.floor(sampleRate / (o.fMax || 1320)));
+  const maxLag = Math.min((n >> 1) - 1, Math.ceil(sampleRate / (o.fMin || 70)));
   if (maxLag <= minLag) return -1;
 
   // Finestra costante così d(tau) è confrontabile tra i vari tau (niente bias di lunghezza)
@@ -8763,7 +9038,7 @@ function autocorrelate(buf, sampleRate) {
   }
 
   // 3) Absolute threshold: primo minimo locale sotto soglia entro il range chitarra
-  const THRESH = 0.12;
+  const THRESH = o.yinThresh || 0.12;
   let tau = -1;
   for (let t = minLag; t <= maxLag; t++) {
     if (cmnd[t] < THRESH) {
@@ -8852,8 +9127,7 @@ function tunerTick() {
   if (!TUNER.running) return;
   TUNER.rafId = requestAnimationFrame(tunerTick);
   if (++_tunerFrame % 4 !== 0) return; // run analysis at ~15fps to save CPU on mobile
-  TUNER.analyser.getFloatTimeDomainData(TUNER.buf);
-  const freq = autocorrelate(TUNER.buf, TUNER.ctx.sampleRate);
+  const freq = PITCH.detect().freq;
   const noteEl  = document.getElementById('tuner-note');
   const freqEl  = document.getElementById('tuner-freq');
   const centsEl = document.getElementById('tuner-cents');
@@ -8900,9 +9174,7 @@ async function tunerToggle() {
   if (TUNER.running) {
     TUNER.running = false;
     cancelAnimationFrame(TUNER.rafId);
-    if (TUNER.stream) TUNER.stream.getTracks().forEach(t => t.stop());
-    if (TUNER.ctx)    TUNER.ctx.close();
-    TUNER.stream = TUNER.ctx = null;
+    PITCH.release('tuner');
     _tunerStrLastActive.fill(0);
     document.querySelectorAll('#tuner-strings-list .tuner-str').forEach(el => el.className = 'tuner-str');
     btn.textContent = '🎤 Avvia accordatore';
@@ -8911,25 +9183,11 @@ async function tunerToggle() {
     freqEl.style.color = '';
     return;
   }
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    freqEl.textContent = '⚠ Microfono non supportato in questo browser';
-    freqEl.style.color = '#ef4444';
-    return;
-  }
   btn.textContent = '⏳ Accesso microfono...';
   btn.disabled = true;
   freqEl.style.color = '';
   try {
-    TUNER.stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-      video: false
-    });
-    TUNER.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (TUNER.ctx.state === 'suspended') await TUNER.ctx.resume();
-    TUNER.analyser = TUNER.ctx.createAnalyser();
-    TUNER.analyser.fftSize = 2048;
-    TUNER.buf = new Float32Array(TUNER.analyser.fftSize);
-    TUNER.ctx.createMediaStreamSource(TUNER.stream).connect(TUNER.analyser);
+    await PITCH.acquire('tuner');
     TUNER.running = true;
     btn.textContent = '⏹ Ferma accordatore';
     btn.disabled = false;
@@ -8938,12 +9196,7 @@ async function tunerToggle() {
   } catch (e) {
     btn.textContent = '🎤 Avvia accordatore';
     btn.disabled = false;
-    const msg = e.name === 'NotAllowedError'
-      ? '⚠ Permesso microfono negato — abilita il microfono nelle impostazioni del browser'
-      : e.name === 'NotFoundError'
-      ? '⚠ Microfono non trovato'
-      : '⚠ Errore microfono: ' + (e.message || e.name || e);
-    freqEl.textContent = msg;
+    freqEl.textContent = pitchErrorMsg(e);
     freqEl.style.color = '#ef4444';
   }
 }
@@ -8952,7 +9205,7 @@ async function tunerToggle() {
 // Riusa autocorrelate() e la stessa pipeline mic dell'accordatore, ma con stato
 // separato: accordatore e manico live possono essere usati indipendentemente.
 const MICFB = {
-  running: false, stream: null, ctx: null, analyser: null, buf: null,
+  running: false,               // mic/analyser condivisi: vedi PITCH
   rafId: null, frame: 0, built: false,
   lastMidi: -1, lastSignalAt: 0,
   hist: [], // stabilizzazione d'ottava (anti-jitter), come JLIVE
@@ -9053,9 +9306,8 @@ function micFbClear() {
 function micFbTick() {
   if (!MICFB.running) return;
   MICFB.rafId = requestAnimationFrame(micFbTick);
-  if (++MICFB.frame % 3 !== 0) return; // ~20fps di analisi
-  MICFB.analyser.getFloatTimeDomainData(MICFB.buf);
-  const freq = autocorrelate(MICFB.buf, MICFB.ctx.sampleRate);
+  if (++MICFB.frame % 2 !== 0) return; // ~30fps di analisi (feedback più reattivo)
+  const freq = PITCH.detect().freq;
   const noteEl = document.getElementById('micfb-note');
   const metaEl = document.getElementById('micfb-meta');
   const now = performance.now();
@@ -9089,34 +9341,17 @@ async function micFbToggle() {
   if (MICFB.running) {
     MICFB.running = false;
     if (MICFB.rafId) cancelAnimationFrame(MICFB.rafId);
-    if (MICFB.stream) MICFB.stream.getTracks().forEach(t => t.stop());
-    if (MICFB.ctx) { try { MICFB.ctx.close(); } catch(e) {} }
-    MICFB.stream = null; MICFB.ctx = null; MICFB.analyser = null;
+    PITCH.release('micfb');
     micFbClear();
     document.getElementById('micfb-note').textContent = '—';
     metaEl.textContent = 'in attesa…';
     btn.textContent = '🎤 Avvia ascolto';
     return;
   }
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    metaEl.textContent = '⚠ microfono non supportato';
-    return;
-  }
   btn.textContent = '⏳ …';
   btn.disabled = true;
   try {
-    MICFB.stream = await navigator.mediaDevices.getUserMedia({
-      // autoGainControl attivo: aiuta le acustiche deboli senza alterare il pitch (YIN è
-      // robusto all'ampiezza). echoCancellation/noiseSuppression off per non deformare il segnale.
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true },
-      video: false
-    });
-    MICFB.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (MICFB.ctx.state === 'suspended') await MICFB.ctx.resume();
-    MICFB.analyser = MICFB.ctx.createAnalyser();
-    MICFB.analyser.fftSize = 2048;
-    MICFB.buf = new Float32Array(MICFB.analyser.fftSize);
-    MICFB.ctx.createMediaStreamSource(MICFB.stream).connect(MICFB.analyser);
+    await PITCH.acquire('micfb'); // pipeline condivisa: gain/highpass/gate dal profilo strumento
     MICFB.running = true;
     btn.textContent = '⏹ Ferma ascolto';
     btn.disabled = false;
@@ -9125,9 +9360,7 @@ async function micFbToggle() {
   } catch (e) {
     btn.textContent = '🎤 Avvia ascolto';
     btn.disabled = false;
-    metaEl.textContent = e.name === 'NotAllowedError'
-      ? '⚠ permesso microfono negato'
-      : '⚠ errore: ' + (e.message || e.name);
+    metaEl.textContent = pitchErrorMsg(e);
   }
 }
 
