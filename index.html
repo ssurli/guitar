@@ -2907,6 +2907,7 @@
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
         <button class="pos-btn active" id="mode-all-btn" onclick="setFbMode('all')">Tutte le note</button>
         <button class="pos-btn" id="mode-nps-btn" onclick="setFbMode('nps')">3 note per corda</button>
+        <button class="pos-btn" id="mode-caged-btn" onclick="setFbMode('caged')">Box CAGED</button>
         <button class="pos-btn" id="tech-btn" onclick="toggleTech()" style="margin-left:8px">Tecnica off</button>
         <span id="nps-position-wrap" style="display:none;margin-left:8px;display:none;gap:4px;align-items:center">
           <span class="ctrl-label">Posizione:</span>
@@ -4115,7 +4116,7 @@ function playBassSynth(ctx, dest, rootMidi, time, duration) {
 const FRET_WIDTHS = []; // will be computed
 
 // NPS state
-const FB_STATE = { mode: 'all', npsPosition: 0 };
+const FB_STATE = { mode: 'all', npsPosition: 0, cagedPosition: 0 };
 
 // Configurazione del manico (solo pagina Fretboard: le altre pagine — CAGED,
 // triadi, jam — ragionano in accordatura standard e non vengono toccate).
@@ -4159,10 +4160,25 @@ function setFbMode(mode) {
   FB_STATE.mode = mode;
   document.getElementById('mode-all-btn').classList.toggle('active', mode === 'all');
   document.getElementById('mode-nps-btn').classList.toggle('active', mode === 'nps');
+  const cagedBtn = document.getElementById('mode-caged-btn');
+  if (cagedBtn) cagedBtn.classList.toggle('active', mode === 'caged');
   const wrap = document.getElementById('nps-position-wrap');
-  wrap.style.display = mode === 'nps' ? 'flex' : 'none';
+  wrap.style.display = (mode === 'nps' || mode === 'caged') ? 'flex' : 'none';
   document.getElementById('nps-info-row').style.display = mode === 'nps' ? 'block' : 'none';
   renderFretboard();
+}
+
+// Finestre delle 5 posizioni CAGED per la tonalità corrente: ogni forma ancora
+// una zona di ~5 tasti in cui suonare la scala "in posizione". Riusa cagedCapo()
+// (pagina CAGED). Le forme assumono accordatura standard: con accordature custom
+// la finestra resta una zona di tasti coerente ma il nome della forma è indicativo.
+function computeCagedWindows(keyIndex, fretCount, capo) {
+  return CAGED_ORDER.map(shape => {
+    let start = cagedCapo(shape, keyIndex);
+    if (start + 4 < capo) start += 12;           // dietro il capotasto → ottava sopra
+    if (start > fretCount - 2 && start >= 12) start -= 12; // oltre il manico → ottava sotto
+    return { shape, start, end: start + 4, color: CAGED_DEFS[shape].color };
+  }).filter(w => w.end >= capo && w.start <= fretCount);
 }
 
 // Compute all NPS positions for current scale.
@@ -4342,6 +4358,25 @@ function renderFretboard() {
     }
   }
 
+  // ── CAGED mode: una finestra di ~5 tasti ancorata alla forma selezionata ──
+  let cagedWin = null;
+  if (FB_STATE.mode === 'caged') {
+    const wins = computeCagedWindows(keyIndex, fretCount, capo);
+    if (FB_STATE.cagedPosition >= wins.length) FB_STATE.cagedPosition = 0;
+    const tabsWrap = document.getElementById('nps-pos-tabs');
+    tabsWrap.innerHTML = '';
+    wins.forEach((w, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'pos-btn' + (i === FB_STATE.cagedPosition ? ' active' : '');
+      btn.textContent = `Forma ${w.shape} · ${w.start === 0 ? '0' : w.start}–${w.end}`;
+      btn.style.borderColor = i === FB_STATE.cagedPosition ? w.color : '';
+      btn.style.color = i === FB_STATE.cagedPosition ? w.color : '';
+      btn.onclick = () => { FB_STATE.cagedPosition = i; renderFretboard(); };
+      tabsWrap.appendChild(btn);
+    });
+    cagedWin = wins[FB_STATE.cagedPosition] || null;
+  }
+
   // Fret widths: index = guitar fret number (1-based); 0 unused
   const fretWidths = [0]; // index 0 placeholder
   for (let f = 1; f <= fretCount; f++) {
@@ -4425,8 +4460,11 @@ function renderFretboard() {
     const openInterval = (openNoteIndex - keyIndex + 12) % 12;
     const openInScale = scaleSet.has(openNoteIndex);
     const openInNps = npsActiveSet ? npsActiveSet.has(s + ',0') : false;
-    const openShouldShow = capo === 0 && (FB_STATE.mode === 'all' ? openInScale : openInNps);
-    const openIsDimmed = capo === 0 && FB_STATE.mode === 'nps' && openInScale && !openInNps;
+    const openInCaged = cagedWin ? cagedWin.start === 0 && openInScale : false;
+    const openShouldShow = capo === 0 && (
+      FB_STATE.mode === 'all' ? openInScale :
+      FB_STATE.mode === 'caged' ? openInCaged : openInNps);
+    const openIsDimmed = capo === 0 && openInScale && !openShouldShow && FB_STATE.mode !== 'all';
     const openIsOutside = capo === 0 && !openShouldShow && !openIsDimmed &&
                           FB_STATE.mode === 'all' && FB_CONFIG.showOutside;
 
@@ -4477,8 +4515,10 @@ function renderFretboard() {
       const inScale = scaleSet.has(noteIndex);
       const interval = (noteIndex - keyIndex + 12) % 12;
       const inNps = npsActiveSet ? npsActiveSet.has(s + ',' + f) : false;
-      const shouldShow = FB_STATE.mode === 'all' ? inScale : inNps;
-      const isDimmed = FB_STATE.mode === 'nps' && inScale && !inNps;
+      const inCaged = cagedWin ? (f >= cagedWin.start && f <= cagedWin.end && inScale) : false;
+      const shouldShow = FB_STATE.mode === 'all' ? inScale :
+                         FB_STATE.mode === 'caged' ? inCaged : inNps;
+      const isDimmed = inScale && !shouldShow && FB_STATE.mode !== 'all';
       const isOutside = !shouldShow && !isDimmed && FB_STATE.mode === 'all' && FB_CONFIG.showOutside;
 
       if (shouldShow || isOutside) {
