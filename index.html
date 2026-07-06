@@ -55,7 +55,35 @@
     --fret-color: #3d3020;
     --string-color: #c8a84b;
     --nut: #d4af6a;
+
+    /* Colori RUOLO nota (tonica/3ª/5ª/7ª) usati da manico e legende: -l = stop
+       chiaro del gradiente, base = colore pieno, -d = stop scuro. Le palette
+       alternative (sotto) sovrascrivono solo queste variabili → tutta l'app
+       resta cromaticamente coerente. */
+    --role-root-l:#fde68a;    --role-root:#f59e0b;    --role-root-d:#b45309;
+    --role-third-l:#bfdbfe;   --role-third:#3b82f6;   --role-third-d:#1e3a8a;
+    --role-fifth-l:#bbf7d0;   --role-fifth:#22c55e;   --role-fifth-d:#14532d;
+    --role-seventh-l:#e9d5ff; --role-seventh:#a855f7; --role-seventh-d:#4a1d96;
   }
+
+  /* Palette per daltonici (Okabe–Ito: distinguibile con deuteranopia/protanopia) */
+  body.palette-cb {
+    --role-root-l:#ffd76b;    --role-root:#e69f00;    --role-root-d:#9a6a00;
+    --role-third-l:#b3e0f7;   --role-third:#56b4e9;   --role-third-d:#1d6fa3;
+    --role-fifth-l:#7fe3c4;   --role-fifth:#009e73;   --role-fifth-d:#00563f;
+    --role-seventh-l:#f0c1d9; --role-seventh:#cc79a7; --role-seventh-d:#8c4470;
+  }
+  /* Palette ad alto contrasto: tinte più accese + bordo bianco sui pallini */
+  body.palette-hc {
+    --role-root-l:#ffe680;    --role-root:#ffcc00;    --role-root-d:#b38f00;
+    --role-third-l:#99e2ff;   --role-third:#00aaff;   --role-third-d:#005c8a;
+    --role-fifth-l:#a2ffcb;   --role-fifth:#00e676;   --role-fifth-d:#007a3e;
+    --role-seventh-l:#ffb3ff; --role-seventh:#ff4dff; --role-seventh-d:#8a008a;
+  }
+  body.palette-hc .note-dot.root,
+  body.palette-hc .note-dot.third,
+  body.palette-hc .note-dot.fifth,
+  body.palette-hc .note-dot.seventh { border-color: rgba(255,255,255,0.75); }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -452,25 +480,25 @@
      saturated fills, each with a matching shadow so labels stay legible across
      the whole radial gradient (edge → core). Root is the brightest/largest cue. */
   .note-dot.root {
-    background: radial-gradient(circle at 35% 30%, #fde68a 0%, var(--amber) 45%, #b45309 100%);
+    background: radial-gradient(circle at 35% 30%, var(--role-root-l) 0%, var(--role-root) 45%, var(--role-root-d) 100%);
     color: #1a1200;
     text-shadow: 0 1px 0 rgba(255,240,200,0.45);
     box-shadow: 0 0 14px rgba(245,158,11,0.7), inset 0 2px 4px rgba(255,255,200,0.4), inset 0 -2px 3px rgba(0,0,0,0.3);
   }
   .note-dot.third {
-    background: radial-gradient(circle at 35% 30%, #bfdbfe 0%, var(--blue) 45%, #1e3a8a 100%);
+    background: radial-gradient(circle at 35% 30%, var(--role-third-l) 0%, var(--role-third) 45%, var(--role-third-d) 100%);
     color: #fff;
     text-shadow: 0 1px 2px rgba(0,0,0,0.55);
     box-shadow: 0 0 10px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 3px rgba(0,0,0,0.3);
   }
   .note-dot.fifth {
-    background: radial-gradient(circle at 35% 30%, #bbf7d0 0%, var(--green) 45%, #14532d 100%);
+    background: radial-gradient(circle at 35% 30%, var(--role-fifth-l) 0%, var(--role-fifth) 45%, var(--role-fifth-d) 100%);
     color: #05230f;
     text-shadow: 0 1px 0 rgba(220,255,230,0.4);
     box-shadow: 0 0 10px rgba(34,197,94,0.5), inset 0 2px 4px rgba(255,255,255,0.35), inset 0 -2px 3px rgba(0,0,0,0.3);
   }
   .note-dot.seventh {
-    background: radial-gradient(circle at 35% 30%, #e9d5ff 0%, var(--purple) 45%, #4a1d96 100%);
+    background: radial-gradient(circle at 35% 30%, var(--role-seventh-l) 0%, var(--role-seventh) 45%, var(--role-seventh-d) 100%);
     color: #fff;
     text-shadow: 0 1px 2px rgba(0,0,0,0.55);
     box-shadow: 0 0 10px rgba(168,85,247,0.5), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 3px rgba(0,0,0,0.3);
@@ -537,10 +565,10 @@
     display: inline-block; width: 12px; height: 12px; border-radius: 50%;
     margin-right: 5px; vertical-align: -1px;
   }
-  .jam-fb-legend .lg-root { background: var(--amber); }
-  .jam-fb-legend .lg-third { background: var(--blue); }
-  .jam-fb-legend .lg-fifth { background: var(--green); }
-  .jam-fb-legend .lg-seventh { background: var(--purple); }
+  .jam-fb-legend .lg-root { background: var(--role-root); }
+  .jam-fb-legend .lg-third { background: var(--role-third); }
+  .jam-fb-legend .lg-fifth { background: var(--role-fifth); }
+  .jam-fb-legend .lg-seventh { background: var(--role-seventh); }
   .jam-fb-legend .lg-live { background: transparent; box-shadow: 0 0 0 2px #fff, 0 0 8px #fff; }
   .jam-fb-legend .lg-hint { color: var(--text-dim); }
 
@@ -2945,6 +2973,14 @@
         <option value="degree">Grado</option>
       </select>
     </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Colori</div>
+      <select id="fb-palette" onchange="setPalette(this.value)">
+        <option value="default">Classici</option>
+        <option value="cb">Daltonici</option>
+        <option value="hc">Alto contrasto</option>
+      </select>
+    </div>
     <div class="ctrl-group" style="flex:0 0 auto;margin-top:18px;">
       <button class="play-btn" onclick="playScale()">▶ Play scala</button>
     </div>
@@ -3012,10 +3048,10 @@
   <div id="nps-mini-diagrams" class="mini-diag-wrap" style="margin-top:14px"></div>
 
   <div class="legend">
-    <div class="legend-item"><div class="legend-dot" style="background:var(--amber);box-shadow:0 0 8px rgba(245,158,11,0.5)"></div> Tonica (1)</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--blue);box-shadow:0 0 8px rgba(59,130,246,0.4)"></div> Terza (3)</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--green);box-shadow:0 0 8px rgba(34,197,94,0.4)"></div> Quinta (5)</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--purple);box-shadow:0 0 8px rgba(168,85,247,0.4)"></div> Settima (7)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--role-root);box-shadow:0 0 8px rgba(245,158,11,0.5)"></div> Tonica (1)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--role-third);box-shadow:0 0 8px rgba(59,130,246,0.4)"></div> Terza (3)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--role-fifth);box-shadow:0 0 8px rgba(34,197,94,0.4)"></div> Quinta (5)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--role-seventh);box-shadow:0 0 8px rgba(168,85,247,0.4)"></div> Settima (7)</div>
     <div class="legend-item"><div class="legend-dot" style="background:var(--bg3);border:1px solid #333"></div> Altre note</div>
     <div class="legend-item" id="legend-tech" style="display:none;margin-left:8px;border-left:1px solid var(--border);padding-left:12px;gap:10px">
       <span style="color:#f87171;font-size:13px;font-family:monospace">↑</span> Bend &nbsp;
@@ -4203,6 +4239,24 @@ function fbSetTuning(key) {
 function fbSetCapo(v) { FB_CONFIG.capo = parseInt(v) || 0; FB_STATE.npsPosition = 0; renderFretboard(); }
 function fbSetLefty(on) { FB_CONFIG.lefty = !!on; renderFretboard(); }
 function fbSetOutside(on) { FB_CONFIG.showOutside = !!on; renderFretboard(); }
+
+// Palette colori dei ruoli nota (tonica/3ª/5ª/7ª): applicata a livello di body
+// così manico, legende e jam restano coerenti in tutta l'app. Persistita.
+function setPalette(key) {
+  document.body.classList.remove('palette-cb', 'palette-hc');
+  if (key === 'cb') document.body.classList.add('palette-cb');
+  if (key === 'hc') document.body.classList.add('palette-hc');
+  try { localStorage.setItem('fb-palette', key); } catch (e) {}
+}
+document.addEventListener('DOMContentLoaded', () => {
+  let p = 'default';
+  try { p = localStorage.getItem('fb-palette') || 'default'; } catch (e) {}
+  if (p !== 'default') {
+    setPalette(p);
+    const sel = document.getElementById('fb-palette');
+    if (sel) sel.value = p;
+  }
+});
 
 function toggleTech() {
   const active = document.body.classList.toggle('show-tech');
