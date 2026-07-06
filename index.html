@@ -11478,9 +11478,15 @@ function paintStrokeSegment(ctx, a, b, color, sz, erase){
   const dx = b[0]-a[0], dy = b[1]-a[1], dist = Math.hypot(dx,dy);
   ctx.globalCompositeOperation = erase ? 'destination-out' : 'source-over';
   const n = Math.max(1, Math.round(dist/step));
+  const pa = ctx.globalAlpha;
   for (let i=0; i<=n; i++){
-    ctx.drawImage(stamp, a[0]+dx*i/n-rad, a[1]+dy*i/n-rad, rad*2, rad*2);
+    // pressione irregolare lungo il tratto (deterministica: il replay è identico)
+    const t = a[0]+a[1]+i;
+    if (!erase) ctx.globalAlpha = pa * (0.72 + 0.28*Math.abs(Math.sin(t*0.9)));
+    const wob = erase ? 0 : Math.sin(t*1.7) * rad * 0.14;
+    ctx.drawImage(stamp, a[0]+dx*i/n-rad - wob*dy/(dist||1), a[1]+dy*i/n-rad + wob*dx/(dist||1), rad*2, rad*2);
   }
+  ctx.globalAlpha = pa;
   ctx.globalCompositeOperation = 'source-over';
 }
 
