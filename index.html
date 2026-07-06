@@ -8705,6 +8705,10 @@ window.addEventListener('DOMContentLoaded', function() {
 
     <div class="controls" style="margin-bottom:16px">
       <button id="micfb-btn" class="tap-btn" onclick="micFbToggle()">🎤 Avvia ascolto</button>
+      <div class="pp-chips" style="align-self:center">
+        <button type="button" class="pp-chip active" id="micfb-mode-mono" onclick="micFbSetChordMode(false)">Note singole</button>
+        <button type="button" class="pp-chip" id="micfb-mode-chord" onclick="micFbSetChordMode(true)">Accordi (beta)</button>
+      </div>
       <div class="micfb-note-display">
         <span class="micfb-note" id="micfb-note">—</span>
         <span class="micfb-meta" id="micfb-meta">in attesa…</span>
@@ -8723,7 +8727,9 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="hint-box" style="font-size:12px;max-width:720px">
       <strong>Come usarlo:</strong> suona una nota alla volta sulla chitarra: si accende in ambra la
       posizione (o le posizioni unisone) della nota che stai suonando — solo quella, non le altre ottave.
-      Con gli accordi la rilevazione cattura solo la nota dominante.
+      In <strong>modalità Accordi (beta)</strong> suona un accordo pieno e lascialo squillare: appare il
+      nome (maggiore/minore/7) e i suoi toni si accendono sul manico — funziona meglio con accordi
+      tenuti, meno bene con arpeggi veloci.
     </div>
   </div><!-- /bpage-micfb -->
   <div id="bpage-looper" class="cpage-view">
@@ -9251,7 +9257,7 @@ const PITCH = {
     this.hpNode = this.ctx.createBiquadFilter();
     this.hpNode.type = 'highpass';
     this.analyser = this.ctx.createAnalyser();
-    this.analyser.fftSize = 2048;
+    this.analyser.fftSize = this._fftSize || 2048;
     this.analyser.smoothingTimeConstant = 0;
     this.buf = new Float32Array(this.analyser.fftSize);
     this.source.connect(this.gainNode);
@@ -9309,16 +9315,29 @@ const PITCH = {
 
   gateLevel() { return this.calibGate > 0 ? this.calibGate : this.profile.gate; },
 
+  // Cambia la finestra FFT (la modalità accordi vuole 8192 per risolvere i bassi;
+  // il rilevamento monofonico resta a 2048 per la latenza).
+  setFft(size) {
+    this._fftSize = size;
+    if (this.analyser && this.analyser.fftSize !== size) {
+      this.analyser.fftSize = size;
+      this.buf = new Float32Array(size);
+    }
+  },
+
   // Legge una finestra e rileva il pitch secondo il profilo attivo.
   // Ritorna { freq, rms, conf } — freq = -1 se nessun tono affidabile
   // (silenzio, transiente d'attacco, o confidenza sotto la soglia del profilo).
   detect() {
     if (!this.analyser) return { freq: -1, rms: 0, conf: 0 };
     this.analyser.getFloatTimeDomainData(this.buf);
+    // Con FFT grande (modalità accordi) YIN userebbe una finestra enorme e lenta:
+    // analizza solo gli ultimi 2048 campioni (i più recenti sono in coda).
+    const abuf = this.buf.length > 2048 ? this.buf.subarray(this.buf.length - 2048) : this.buf;
     const p = this.profile;
     let sum = 0;
-    for (let i = 0; i < this.buf.length; i++) sum += this.buf[i] * this.buf[i];
-    const rms = Math.sqrt(sum / this.buf.length);
+    for (let i = 0; i < abuf.length; i++) sum += abuf[i] * abuf[i];
+    const rms = Math.sqrt(sum / abuf.length);
     const now = performance.now();
     // Gate sui transienti: la plettrata/il tocco produce un salto d'energia con
     // spettro inarmonico (critico su classica/acustica) → ignora i primi ms.
@@ -9328,7 +9347,7 @@ const PITCH = {
       if (now < this._attackHoldUntil) return { freq: -1, rms, conf: 0 };
     } else this._lastRms = rms;
     if (rms < this.gateLevel()) return { freq: -1, rms, conf: 0 };
-    const freq = autocorrelate(this.buf, this.ctx.sampleRate, {
+    const freq = autocorrelate(abuf, this.ctx.sampleRate, {
       gate: this.gateLevel(), fMin: p.fMin, fMax: p.fMax, yinThresh: p.yinThresh,
     });
     const conf = autocorrelate.confidence;
@@ -9885,9 +9904,158 @@ function micFbClear() {
   MICFB.lastPos = null;
 }
 
+// ── MODALITÀ ACCORDI (beta) ───────────────────────────────────────────────────
+// YIN è monofonico: per gli accordi si passa a FFT 8192 → vettore chroma (12
+// classi di altezza, pesato per attenuare le armoniche acute) → template
+// matching su 36 sagome (maj/min/dom7 × 12 toniche). Percorso separato che non
+// tocca il rilevamento monofonico.
+const MICCHORD = {
+  on: false, fbuf: null,
+  lastName: '', stableCount: 0, shownName: '', lastHitAt: 0,
+};
+// 24 template di TRIADE (maj/min × 12 toniche). La settima di dominante non è
+// un template a sé (conterrebbe la triade maggiore e vincerebbe/perderebbe per
+// un soffio): si aggiunge come "upgrade" se la ♭7 è davvero presente nel chroma.
+const CHORD_TEMPLATES = (() => {
+  const shapes = [
+    { suf: '',  pcs: [1, 0, 0, 0, .85, 0, 0, .9, 0, 0, 0, 0], tones: [0, 4, 7], major: true },
+    { suf: 'm', pcs: [1, 0, 0, .85, 0, 0, 0, .9, 0, 0, 0, 0], tones: [0, 3, 7], major: false },
+  ];
+  const out = [];
+  for (let r = 0; r < 12; r++) {
+    for (const sh of shapes) {
+      out.push({
+        name: NOTES[r] + sh.suf,
+        root: r,
+        major: sh.major,
+        tones: sh.tones.map(t => (r + t) % 12),
+        pcs: Array.from({ length: 12 }, (_, i) => sh.pcs[((i - r) % 12 + 12) % 12]),
+      });
+    }
+  }
+  return out;
+})();
+
+function micFbSetChordMode(on) {
+  MICCHORD.on = !!on;
+  MICCHORD.lastName = ''; MICCHORD.stableCount = 0; MICCHORD.shownName = '';
+  PITCH.setFft(on ? 8192 : 2048); // più risoluzione in frequenza per i bassi
+  micFbClear();
+  document.getElementById('micfb-mode-mono')?.classList.toggle('active', !on);
+  document.getElementById('micfb-mode-chord')?.classList.toggle('active', on);
+  const noteEl = document.getElementById('micfb-note');
+  const metaEl = document.getElementById('micfb-meta');
+  if (noteEl) noteEl.textContent = '—';
+  if (metaEl) metaEl.textContent = MICFB.running
+    ? (on ? 'suona un accordo…' : 'in ascolto…') : 'in attesa…';
+}
+
+// Estrae il chroma dallo spettro e cerca l'accordo più plausibile.
+// Ritorna il template o null (segnale debole / nessuna dominanza netta).
+function micChordDetect() {
+  const an = PITCH.analyser;
+  if (!an) return null;
+  // gate RMS come nel percorso mono
+  PITCH.analyser.getFloatTimeDomainData(PITCH.buf);
+  let sum = 0;
+  const tb = PITCH.buf;
+  for (let i = 0; i < tb.length; i++) sum += tb[i] * tb[i];
+  if (Math.sqrt(sum / tb.length) < PITCH.gateLevel()) return null;
+
+  const n = an.frequencyBinCount;
+  if (!MICCHORD.fbuf || MICCHORD.fbuf.length !== n) MICCHORD.fbuf = new Float32Array(n);
+  an.getFloatFrequencyData(MICCHORD.fbuf);
+  const binHz = PITCH.ctx.sampleRate / an.fftSize;
+  const chroma = new Array(12).fill(0);
+  let total = 0;
+  const i0 = Math.max(1, Math.floor(70 / binHz));
+  const i1 = Math.min(n - 1, Math.ceil(1100 / binHz));
+  for (let i = i0; i <= i1; i++) {
+    const db = MICCHORD.fbuf[i];
+    if (db < -75) continue;
+    const f = i * binHz;
+    const mag = Math.pow(10, db / 20) / (1 + f / 500); // pesa meno le armoniche acute
+    const midi = Math.round(69 + 12 * Math.log2(f / 440));
+    chroma[((midi % 12) + 12) % 12] += mag;
+    total += mag;
+  }
+  if (total < 1e-7) return null;
+  for (let i = 0; i < 12; i++) chroma[i] /= total;
+
+  // Similarità coseno chroma↔template: invariante alla concentrazione dell'energia
+  // (una triade secca e un accordo a 4 note ottengono punteggi confrontabili).
+  let cNorm = 0;
+  for (let i = 0; i < 12; i++) cNorm += chroma[i] * chroma[i];
+  cNorm = Math.sqrt(cNorm);
+  if (cNorm < 1e-7) return null;
+  const T_NORM = Math.sqrt(1 + 0.85 * 0.85 + 0.9 * 0.9); // uguale per tutti i template
+  let best = null, bestScore = 0, second = 0;
+  for (const t of CHORD_TEMPLATES) {
+    let dot = 0;
+    for (let i = 0; i < 12; i++) dot += chroma[i] * t.pcs[i];
+    const s = dot / (cNorm * T_NORM);
+    if (s > bestScore) { second = bestScore; bestScore = s; best = t; }
+    else if (s > second) second = s;
+  }
+  // serve buona somiglianza E dominanza netta sul 2° classificato
+  if (!best || bestScore < 0.72 || bestScore - second < 0.04) return null;
+
+  // Upgrade a settima di dominante: triade maggiore vinta + ♭7 chiaramente
+  // presente rispetto alla media dei toni della triade.
+  let name = best.name, tones = best.tones;
+  if (best.major) {
+    const b7 = (best.root + 10) % 12;
+    const triAvg = (chroma[best.root] + chroma[(best.root + 4) % 12] + chroma[(best.root + 7) % 12]) / 3;
+    if (chroma[b7] > 0.05 && chroma[b7] > 0.55 * triAvg) {
+      name = NOTES[best.root] + '7';
+      tones = [...best.tones, b7];
+    }
+  }
+  return { name, root: best.root, tones, score: bestScore };
+}
+
+// Evidenzia i toni dell'accordo sul manico: tonica piena, altri toni soft.
+function micChordHighlight(t) {
+  const fb = document.getElementById('micfb-fretboard');
+  if (!fb) return;
+  const toneSet = new Set(t ? t.tones : []);
+  fb.querySelectorAll('.note-dot').forEach(d => {
+    const pc = ((parseInt(d.dataset.midi) % 12) + 12) % 12;
+    d.classList.toggle('mic-hit', !!t && pc === t.root);
+    d.classList.toggle('mic-oct', !!t && pc !== t.root && toneSet.has(pc));
+  });
+}
+
+function micChordTick(noteEl, metaEl, now) {
+  const t = micChordDetect();
+  if (t) {
+    MICCHORD.lastHitAt = now;
+    // isteresi: 3 letture uguali consecutive prima di cambiare il nome mostrato
+    if (t.name === MICCHORD.lastName) MICCHORD.stableCount++;
+    else { MICCHORD.lastName = t.name; MICCHORD.stableCount = 1; }
+    if (MICCHORD.stableCount >= 3 && t.name !== MICCHORD.shownName) {
+      MICCHORD.shownName = t.name;
+      micChordHighlight(t);
+      noteEl.textContent = t.name;
+    }
+    if (MICCHORD.shownName) metaEl.textContent = `accordo · aff. ${Math.round(t.score * 100)}%`;
+  } else if (MICCHORD.shownName && now - MICCHORD.lastHitAt > MICFB_HOLD_MS) {
+    MICCHORD.shownName = ''; MICCHORD.lastName = ''; MICCHORD.stableCount = 0;
+    micChordHighlight(null);
+    noteEl.textContent = '—';
+    metaEl.textContent = 'suona un accordo…';
+  }
+}
+
 function micFbTick() {
   if (!MICFB.running) return;
   MICFB.rafId = requestAnimationFrame(micFbTick);
+  if (MICCHORD.on) {
+    if (++MICFB.frame % 4 !== 0) return; // ~15fps: la FFT 8192 è più pesante
+    micChordTick(document.getElementById('micfb-note'),
+                 document.getElementById('micfb-meta'), performance.now());
+    return;
+  }
   if (++MICFB.frame % 2 !== 0) return; // ~30fps di analisi (feedback più reattivo)
   const det = PITCH.detect();
   const freq = det.freq;
