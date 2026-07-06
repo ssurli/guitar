@@ -11145,7 +11145,9 @@ function paintInit(){
   });
   paintBuildSwatches();
   paintRefreshSavedList();
-  paintRestoreAutosave();
+  const restored = paintRestoreAutosave();
+  // primo avvio su schermo stretto: manico a 12 tasti, entra quasi tutto senza scroll
+  if (!restored && window.innerWidth < 480) $pt('paint-frets').value = '12';
   paintBuildNeck();
   paintSyncUI();
 }
@@ -11386,9 +11388,19 @@ function paintPointerUp(){
   const g = PAINT.geom;
   const norm = pts.map(p => [ +(p[0]/g.W).toFixed(4), +(p[1]/g.H).toFixed(4) ]);
   paintPushUndo();
-  PAINT.ops.push(PAINT.tool==='eraser'
-    ? { t:'ers', sz:PAINT.size, pts:norm }
-    : { t:'str', c:PAINT.strokeColor, sz:PAINT.size, pts:norm });
+  if (PAINT.tool==='eraser'){
+    // la gomma libera rimuove anche i dab che attraversa (corpo + etichetta),
+    // non solo i pixel: altrimenti l'etichetta ridisegnata sopra resterebbe
+    const rad = 9*PAINT.size + 4;
+    PAINT.ops = PAINT.ops.filter(o => {
+      if (o.t !== 'dab' || o.f > g.fretCount) return true;
+      const dx = g.xc[o.f], dy = paintYc(o.s);
+      return !pts.some(p => Math.hypot(p[0]-dx, p[1]-dy) < rad);
+    });
+    PAINT.ops.push({ t:'ers', sz:PAINT.size, pts:norm });
+  } else {
+    PAINT.ops.push({ t:'str', c:PAINT.strokeColor, sz:PAINT.size, pts:norm });
+  }
   paintRender(); paintAutosave();
 }
 
@@ -11671,12 +11683,13 @@ function paintAutosave(){
 function paintRestoreAutosave(){
   try{
     const d = JSON.parse(localStorage.getItem(PAINT_LS_AUTO) || 'null');
-    if (!d || !Array.isArray(d.ops)) return;
+    if (!d || !Array.isArray(d.ops)) return false;
     if (d.key != null) $pt('paint-key').value = d.key;
     if (d.scale && SCALES[d.scale]) $pt('paint-scale').value = d.scale;
     if (d.frets) $pt('paint-frets').value = d.frets;
     PAINT.ops = d.ops; PAINT.seed = d.seed || PAINT.ops.length+1;
-  }catch(_){}
+    return true;
+  }catch(_){ return false; }
 }
 function paintGetStore(){ try{ return JSON.parse(localStorage.getItem(PAINT_LS_KEY) || '{}'); }catch(_){ return {}; } }
 function paintSetStore(o){ try{ localStorage.setItem(PAINT_LS_KEY, JSON.stringify(o)); }catch(_){ alert('localStorage non disponibile in questo browser.'); } }
