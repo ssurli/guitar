@@ -313,6 +313,21 @@
     width: 26px;
     text-align: center;
     flex-shrink: 0;
+    /* Sempre visibile durante lo scroll orizzontale del manico (mobile!):
+       resta incollato al bordo del riquadro scrollabile, sopra i dot. */
+    position: sticky;
+    left: 0;
+    z-index: 12;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(90deg, var(--panel) 72%, transparent);
+  }
+  .fretboard.lefty .string-name {
+    left: auto;
+    right: 0;
+    background: linear-gradient(270deg, var(--panel) 72%, transparent);
   }
 
   .nut-col {
