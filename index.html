@@ -8924,9 +8924,110 @@ async function renderPitchPanels() {
         <button type="button" class="pp-refresh" title="Aggiorna elenco sorgenti" onclick="renderPitchPanels()">↻</button>
         ${deviceHint}
       </div>
+      <div class="pp-row"><span class="pp-lbl">Taratura</span>
+        <button type="button" class="pp-chip" onclick="calibStart()" ${CALIB.running ? 'disabled' : ''}>🎚 Calibra</button>
+        <span class="pp-desc" data-calib-status>${calibSummary()}</span>
+      </div>
       <div class="pp-desc">${PITCH.profile.desc}</div>
       ${secureWarn}`;
   });
+}
+
+// ── CALIBRAZIONE GUIDATA ──────────────────────────────────────────────────────
+// Due fasi: (1) silenzio → misura il rumore di fondo; (2) corde a vuoto → misura
+// il livello del segnale e verifica che le corde vengano riconosciute.
+// Risultato: gate = rumore×3 (i falsi positivi da rumore di dita/ambiente
+// spariscono) e gain che porta il picco del tuo strumento a livello ottimale.
+// Salvato per profilo in localStorage: elettrica via line-in e classica al mic
+// hanno tarature indipendenti.
+const CALIB = { running: false };
+
+function calibSummary() {
+  if (CALIB.running) return '';
+  if (PITCH.calibGate > 0) {
+    return `tarato ✓ (gate ${PITCH.calibGate.toFixed(4)} · gain ×${PITCH.calibGain.toFixed(2)}) — rifai la taratura se cambi stanza o strumento`;
+  }
+  return 'non tarato — 15 secondi: silenzio + corde a vuoto';
+}
+
+function _calibStatus(msg) {
+  document.querySelectorAll('[data-calib-status]').forEach(el => { el.innerHTML = msg; });
+}
+
+function _calibRms() {
+  PITCH.analyser.getFloatTimeDomainData(PITCH.buf);
+  let sum = 0;
+  for (let i = 0; i < PITCH.buf.length; i++) sum += PITCH.buf[i] * PITCH.buf[i];
+  return Math.sqrt(sum / PITCH.buf.length);
+}
+
+async function calibStart() {
+  if (CALIB.running) return;
+  try { await PITCH.acquire('calib'); }
+  catch (e) { _calibStatus('<span class="pp-warn">' + pitchErrorMsg(e) + '</span>'); return; }
+  CALIB.running = true;
+  const NOTE_N = NOTE_STRINGS; // nomi nota per il riepilogo corde
+
+  const sample = (ms, onTick) => new Promise(res => {
+    const vals = [];
+    const t0 = performance.now();
+    (function loop() {
+      if (!PITCH.analyser) return res(vals); // stream caduto
+      vals.push(_calibRms());
+      const left = ms - (performance.now() - t0);
+      if (onTick) onTick(left, vals);
+      if (left <= 0) return res(vals);
+      setTimeout(loop, 50);
+    })();
+  });
+
+  try {
+    // Fase 1 — rumore di fondo
+    for (let c = 3; c >= 1; c--) {
+      _calibStatus(`🤫 <strong>fase 1/2:</strong> fai silenzio… parto tra ${c}`);
+      await new Promise(r => setTimeout(r, 700));
+    }
+    const noiseVals = await sample(2000, left =>
+      _calibStatus(`🤫 <strong>fase 1/2:</strong> misuro il rumore di fondo… ${(left / 1000).toFixed(1)}s`));
+    noiseVals.sort((a, b) => a - b);
+    const noise = noiseVals[Math.floor(noiseVals.length * 0.9)] || 0; // 90° percentile
+
+    // Fase 2 — corde a vuoto
+    let peak = 0;
+    const heard = new Set();
+    const gateNow = Math.max(noise * 2.5, 0.003);
+    await sample(8000, (left, vals) => {
+      const rms = vals[vals.length - 1];
+      if (rms > peak) peak = rms;
+      if (rms > gateNow) {
+        const f = autocorrelate(PITCH.buf, PITCH.ctx.sampleRate,
+          { gate: gateNow, fMin: 60, fMax: 700, yinThresh: 0.2 });
+        if (f > 0) heard.add(NOTE_N[((Math.round(12 * Math.log2(f / TUNER.aRef) + 69) % 12) + 12) % 12]);
+      }
+      const lvl = '▮'.repeat(Math.min(10, Math.round(rms * 120))).padEnd(10, '▯');
+      _calibStatus(`🎸 <strong>fase 2/2:</strong> suona le corde a vuoto, una alla volta… ${(left / 1000).toFixed(0)}s &nbsp;<span style="letter-spacing:1px">${lvl}</span>`);
+    });
+
+    if (peak < noise * 3 || peak < 0.004) {
+      _calibStatus('<span class="pp-warn">⚠ segnale troppo debole: avvicina il microfono / alza il volume dell’interfaccia e riprova</span>');
+    } else {
+      // Le misure sono post-gain: k riporta il picco al livello target e scala
+      // coerentemente anche il gate misurato sul rumore.
+      const k = Math.max(0.5, Math.min(4, 0.25 / peak));
+      PITCH.calibGain = Math.max(0.25, Math.min(6, PITCH.calibGain * k));
+      PITCH.calibGate = Math.max(0.0035, Math.min(0.05, noise * k * 3));
+      try {
+        localStorage.setItem('pitch-calib-' + PITCH.profileKey,
+          JSON.stringify({ gain: PITCH.calibGain, gate: PITCH.calibGate }));
+      } catch (e) {}
+      PITCH._applyProfile();
+      const strs = heard.size ? ` · corde sentite: ${[...heard].join(' ')}` : '';
+      _calibStatus(`✅ taratura completata (gate ${PITCH.calibGate.toFixed(4)} · gain ×${PITCH.calibGain.toFixed(2)}${strs})`);
+    }
+  } finally {
+    CALIB.running = false;
+    PITCH.release('calib');
+  }
 }
 if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
   navigator.mediaDevices.addEventListener('devicechange', () => renderPitchPanels());
