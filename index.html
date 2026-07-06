@@ -596,16 +596,20 @@
      Restano visibili anche se attenuate/nascoste da arp-mode/chord-dim. */
   /* Quando il mic è attivo, le note SUGGERITE passano in secondo piano così la
      nota che stai suonando domina visivamente. */
-  #jam-fretboard.live-active .note-dot { opacity: 0.4; filter: saturate(0.7); }
+  #jam-fretboard.live-active .note-dot,
+  #fretboard.live-active .note-dot { opacity: 0.4; filter: saturate(0.7); }
   #jam-fretboard.live-active .note-dot.chord-tone { opacity: 0.62; }
 
   #jam-fretboard .note-dot.live-exact,
-  #jam-fretboard .note-dot.live-trail {
+  #jam-fretboard .note-dot.live-trail,
+  #fretboard .note-dot.live-exact,
+  #fretboard .note-dot.live-trail {
     display: flex !important; filter: none !important;
     z-index: 8;
   }
   /* LA NOTA CHE SUONI — la più prominente in assoluto: grande, cerchio bianco
      spesso, alone luminoso pulsante, testo nitido sopra ogni suggerimento. */
+  #fretboard .note-dot.live-exact,
   #jam-fretboard .note-dot.live-exact {
     opacity: 1 !important;
     color: #fff !important;
@@ -619,6 +623,7 @@
     50%     { box-shadow: 0 0 0 4px #fff, 0 0 30px 7px rgba(255,255,255,1);   transform: scale(1.46); }
   }
   /* scia: cerchio sottile che sfuma via — traccia il movimento di slide/passaggio */
+  #fretboard .note-dot.live-trail,
   #jam-fretboard .note-dot.live-trail {
     box-shadow: 0 0 0 2px rgba(255,255,255,0.55);
     transform: scale(1.02);
@@ -631,6 +636,47 @@
   }
   /* readout "Stai suonando" durante un bend */
   .jam-live-note.bending { color: #67e8f9; border-color: #22d3ee; background: rgba(34,211,238,0.12); }
+
+  /* ── LIVE SUL VISUALIZZATORE: HUD con nota, needle dei cents e confidenza ── */
+  .fblive-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin: 0 0 10px;
+  }
+  .fblive-hud { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .fblive-note {
+    font-family: 'Bebas Neue', sans-serif; font-size: 24px; line-height: 1;
+    color: #fff; min-width: 52px; text-align: center;
+    padding: 5px 10px; border: 1px solid rgba(255,255,255,0.35); border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+  }
+  .fblive-note.bending { color: #67e8f9; border-color: #22d3ee; background: rgba(34,211,238,0.12); }
+  .cents-meter {
+    position: relative; width: 150px; height: 12px; border-radius: 6px;
+    background: linear-gradient(90deg,
+      rgba(29,78,216,0.55) 0%, var(--bg3) 34%,
+      rgba(22,163,74,0.75) 45%, rgba(22,163,74,0.75) 55%,
+      var(--bg3) 66%, rgba(220,38,38,0.55) 100%);
+    border: 1px solid var(--border);
+  }
+  .cents-needle {
+    position: absolute; top: -3px; bottom: -3px; left: 50%; width: 2px;
+    background: #fff; box-shadow: 0 0 6px rgba(255,255,255,0.9); border-radius: 1px;
+    transition: left .08s linear;
+  }
+  .cents-meter .cm-zero {
+    position: absolute; top: 0; bottom: 0; left: 50%; width: 1px;
+    background: rgba(255,255,255,0.35);
+  }
+  .fblive-cents { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-mid); min-width: 44px; }
+  .conf-bar {
+    width: 64px; height: 8px; border-radius: 4px;
+    background: var(--bg3); border: 1px solid var(--border); overflow: hidden;
+  }
+  .conf-bar i {
+    display: block; height: 100%; width: 0;
+    background: linear-gradient(90deg, #f59e0b, #4ade80);
+    transition: width .12s;
+  }
 
   /* ── SISTEMA CONNESSO CAGED ── */
   .csys-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -2942,6 +2988,19 @@
       Note fuori scala
     </label>
   </div>
+  <div class="fblive-row">
+    <button class="jam-live-btn" id="fblive-btn" onclick="fbLiveToggle()">🎤 Suona live</button>
+    <button class="jam-live-btn" id="fblive-trail-btn" onclick="fbLiveToggleTrail()" style="display:none">Scia: on</button>
+    <div class="fblive-hud" id="fblive-hud" style="display:none">
+      <span class="fblive-note" id="fblive-note">—</span>
+      <div class="cents-meter" title="scostamento in cents (−50 … +50)">
+        <div class="cm-zero"></div>
+        <div class="cents-needle" id="fblive-needle"></div>
+      </div>
+      <span class="fblive-cents" id="fblive-cents">—</span>
+      <div class="conf-bar" title="confidenza del rilevamento"><i id="fblive-conf"></i></div>
+    </div>
+  </div>
   <div class="fretboard-wrap">
     <div class="fretboard-rel">
       <div id="fretboard" class="fretboard"></div>
@@ -4637,6 +4696,13 @@ function renderFretboard() {
   }
   fb.appendChild(markerRow);
 
+  // Il rebuild cancella le classi live: se il mic è attivo, ri-evidenzia la nota
+  if (typeof FBLIVE !== 'undefined' && FBLIVE.running) {
+    fb.classList.add('live-active');
+    FBLIVE.lastPos = null;
+    if (FBLIVE.lastMidi !== -1) fbLiveHighlight(FBLIVE.lastMidi);
+  }
+
   // Disegna linee tratteggiate del pattern dopo che il DOM è stato costruito
   requestAnimationFrame(drawPatternLines);
 }
@@ -5844,20 +5910,25 @@ function stabilizePitch(hist, midiF, prevMidi) {
 // In modalità "una posizione": durante una melodia sceglie l'unisono più vicino alla
 // nota precedente (segue la mano); per una nota isolata sceglie la posizione più
 // vicina al tasto d'ancoraggio della scala (LIVE_ANCHOR), evitando le corde a vuoto.
-function livePickDots(fb, midi, state) {
+function livePickDots(fb, midi, state, anchor) {
+  const anchorFret = anchor != null ? anchor : LIVE_ANCHOR;
   const cands = [...fb.querySelectorAll('.note-dot')].filter(d => parseInt(d.dataset.midi) === midi);
   if (!cands.length || !LIVE_SINGLE) return cands;
   const now = performance.now();
   const recent = state.lastPos && (now - state.lastPos.at < 1200);
   let best = cands[0], bestScore = Infinity;
   for (const d of cands) {
-    const s = parseInt(d.dataset.string), f = parseInt(d.dataset.fret);
+    const s = parseInt(d.dataset.string), f = d.dataset.fret === 'open' ? 0 : parseInt(d.dataset.fret);
     const score = recent
       ? Math.abs(f - state.lastPos.f) + Math.abs(s - state.lastPos.s) * 2 // segui la mano
-      : Math.abs(f - LIVE_ANCHOR) + (f === 0 ? 6 : 0);                    // box scala · evita corde a vuoto
+      : Math.abs(f - anchorFret) + (f === 0 ? 6 : 0);                     // box scala · evita corde a vuoto
     if (score < bestScore) { bestScore = score; best = d; }
   }
-  state.lastPos = { s: parseInt(best.dataset.string), f: parseInt(best.dataset.fret), at: now };
+  state.lastPos = {
+    s: parseInt(best.dataset.string),
+    f: best.dataset.fret === 'open' ? 0 : parseInt(best.dataset.fret),
+    at: now,
+  };
   return [best];
 }
 
@@ -5983,6 +6054,159 @@ function jamLiveClear() {
   JLIVE.trail = [];
   JLIVE.hist = [];
   JLIVE.lastPos = null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LIVE SUL VISUALIZZATORE MANICO — la nota suonata pulsa sul manico della pagina
+// Fretboard (scala + posizioni), con scia delle ultime note e HUD accordatore:
+// needle dei cents + barra di confidenza. Stessa pipeline PITCH condivisa.
+// ═══════════════════════════════════════════════════════════════════════════════
+const FBLIVE = {
+  running: false, rafId: null, frame: 0,
+  lastMidi: -1, lastSignalAt: 0, hist: [], lastPos: null,
+  trail: [], showTrail: true,
+};
+const FBLIVE_HOLD_MS = 900;   // la nota resta accesa ~0.9s dopo l'ultimo segnale
+const FBLIVE_TRAIL_MS = 700;  // durata della scia
+const FBLIVE_TRAIL_N = 6;     // ultime N note in scia
+
+// Ancoraggio per la scelta della posizione unisona: tonica sulla 6ª corda,
+// mai dietro il capotasto né in zona capotasto-aperto.
+function fbLiveAnchor() {
+  const key = parseInt(document.getElementById('fb-key').value) || 0;
+  let fret = (((key - (FB_CONFIG.tuning[5] % 12)) % 12) + 12) % 12;
+  if (fret < Math.max(3, FB_CONFIG.capo)) fret += 12;
+  return fret;
+}
+
+async function fbLiveToggle() {
+  const btn = document.getElementById('fblive-btn');
+  const hud = document.getElementById('fblive-hud');
+  const trailBtn = document.getElementById('fblive-trail-btn');
+  const fb = document.getElementById('fretboard');
+  if (FBLIVE.running) {
+    FBLIVE.running = false;
+    if (FBLIVE.rafId) cancelAnimationFrame(FBLIVE.rafId);
+    PITCH.release('fblive');
+    fbLiveClear();
+    fb?.classList.remove('live-active');
+    btn.textContent = '🎤 Suona live';
+    btn.classList.remove('live-on');
+    if (hud) hud.style.display = 'none';
+    if (trailBtn) trailBtn.style.display = 'none';
+    return;
+  }
+  btn.textContent = '⏳ …';
+  btn.disabled = true;
+  try {
+    await PITCH.acquire('fblive');
+    FBLIVE.running = true;
+    FBLIVE.lastMidi = -1;
+    fb?.classList.add('live-active');
+    btn.textContent = '⏹ Stop live';
+    btn.classList.add('live-on');
+    btn.disabled = false;
+    if (hud) hud.style.display = 'flex';
+    if (trailBtn) trailBtn.style.display = '';
+    fbLiveTick();
+  } catch (e) {
+    btn.textContent = '🎤 Suona live';
+    btn.disabled = false;
+    const note = document.getElementById('fblive-note');
+    if (hud) hud.style.display = 'flex';
+    if (note) note.textContent = '⚠';
+    const cents = document.getElementById('fblive-cents');
+    if (cents) cents.textContent = pitchErrorMsg(e);
+  }
+}
+
+function fbLiveToggleTrail() {
+  FBLIVE.showTrail = !FBLIVE.showTrail;
+  const b = document.getElementById('fblive-trail-btn');
+  if (b) b.textContent = FBLIVE.showTrail ? 'Scia: on' : 'Scia: off';
+  if (!FBLIVE.showTrail) {
+    FBLIVE.trail = [];
+    document.querySelectorAll('#fretboard .note-dot.live-trail')
+      .forEach(d => d.classList.remove('live-trail'));
+  }
+}
+
+function fbLiveTick() {
+  if (!FBLIVE.running) return;
+  FBLIVE.rafId = requestAnimationFrame(fbLiveTick);
+  if (++FBLIVE.frame % 2 !== 0) return; // ~30fps di analisi
+  const det = PITCH.detect();
+  const now = performance.now();
+  const noteEl = document.getElementById('fblive-note');
+  const centsEl = document.getElementById('fblive-cents');
+  const needle = document.getElementById('fblive-needle');
+  const confEl = document.getElementById('fblive-conf');
+  if (confEl) confEl.style.width = Math.round(det.conf * 100) + '%';
+
+  if (det.freq > 0) {
+    const midiF = 12 * Math.log2(det.freq / TUNER.aRef) + 69;
+    const rawMidi = Math.round(midiF);
+    if (rawMidi >= 36 && rawMidi <= 88) {
+      const midi = stabilizePitch(FBLIVE.hist, midiF, FBLIVE.lastMidi);
+      const cents = Math.round((midiF - midi) * 100);
+      FBLIVE.lastSignalAt = now;
+      if (midi !== FBLIVE.lastMidi) {
+        if (FBLIVE.showTrail && FBLIVE.lastMidi !== -1) {
+          FBLIVE.trail.push({ midi: FBLIVE.lastMidi, at: now });
+          if (FBLIVE.trail.length > FBLIVE_TRAIL_N) FBLIVE.trail.shift();
+        }
+        FBLIVE.lastMidi = midi;
+        fbLiveHighlight(midi);
+      }
+      // HUD: nota, needle dei cents (clamp ±50), scostamento numerico
+      if (noteEl) {
+        const octave = Math.floor(midi / 12) - 1;
+        const name = NOTES[((midi % 12) + 12) % 12] + octave;
+        const bending = Math.abs(cents) >= JLIVE_BEND_CENTS && Math.abs(cents) <= 70;
+        noteEl.textContent = bending ? `${name} ${cents > 0 ? '↗' : '↘'}` : name;
+        noteEl.classList.toggle('bending', bending);
+      }
+      if (needle) needle.style.left = ((Math.max(-50, Math.min(50, cents)) + 50) / 100 * 100) + '%';
+      if (centsEl) centsEl.textContent = (cents >= 0 ? '+' : '') + cents + '¢';
+    }
+  } else if (FBLIVE.lastMidi !== -1 && now - FBLIVE.lastSignalAt > FBLIVE_HOLD_MS) {
+    fbLiveClear();
+    if (noteEl) { noteEl.textContent = '—'; noteEl.classList.remove('bending'); }
+    if (centsEl) centsEl.textContent = '—';
+    if (needle) needle.style.left = '50%';
+  }
+  if (FBLIVE.showTrail) fbLiveRenderTrail(now);
+}
+
+function fbLiveHighlight(midi) {
+  const fb = document.getElementById('fretboard');
+  if (!fb) return;
+  const chosen = new Set(livePickDots(fb, midi, FBLIVE, fbLiveAnchor()));
+  fb.querySelectorAll('.note-dot').forEach(d => {
+    d.classList.toggle('live-exact', chosen.has(d));
+  });
+}
+
+function fbLiveRenderTrail(now) {
+  const fb = document.getElementById('fretboard');
+  if (!fb) return;
+  FBLIVE.trail = FBLIVE.trail.filter(t => now - t.at < FBLIVE_TRAIL_MS);
+  const trailMidis = new Set(FBLIVE.trail.map(t => t.midi));
+  fb.querySelectorAll('.note-dot').forEach(d => {
+    const m = parseInt(d.dataset.midi);
+    const isTrail = trailMidis.has(m) && !d.classList.contains('live-exact');
+    d.classList.toggle('live-trail', isTrail);
+  });
+}
+
+function fbLiveClear() {
+  const fb = document.getElementById('fretboard');
+  if (fb) fb.querySelectorAll('.live-exact, .live-trail')
+    .forEach(d => d.classList.remove('live-exact', 'live-trail'));
+  FBLIVE.lastMidi = -1;
+  FBLIVE.trail = [];
+  FBLIVE.hist = [];
+  FBLIVE.lastPos = null;
 }
 
 function jamInit() {
