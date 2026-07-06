@@ -5644,19 +5644,17 @@ function liveSetAnchor(v) {
   if (MICFB.running && MICFB.lastMidi !== -1) micFbHighlight(MICFB.lastMidi);
 }
 
-// Anti-jitter d'ottava: il rilevatore su chitarra vera può saltare d'ottava per
-// un frame; restituiamo la nota PIÙ FREQUENTE tra le ultime letture così la
-// posizione evidenziata resta stabile e non "lampeggia" su più ottave.
-function stabilizePitch(hist, rawMidi) {
-  hist.push(rawMidi);
+// Stabilizzazione della nota mostrata: FILTRO MEDIANO sulle ultime 5 letture
+// (elimina i frame outlier, es. salti d'ottava residui) + ISTERESI di ±60 cents:
+// la nota cambia solo quando la mediana si sposta davvero su un'altra nota, così
+// ai confini tra due semitoni (o durante un bend lento) non c'è flicker.
+function stabilizePitch(hist, midiF, prevMidi) {
+  hist.push(midiF);
   if (hist.length > 5) hist.shift();
-  const counts = {};
-  let best = rawMidi, bestN = 0;
-  for (const m of hist) {
-    counts[m] = (counts[m] || 0) + 1;
-    if (counts[m] > bestN) { bestN = counts[m]; best = m; }
-  }
-  return best;
+  const sorted = [...hist].slice().sort((a, b) => a - b);
+  const median = sorted[sorted.length >> 1];
+  if (prevMidi == null || prevMidi === -1) return Math.round(median);
+  return Math.abs(median - prevMidi) > 0.6 ? Math.round(median) : prevMidi;
 }
 
 // Sceglie quali dot accendere per la nota rilevata (per pitch MIDI esatto).
@@ -5737,7 +5735,7 @@ function jamLiveTick() {
     const midiF = 12 * Math.log2(freq / TUNER.aRef) + 69;
     const rawMidi = Math.round(midiF);
     if (rawMidi >= 38 && rawMidi <= 86) { // range chitarra
-      const midi = stabilizePitch(JLIVE.hist, rawMidi); // nota stabilizzata (anti salto d'ottava)
+      const midi = stabilizePitch(JLIVE.hist, midiF, JLIVE.lastMidi); // mediana + isteresi anti-flicker
       const cents = Math.round((midiF - midi) * 100);
       JLIVE.lastSignalAt = now;
       if (midi !== JLIVE.lastMidi) {
@@ -8708,19 +8706,19 @@ const PITCH_PROFILES = {
     label: '🎸 Elettrica',
     desc: 'Fondamentale forte, segnale pulito. <strong>Consiglio:</strong> collega la chitarra a un’interfaccia audio/line-in e selezionala come sorgente — il segnale diretto è molto più affidabile del microfono.',
     gain: 1.0, gate: 0.008, fMin: 70, fMax: 1320, yinThresh: 0.12,
-    highpass: 50, attackHoldMs: 0,
+    highpass: 50, attackHoldMs: 0, minConf: 0.80,
   },
   acoustic: {
     label: '🪕 Acustica',
     desc: 'Ricca di armoniche e risonanza della cassa: filtro sul rimbombo e soglia più permissiva. Suona a ~30–50cm dal microfono, evitando di puntarlo sulla buca.',
     gain: 1.25, gate: 0.006, fMin: 70, fMax: 1100, yinThresh: 0.15,
-    highpass: 72, attackHoldMs: 40,
+    highpass: 72, attackHoldMs: 40, minConf: 0.72,
   },
   classical: {
     label: '🎼 Classica',
     desc: 'Attacco morbido del nylon e rumore di dita sui bassi avvolti: gain maggiorato e pausa sui transienti per ignorare lo squeak delle dita.',
     gain: 1.5, gate: 0.006, fMin: 70, fMax: 900, yinThresh: 0.17,
-    highpass: 75, attackHoldMs: 60,
+    highpass: 75, attackHoldMs: 60, minConf: 0.68,
   },
 };
 
@@ -8851,9 +8849,10 @@ const PITCH = {
   gateLevel() { return this.calibGate > 0 ? this.calibGate : this.profile.gate; },
 
   // Legge una finestra e rileva il pitch secondo il profilo attivo.
-  // Ritorna { freq, rms } — freq = -1 se nessun tono affidabile.
+  // Ritorna { freq, rms, conf } — freq = -1 se nessun tono affidabile
+  // (silenzio, transiente d'attacco, o confidenza sotto la soglia del profilo).
   detect() {
-    if (!this.analyser) return { freq: -1, rms: 0 };
+    if (!this.analyser) return { freq: -1, rms: 0, conf: 0 };
     this.analyser.getFloatTimeDomainData(this.buf);
     const p = this.profile;
     let sum = 0;
@@ -8865,13 +8864,17 @@ const PITCH = {
     if (p.attackHoldMs > 0) {
       if (rms > this._lastRms * 3 && rms > this.gateLevel() * 2) this._attackHoldUntil = now + p.attackHoldMs;
       this._lastRms = rms;
-      if (now < this._attackHoldUntil) return { freq: -1, rms };
+      if (now < this._attackHoldUntil) return { freq: -1, rms, conf: 0 };
     } else this._lastRms = rms;
-    if (rms < this.gateLevel()) return { freq: -1, rms };
+    if (rms < this.gateLevel()) return { freq: -1, rms, conf: 0 };
     const freq = autocorrelate(this.buf, this.ctx.sampleRate, {
       gate: this.gateLevel(), fMin: p.fMin, fMax: p.fMax, yinThresh: p.yinThresh,
     });
-    return { freq, rms };
+    const conf = autocorrelate.confidence;
+    // Soglia di confidenza: il rumore di dita/percussivo produce dip CMND deboli
+    // → sotto soglia la nota non viene mostrata (meno falsi positivi).
+    if (freq > 0 && conf < p.minConf) return { freq: -1, rms, conf };
+    return { freq, rms, conf };
   },
 
   async listInputs() {
@@ -9002,6 +9005,7 @@ function freqToNote(freq) {
 // Ritorna la frequenza in Hz, o -1 se non c'è un tono affidabile.
 // opts (facoltativi, dal profilo strumento): gate RMS, range Hz, soglia YIN.
 function autocorrelate(buf, sampleRate, opts) {
+  autocorrelate.confidence = 0; // azzera: le uscite anticipate non devono lasciare valori stantii
   const o = opts || {};
   const n = buf.length;
   // Gate RMS: ignora silenzio / rumore di fondo. Soglia bassa per acustiche non forti.
@@ -9057,15 +9061,31 @@ function autocorrelate(buf, sampleRate, opts) {
   }
   if (tau < minLag) return -1;
 
-  // 4) Interpolazione parabolica sub-campione attorno al minimo di cmnd
+  // 4) CORREZIONE D'OTTAVA: l'errore classico su chitarra è l'ottava SOPRA —
+  // una 2ª armonica forte scava un dip a τ/2 che scatta per primo sotto soglia.
+  // Se il minimo attorno a 2τ è nettamente più profondo, la vera fondamentale
+  // è un'ottava sotto: preferiscila.
+  if (2 * tau <= maxLag) {
+    let t2 = 2 * tau, best2 = cmnd[t2];
+    for (let t = Math.max(minLag, 2 * tau - 3); t <= Math.min(maxLag, 2 * tau + 3); t++) {
+      if (cmnd[t] < best2) { best2 = cmnd[t]; t2 = t; }
+    }
+    if (best2 < Math.min(cmnd[tau] * 0.85, THRESH)) tau = t2;
+  }
+
+  // 5) Interpolazione parabolica sub-campione attorno al minimo di cmnd
   let betterTau = tau;
   if (tau > minLag && tau < maxLag) {
     const s0 = cmnd[tau - 1], s1 = cmnd[tau], s2 = cmnd[tau + 1];
     const denom = s0 - 2 * s1 + s2;
     if (denom > 0) betterTau = tau + (s0 - s2) / (2 * denom);
   }
+  // Confidenza = quanto è profondo il minimo CMND (1 = periodicità perfetta).
+  // Esposta come proprietà per non cambiare la firma (freq resta il ritorno).
+  autocorrelate.confidence = Math.max(0, Math.min(1, 1 - cmnd[tau]));
   return sampleRate / betterTau;
 }
+autocorrelate.confidence = 0;
 
 let _tunerFrame = 0;
 const _tunerStrLastActive = new Array(6).fill(0);
@@ -9307,7 +9327,8 @@ function micFbTick() {
   if (!MICFB.running) return;
   MICFB.rafId = requestAnimationFrame(micFbTick);
   if (++MICFB.frame % 2 !== 0) return; // ~30fps di analisi (feedback più reattivo)
-  const freq = PITCH.detect().freq;
+  const det = PITCH.detect();
+  const freq = det.freq;
   const noteEl = document.getElementById('micfb-note');
   const metaEl = document.getElementById('micfb-meta');
   const now = performance.now();
@@ -9317,7 +9338,7 @@ function micFbTick() {
     const rawMidi = Math.round(midiF);
     // Range chitarra (E2..~D6); fuori range = rumore, ignora
     if (rawMidi >= 38 && rawMidi <= 86) {
-      const midi = stabilizePitch(MICFB.hist, rawMidi); // anti salto d'ottava
+      const midi = stabilizePitch(MICFB.hist, midiF, MICFB.lastMidi); // mediana + isteresi anti-flicker
       const cents = Math.round((midiF - midi) * 100);
       MICFB.lastSignalAt = now;
       if (midi !== MICFB.lastMidi) {
@@ -9326,7 +9347,7 @@ function micFbTick() {
       }
       const octave = Math.floor(midi / 12) - 1;
       noteEl.textContent = NOTES[((midi % 12) + 12) % 12] + octave;
-      metaEl.textContent = `${freq.toFixed(1)} Hz · ${Math.abs(cents) <= 60 ? (cents >= 0 ? '+' : '') + cents + ' cent' : '…'}`;
+      metaEl.textContent = `${freq.toFixed(1)} Hz · ${Math.abs(cents) <= 60 ? (cents >= 0 ? '+' : '') + cents + ' cent' : '…'} · aff. ${Math.round(det.conf * 100)}%`;
     }
   } else if (MICFB.lastMidi !== -1 && now - MICFB.lastSignalAt > MICFB_HOLD_MS) {
     micFbClear();
