@@ -590,7 +590,7 @@
     padding:6px 8px; font-family:'Space Mono',monospace; font-size:11px; max-width:100%;
   }
   .scl-fb-wrap { overflow-x:auto; background:var(--bg); border:1px solid var(--border); border-radius:8px; margin-top:8px; }
-  .scl-fb-wrap svg { display:block; min-width:560px; width:100%; height:auto; }
+  .scl-fb-wrap svg { display:block; min-width:780px; width:100%; height:auto; }
   .scl-fb-legend {
     display:flex; gap:12px; flex-wrap:wrap; margin-top:6px;
     font-family:'Space Mono',monospace; font-size:10px; color:var(--text-mid);
@@ -2893,6 +2893,7 @@
       <select id="fb-frets" onchange="renderFretboard()">
         <option value="12">12 tasti</option>
         <option value="15" selected>15 tasti</option>
+        <option value="21">21 tasti</option>
         <option value="22">22 tasti</option>
       </select>
     </div>
@@ -5766,7 +5767,7 @@ function renderJamFretboard() {
   const scale = SCALES[jamScaleKey()];
   if (!scale) return;
   const scaleSet = new Set(scale.intervals.map(i => (keyIndex + i) % 12));
-  const fretCount = 15;
+  const fretCount = 21;
   const fretWidths = [0];
   for (let f = 1; f <= fretCount; f++) fretWidths.push(Math.round(58 - f * 1.1));
   const OPEN_COL_W = 40, NUT_W = 14;
@@ -5923,7 +5924,7 @@ function liveUpdateAnchorFromKey() {
 }
 function liveSetAnchor(v) {
   const n = parseInt(v);
-  if (!isNaN(n)) LIVE_ANCHOR = Math.max(0, Math.min(15, n));
+  if (!isNaN(n)) LIVE_ANCHOR = Math.max(0, Math.min(18, n));
   JLIVE.lastPos = null; MICFB.lastPos = null;
   if (JLIVE.running && JLIVE.lastMidi !== -1) jamLiveHighlight(JLIVE.lastMidi);
   if (MICFB.running && MICFB.lastMidi !== -1) micFbHighlight(MICFB.lastMidi);
@@ -6466,7 +6467,7 @@ function sclDrawFretboard() {
   const gripPos = new Set();
   if (SCL_FB.showGrip && grip) chordGripAbs(sel.rootPc, grip).forEach(g => gripPos.add(g.str + ':' + g.fret));
 
-  const ML = 26, MT = 14, FW = 38, SH = 21, FRETS = 15;
+  const ML = 26, MT = 14, FW = 38, SH = 21, FRETS = 21;
   const W = ML + FRETS * FW + 8, H = MT + 5 * SH + 18;
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   let out = '';
@@ -6477,7 +6478,7 @@ function sclDrawFretboard() {
     out += `<line x1="${x}" y1="${MT}" x2="${x}" y2="${MT + 5 * SH}" stroke="#3d3020" stroke-width="1.5"/>`;
   }
   // segnatasti
-  [3,5,7,9,15].forEach(f => { out += `<circle cx="${ML + (f - 0.5) * FW}" cy="${MT + 2.5 * SH}" r="3" fill="#222"/>`; });
+  [3,5,7,9,15,17,19,21].forEach(f => { out += `<circle cx="${ML + (f - 0.5) * FW}" cy="${MT + 2.5 * SH}" r="3" fill="#222"/>`; });
   out += `<circle cx="${ML + 11.5 * FW}" cy="${MT + 1.5 * SH}" r="3" fill="#222"/><circle cx="${ML + 11.5 * FW}" cy="${MT + 3.5 * SH}" r="3" fill="#222"/>`;
   // corde + note
   for (let s = 0; s < 6; s++) {
@@ -9113,7 +9114,7 @@ window.addEventListener('DOMContentLoaded', function() {
     <button class="jam-live-btn" id="jam-live-btn" onclick="jamLiveToggle()">🎤 Suona live</button>
     <button class="jam-live-btn active" id="jam-single-btn" onclick="liveToggleSingle()" title="Mostra una sola posizione della nota, invece di tutti i punti dove si può suonare">1 posizione</button>
     <span class="jam-pos-ctrl" title="Tasto di partenza del box della scala: la nota suonata viene mostrata nella posizione più vicina a questo tasto (auto in base alla tonalità, modificabile)">🎯 dal tasto
-      <input type="number" id="jam-pos-fret" min="0" max="15" value="5" oninput="liveSetAnchor(this.value)">
+      <input type="number" id="jam-pos-fret" min="0" max="18" value="5" oninput="liveSetAnchor(this.value)">
     </span>
     <div class="jam-now-wrap">
       <span class="jam-now-lbl">Ora suona</span>
@@ -9947,7 +9948,7 @@ function micFbInit() {
   if (MICFB.built) return;
   const fb = document.getElementById('micfb-fretboard');
   if (!fb) return;
-  const fretCount = 15;
+  const fretCount = 21;
   const fretWidths = [0];
   for (let f = 1; f <= fretCount; f++) fretWidths.push(Math.round(58 - f * 1.1));
   const OPEN_COL_W = 40, NUT_W = 14;
