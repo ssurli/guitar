@@ -549,6 +549,54 @@
   /* Modalità arpeggio: nasconde del tutto le note fuori dall'accordo corrente */
   #jam-fretboard.arp-mode .note-dot.chord-dim { display: none; }
 
+  /* ── COLORI PER FUNZIONE dell'accordo corrente (override del ruolo di scala):
+     R=ambra · 3ª=blu · 5ª=verde · 7ª=viola · 9ª=rosa · 4ª=ciano — costanti in
+     tutta l'app (stesso sistema di FN_COLORS). Le GUIDE TONE (3ª e 7ª) hanno
+     il contorno bianco più marcato: sono gli appigli sui cambi di accordo. */
+  #jam-fretboard .note-dot.chord-tone { outline-color: rgba(255,255,255,0.35); }
+  #jam-fretboard .note-dot.chord-tone.gt {
+    outline: 2px solid rgba(255,255,255,0.95);
+    box-shadow: 0 0 14px rgba(255,255,255,0.4), inset 0 2px 4px rgba(255,255,255,0.3);
+  }
+  #jam-fretboard .note-dot.chord-tone.fng-R {
+    background: radial-gradient(circle at 35% 30%, #fde68a 0%, var(--amber) 45%, #b45309 100%);
+    color: #1a1200; text-shadow: 0 1px 0 rgba(255,240,200,0.45);
+  }
+  #jam-fretboard .note-dot.chord-tone.fng-3 {
+    background: radial-gradient(circle at 35% 30%, #bfdbfe 0%, var(--blue) 45%, #1e3a8a 100%);
+    color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+  }
+  #jam-fretboard .note-dot.chord-tone.fng-5 {
+    background: radial-gradient(circle at 35% 30%, #bbf7d0 0%, var(--green) 45%, #14532d 100%);
+    color: #05230f; text-shadow: 0 1px 0 rgba(220,255,230,0.4);
+  }
+  #jam-fretboard .note-dot.chord-tone.fng-7 {
+    background: radial-gradient(circle at 35% 30%, #e9d5ff 0%, var(--purple) 45%, #4a1d96 100%);
+    color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+  }
+  #jam-fretboard .note-dot.chord-tone.fng-9 {
+    background: radial-gradient(circle at 35% 30%, #fbcfe8 0%, #ec4899 45%, #9d174d 100%);
+    color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+  }
+  #jam-fretboard .note-dot.chord-tone.fng-4 {
+    background: radial-gradient(circle at 35% 30%, #a5f3fc 0%, var(--cyan) 45%, #164e63 100%);
+    color: #062a33; text-shadow: 0 1px 0 rgba(200,250,255,0.4);
+  }
+
+  /* ── CHORD LAB: manico overlay a livelli nel pannello canzoni ── */
+  .scl-fb-controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:14px; }
+  .scl-fb-controls select {
+    background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:6px;
+    padding:6px 8px; font-family:'Space Mono',monospace; font-size:11px; max-width:100%;
+  }
+  .scl-fb-wrap { overflow-x:auto; background:var(--bg); border:1px solid var(--border); border-radius:8px; margin-top:8px; }
+  .scl-fb-wrap svg { display:block; min-width:560px; width:100%; height:auto; }
+  .scl-fb-legend {
+    display:flex; gap:12px; flex-wrap:wrap; margin-top:6px;
+    font-family:'Space Mono',monospace; font-size:10px; color:var(--text-mid);
+  }
+  .scl-fb-legend i { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; vertical-align:-1px; }
+
   /* ── MANICO LIVE integrato: la nota rilevata dal microfono ──
      live-exact = la nota che stai suonando (cerchio bianco pulsante; su chitarra
                   lo stesso pitch vive su più corde → più posizioni unisone)
@@ -4985,6 +5033,15 @@ function chordFnColor(fn) { return FN_COLORS[fn] || '#888'; }
 // Guide tone = 3ª e 7ª: definiscono la qualità dell'accordo e sono gli appigli
 // per l'improvvisazione sui cambi.
 function isGuideTone(fn) { return fn==='3'||fn==='♭3'||fn==='7'||fn==='♭7'||fn==='𝄫7'; }
+// Famiglia visiva della funzione (per le classi CSS fng-*)
+function chordFnGroup(fn) {
+  if (fn === 'R') return 'R';
+  if (fn === '3' || fn === '♭3') return '3';
+  if (fn === '5' || fn === '♭5' || fn === '♯5') return '5';
+  if (fn === '7' || fn === '♭7' || fn === '𝄫7') return '7';
+  if (fn === '4') return '4';
+  return '9'; // 9, ♭9, ♯9, 2
+}
 
 const CHORD_LIB = {
   // ── TRIADI ──────────────────────────────────────────────────────────────────
@@ -5785,16 +5842,27 @@ function renderJamFretboard() {
   if (JLIVE.running) JLIVE.lastMidi = -1;
 }
 
-// Accende i toni dell'accordo corrente, attenua le altre note della scala
+// Accende i toni dell'accordo corrente colorandoli per FUNZIONE (R/3/5/7/9),
+// attenua le altre note della scala. Le guide tone (3ª/7ª) hanno il ring bianco.
+const _FNG_CLASSES = ['fng-R','fng-3','fng-5','fng-7','fng-9','fng-4','gt'];
 function jamHighlightChord(chordRootPc, chordType) {
   const fb = document.getElementById('jam-fretboard');
   if (!fb) return;
-  const toneSet = new Set((CHORD_IV[chordType] || [0,4,7]).map(iv => (chordRootPc + iv) % 12));
+  const lib = CHORD_LIB[chordType];
+  const toneMap = {};   // pitch class → funzione ('R','3','♭7',…)
+  (lib ? lib.ivs : [[0,'R'],[4,'3'],[7,'5']]).forEach(([st, fn]) => {
+    toneMap[(chordRootPc + st) % 12] = fn;
+  });
   fb.querySelectorAll('.note-dot').forEach(dot => {
     const pc = parseInt(dot.dataset.pc);
-    const isTone = toneSet.has(pc);
-    dot.classList.toggle('chord-tone', isTone);
-    dot.classList.toggle('chord-dim', !isTone);
+    const fn = toneMap[pc];
+    dot.classList.remove(..._FNG_CLASSES);
+    dot.classList.toggle('chord-tone', fn !== undefined);
+    dot.classList.toggle('chord-dim', fn === undefined);
+    if (fn !== undefined) {
+      dot.classList.add('fng-' + chordFnGroup(fn));
+      if (isGuideTone(fn)) dot.classList.add('gt');
+    }
   });
   const badge = document.getElementById('jam-now-chord');
   if (badge) {
@@ -5807,7 +5875,7 @@ function jamHighlightChord(chordRootPc, chordType) {
 // Torna alla scala "piena" (nessun accordo evidenziato)
 function jamClearChordHighlight() {
   const fb = document.getElementById('jam-fretboard');
-  if (fb) fb.querySelectorAll('.note-dot').forEach(d => d.classList.remove('chord-tone', 'chord-dim'));
+  if (fb) fb.querySelectorAll('.note-dot').forEach(d => d.classList.remove('chord-tone', 'chord-dim', ..._FNG_CLASSES));
   const badge = document.getElementById('jam-now-chord');
   if (badge) badge.textContent = '—';
   _jamChordIdx = -1;
@@ -6296,7 +6364,14 @@ function songChartFollow(idx) {
     el.classList.toggle('now', parseInt(el.dataset.flat) === idx));
 }
 
-// Pannello Chord Lab per il singolo accordo (voicing + scale correlate).
+// ── Pannello Chord Lab per il singolo accordo ──────────────────────────────
+// Overlay a livelli sullo stesso manico (metodo scelto in fase di studio):
+//   1. SCALA di riferimento — tenue, è il "terreno"
+//   2. ARPEGGIO / note dell'accordo — accese, colorate per funzione: le TARGET
+//   3. GRIP — contorno tratteggiato del voicing scelto
+// Tutti i livelli sono togglabili; guide tone (3ª/7ª) cerchiate di bianco.
+const SCL_FB = { showScale: true, showArp: true, showGrip: false, gripIdx: 0, scaleKey: null };
+
 function songOpenChord(sym, flatIdx) {
   const parsed = parseChordSymbol(sym);
   if (!parsed) return;
@@ -6305,18 +6380,19 @@ function songOpenChord(sym, flatIdx) {
   if (!el) return;
   const lib = CHORD_LIB[parsed.type];
   const rootName = NOTES[parsed.rootPc];
+  SCL_FB.scaleKey = (lib.scales && lib.scales[0]) || 'major';
+  SCL_FB.showScale = true; SCL_FB.showArp = true; SCL_FB.showGrip = false; SCL_FB.gripIdx = 0;
+
   const notesHTML = lib.ivs.map(([st, fn]) => {
     const c = chordFnColor(fn);
     return `<span class="tdeg" style="color:${c};border-color:${c};background:${c}18">${fn}: <strong>${NOTES[(parsed.rootPc + st) % 12]}</strong></span>`;
   }).join('');
-  const scalesHTML = lib.scales.map((sk, i) => {
+  const scaleOpts = (lib.scales || ['major']).map((sk, i) => {
     const sc = SCALES[sk];
-    if (!sc) return '';
-    return `<div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-      <div style="width:10px;height:10px;border-radius:50%;background:${sc.color}"></div>
-      <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-mid)">${rootName} ${sc.name}${i === 0 ? ' <span style="color:var(--amber)">★</span>' : ''}</span>
-    </div>`;
+    return sc ? `<option value="${sk}">${rootName} ${sc.name}${i === 0 ? ' ★' : ''}</option>` : '';
   }).join('');
+  const canStudy = songlabStudyTarget(parsed.type) !== null;
+
   el.style.display = '';
   el.className = 'song-chordlab';
   el.innerHTML = `
@@ -6325,16 +6401,162 @@ function songOpenChord(sym, flatIdx) {
       <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim)">${lib.name}</span>
       <button class="scl-close" onclick="songlabCloseChord()">✕</button>
     </div>
-    <div class="triad-degrees" style="margin-bottom:8px">${notesHTML}</div>
-    <div class="msect-lbl">Scale per improvvisarci (★ = consigliata)</div>
-    ${scalesHTML}
-    <div class="msect-lbl" style="margin-top:12px">Voicing (tap per ascoltare · le guide tone 3ª/7ª sono cerchiate)</div>
-    <div class="scl-grips" id="scl-grips"></div>`;
+    <div class="triad-degrees" style="margin-bottom:4px">${notesHTML}</div>
+    <div class="scl-fb-controls">
+      <div class="jam-fb-toggle">
+        <button id="scl-t-scale" class="active" onclick="sclToggle('scale')">SCALA</button>
+        <button id="scl-t-arp" class="active" onclick="sclToggle('arp')">ARPEGGIO</button>
+        <button id="scl-t-grip" onclick="sclToggle('grip')">GRIP</button>
+      </div>
+      <select id="scl-scale-sel" onchange="sclSetScale(this.value)" title="Scala di riferimento (★ = consigliata per questo accordo)">${scaleOpts}</select>
+    </div>
+    <div class="scl-fb-wrap"><svg id="scl-fb-svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="scl-fb-legend">
+      <span><i style="background:#f59e0b"></i>R</span>
+      <span><i style="background:#3b82f6"></i>3ª</span>
+      <span><i style="background:#22c55e"></i>5ª</span>
+      <span><i style="background:#a855f7"></i>7ª</span>
+      <span><i style="background:#ec4899"></i>9ª</span>
+      <span><i style="background:transparent;box-shadow:0 0 0 2px rgba(255,255,255,0.85)"></i>guide tone</span>
+      <span><i style="background:transparent;box-shadow:0 0 0 2px var(--amber);opacity:.8"></i>grip (tratteggio)</span>
+    </div>
+    <div class="msect-lbl" style="margin-top:12px">Voicing (tap = ascolta e mostra sul manico · guide tone cerchiate)</div>
+    <div class="scl-grips" id="scl-grips"></div>
+    ${canStudy ? `<div style="margin-top:12px"><button class="songlab-action" onclick="songlabGoStudy()">🎯 Studia forme e inversioni per set di corde →</button></div>` : ''}`;
+
   const grid = el.querySelector('#scl-grips');
-  (lib.grips || []).forEach(grip => grid.appendChild(buildGripCard(parsed.rootPc, grip)));
+  (lib.grips || []).forEach((grip, i) => {
+    const card = buildGripCard(parsed.rootPc, grip);
+    card.addEventListener('click', () => {
+      SCL_FB.gripIdx = i;
+      if (!SCL_FB.showGrip) sclToggle('grip'); else sclDrawFretboard();
+    });
+    grid.appendChild(card);
+  });
+  sclDrawFretboard();
   document.querySelectorAll('#song-chart .sc-chord').forEach(p =>
     p.classList.toggle('selected', parseInt(p.dataset.flat) === flatIdx));
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function sclToggle(layer) {
+  if (layer === 'scale') SCL_FB.showScale = !SCL_FB.showScale;
+  else if (layer === 'arp') SCL_FB.showArp = !SCL_FB.showArp;
+  else if (layer === 'grip') SCL_FB.showGrip = !SCL_FB.showGrip;
+  const map = { scale: 'scl-t-scale', arp: 'scl-t-arp', grip: 'scl-t-grip' };
+  const btn = document.getElementById(map[layer]);
+  if (btn) btn.classList.toggle('active',
+    layer === 'scale' ? SCL_FB.showScale : layer === 'arp' ? SCL_FB.showArp : SCL_FB.showGrip);
+  sclDrawFretboard();
+}
+
+function sclSetScale(key) { SCL_FB.scaleKey = key; sclDrawFretboard(); }
+
+// Disegna il manico overlay (SVG, 15 tasti, scrollabile su mobile)
+function sclDrawFretboard() {
+  const svg = document.getElementById('scl-fb-svg');
+  const sel = SONGLAB.selChord;
+  if (!svg || !sel) return;
+  const lib = CHORD_LIB[sel.type];
+  const toneMap = {};
+  lib.ivs.forEach(([st, fn]) => { toneMap[(sel.rootPc + st) % 12] = fn; });
+  const sc = SCALES[SCL_FB.scaleKey];
+  const scaleSet = new Set((sc ? sc.intervals : []).map(iv => (sel.rootPc + iv) % 12));
+  const grip = lib.grips && lib.grips[SCL_FB.gripIdx];
+  const gripPos = new Set();
+  if (SCL_FB.showGrip && grip) chordGripAbs(sel.rootPc, grip).forEach(g => gripPos.add(g.str + ':' + g.fret));
+
+  const ML = 26, MT = 14, FW = 38, SH = 21, FRETS = 15;
+  const W = ML + FRETS * FW + 8, H = MT + 5 * SH + 18;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  let out = '';
+  // capotasto + tasti
+  out += `<line x1="${ML}" y1="${MT}" x2="${ML}" y2="${MT + 5 * SH}" stroke="#d4af6a" stroke-width="3"/>`;
+  for (let f = 1; f <= FRETS; f++) {
+    const x = ML + f * FW;
+    out += `<line x1="${x}" y1="${MT}" x2="${x}" y2="${MT + 5 * SH}" stroke="#3d3020" stroke-width="1.5"/>`;
+  }
+  // segnatasti
+  [3,5,7,9,15].forEach(f => { out += `<circle cx="${ML + (f - 0.5) * FW}" cy="${MT + 2.5 * SH}" r="3" fill="#222"/>`; });
+  out += `<circle cx="${ML + 11.5 * FW}" cy="${MT + 1.5 * SH}" r="3" fill="#222"/><circle cx="${ML + 11.5 * FW}" cy="${MT + 3.5 * SH}" r="3" fill="#222"/>`;
+  // corde + note
+  for (let s = 0; s < 6; s++) {
+    const y = MT + s * SH;
+    out += `<line x1="${ML}" y1="${y}" x2="${ML + FRETS * FW}" y2="${y}" stroke="#c8a84b" stroke-width="${s < 3 ? 1 : 1.5}" opacity="0.7"/>`;
+    out += `<text x="${ML - 16}" y="${y + 3}" font-size="8" fill="#8a8a8a" font-family="monospace">${STRING_NAMES[s]}</text>`;
+    for (let f = 0; f <= FRETS; f++) {
+      const pc = (OPEN_STRINGS[s] + f) % 12;
+      const fn = toneMap[pc];
+      const inScale = scaleSet.has(pc);
+      const cx = f === 0 ? ML - 8 : ML + (f - 0.5) * FW;
+      const isChordDot = SCL_FB.showArp && fn !== undefined;
+      const isScaleDot = !isChordDot && SCL_FB.showScale && inScale;
+      if (isChordDot) {
+        const col = chordFnColor(fn);
+        if (isGuideTone(fn)) out += `<circle cx="${cx}" cy="${y}" r="9.5" fill="none" stroke="#fff" stroke-width="1.6" opacity="0.9"/>`;
+        out += `<circle cx="${cx}" cy="${y}" r="7.5" fill="${col}"/>`;
+        out += `<text x="${cx}" y="${y + 2.8}" text-anchor="middle" font-size="7" font-weight="bold" fill="#000" font-family="monospace">${fn}</text>`;
+      } else if (isScaleDot) {
+        out += `<circle cx="${cx}" cy="${y}" r="6" fill="#191919" stroke="${sc ? sc.color : '#666'}" stroke-width="1" opacity="0.75"/>`;
+        out += `<text x="${cx}" y="${y + 2.5}" text-anchor="middle" font-size="6" fill="#777" font-family="monospace">${NOTES[pc]}</text>`;
+      }
+      if (gripPos.has(s + ':' + f)) {
+        out += `<circle cx="${cx}" cy="${y}" r="11.5" fill="none" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="3 2.4" opacity="0.95"/>`;
+      }
+    }
+  }
+  // numeri tasto
+  for (let f = 0; f <= FRETS; f++) {
+    out += `<text x="${f === 0 ? ML - 8 : ML + (f - 0.5) * FW}" y="${MT + 5 * SH + 13}" text-anchor="middle" font-size="7.5" fill="#555" font-family="monospace">${f}</text>`;
+  }
+  svg.innerHTML = out;
+}
+
+// Pagina di studio corrispondente al tipo di accordo (triadi / 7ª / 9ª)
+const _STUDY_TRIAD = { maj: 'major', min: 'minor', dim: 'diminished', aug: 'augmented' };
+const _STUDY_S7 = ['maj7','dom7','min7','m7b5','dim7','minmaj7'];
+function songlabStudyTarget(type) {
+  if (_STUDY_TRIAD[type]) return 'triadi';
+  if (_STUDY_S7.includes(type)) return 'seventh';
+  if (typeof NINTH_TYPES !== 'undefined' && NINTH_TYPES.includes(type)) return 'ninth';
+  return null;
+}
+function songlabGoStudy() {
+  const sel = SONGLAB.selChord;
+  if (!sel) return;
+  const target = songlabStudyTarget(sel.type);
+  if (!target) return;
+  if (target === 'triadi') {
+    TR_STATE.type = _STUDY_TRIAD[sel.type];
+    document.getElementById('tr-key').value = String(sel.rootPc);
+    document.querySelectorAll('#triad-type-tabs .triad-tab').forEach((b, i) => {
+      const k = Object.keys(TRIAD_TYPES)[i];
+      b.classList.toggle('active', k === TR_STATE.type);
+      b.querySelector('span').style.color = k === TR_STATE.type ? TRIAD_TYPES[k].color : '';
+    });
+    renderTriads();
+  } else if (target === 'seventh') {
+    S7_STATE.type = sel.type;
+    document.getElementById('s7-key').value = String(sel.rootPc);
+    document.querySelectorAll('#s7-type-tabs .triad-tab').forEach((b, i) => {
+      const k = Object.keys(SEVENTH_CHORD_TYPES)[i];
+      b.classList.toggle('active', k === S7_STATE.type);
+      b.querySelector('span').style.color = k === S7_STATE.type ? SEVENTH_CHORD_TYPES[k].color : '';
+    });
+    renderSeventh();
+  } else {
+    N9_STATE.type = sel.type;
+    document.getElementById('n9-key').value = String(sel.rootPc);
+    document.querySelectorAll('#n9-type-tabs .triad-tab').forEach((b, i) => {
+      const k = NINTH_TYPES[i];
+      b.classList.toggle('active', k === N9_STATE.type);
+      b.querySelector('span').style.color = k === N9_STATE.type ? N9_UI_COLORS[k] : '';
+    });
+    renderNinth();
+  }
+  showPage('scales');
+  showChordScaleSubpage(target);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function songlabCloseChord() {
@@ -8907,6 +9129,8 @@ window.addEventListener('DOMContentLoaded', function() {
     <span><i class="lg lg-third"></i>3ª</span>
     <span><i class="lg lg-fifth"></i>5ª</span>
     <span><i class="lg lg-seventh"></i>7ª</span>
+    <span><i class="lg" style="background:#ec4899"></i>9ª</span>
+    <span><i class="lg" style="background:transparent;box-shadow:0 0 0 2px rgba(255,255,255,0.9)"></i>Guide tone (3ª/7ª dell'accordo)</span>
     <span><i class="lg lg-live"></i>Nota che suoni (mic)</span>
     <span class="lg-hint">// attiva <strong>🎤 Suona live</strong>: la nota che suoni dal microfono si cerchia sul manico — vedi insieme scala e note reali</span>
     <span class="lg-hint" style="color:var(--amber);font-weight:700">build v8 · 05-07 17:20</span>
