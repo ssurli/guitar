@@ -1743,6 +1743,67 @@
   .beat-led.active  { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 6px rgba(245,158,11,0.8); }
   .beat-led.beat-1.active { background: #ff6a00; border-color: #ff8800; box-shadow: 0 0 10px rgba(255,106,0,0.9); }
 
+  /* ── CHORD LAB · CANZONI (setlist con progressioni per sezione) ── */
+  .songlab-toolbar { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .song-pill {
+    padding:7px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:16px;
+    color:var(--text-mid); font-family:'Space Mono',monospace; font-size:12px; cursor:pointer;
+  }
+  .song-pill.active { border-color:var(--amber); color:var(--amber); background:var(--amber-glow); }
+  .songlab-action {
+    padding:7px 10px; background:var(--bg3); border:1px dashed var(--border); border-radius:8px;
+    color:var(--text-dim); font-size:11px; font-family:'Space Mono',monospace; cursor:pointer;
+  }
+  .songlab-action:hover { border-color:var(--amber-dim); color:var(--amber); }
+  .song-editor {
+    background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+    padding:12px; margin-bottom:14px;
+  }
+  .sed-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .sed-row input[type=text] {
+    flex:1; min-width:130px; background:var(--bg3); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); padding:8px 10px; font-family:'Space Mono',monospace; font-size:13px;
+  }
+  .sed-section {
+    display:grid; grid-template-columns:110px 1fr 30px; gap:6px; margin-bottom:8px; align-items:start;
+  }
+  .sed-section input { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); padding:8px 8px; font-family:'Space Mono',monospace; font-size:12px; }
+  .sed-section .sed-del { background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; padding-top:8px; }
+  .sed-section .sed-del:hover { color:var(--red); }
+  @media (max-width:480px) { .sed-section { grid-template-columns:90px 1fr 26px; } }
+  .sed-hint { font-size:10px; color:var(--text-dim); font-family:'Space Mono',monospace; margin:2px 0 10px; }
+  .song-chart {
+    background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px;
+  }
+  .song-chart-head { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:6px; }
+  .song-chart-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:1px; color:var(--text); flex:1; min-width:120px; }
+  .song-chart-title small { color:var(--text-dim); font-size:12px; font-family:'Space Mono',monospace; letter-spacing:0; }
+  .sc-section { margin-top:12px; }
+  .sc-name {
+    font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:2px;
+    color:var(--amber); margin-bottom:6px;
+  }
+  .sc-chords { display:flex; gap:6px; flex-wrap:wrap; }
+  .sc-chord {
+    padding:8px 11px; background:var(--bg3); border:1px solid var(--border); border-radius:8px;
+    font-family:'Space Mono',monospace; font-size:14px; font-weight:700; color:var(--text); cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:1px; min-width:52px;
+  }
+  .sc-chord small { font-size:9px; font-weight:400; color:var(--text-dim); }
+  .sc-chord:hover { border-color:var(--amber-dim); }
+  .sc-chord.selected { border-color:var(--purple); color:var(--purple); }
+  .sc-chord.now { border-color:var(--amber); color:var(--amber); background:var(--amber-glow); box-shadow:0 0 12px -4px var(--amber); }
+  .sc-chord.bad { border-color:var(--red); color:var(--red); opacity:0.7; cursor:default; }
+  .songlab-empty { color:var(--text-dim); font-size:13px; padding:16px 4px; font-family:'Space Mono',monospace; }
+  .song-chordlab {
+    background:var(--bg2); border:1px solid var(--purple); border-radius:10px; padding:14px; margin-bottom:14px;
+  }
+  .song-chordlab .scl-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+  .song-chordlab .scl-title { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--purple); letter-spacing:1px; }
+  .song-chordlab .scl-close { margin-left:auto; background:none; border:none; color:var(--text-dim); font-size:16px; cursor:pointer; }
+  .scl-grips { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; margin-top:10px; }
+
   /* Chord blocks */
   .chord-display {
     display: flex; gap: 10px;
@@ -5218,6 +5279,8 @@ function jamUpdateChordBlocks(loopStep) {
     const chord = BT.progression[activeIdx];
     jamHighlightChord((BT.rootIdx + chord.s) % 12, chord.t);
   }
+  // Chord Lab canzoni: segui l'accordo corrente anche sul chart della canzone
+  songChartFollow(activeIdx);
 }
 
 // ─── PUBLIC API ──────────────────────────────────────────────────────────────
@@ -5529,6 +5592,10 @@ function jamLoadCustomProgression() {
   BT.modeKey = modeKey;
   BT.customProgression = chords.map(c => ({ rootPc: c.rootPc, t: c.type, b: c.bars, sym: c.sym }));
   BT.useCustom = true;
+  // Nuovo caricamento manuale: scollega il chart della canzone (songTogglePlay
+  // reimposta playingId subito dopo questa chiamata quando arriva da una canzone)
+  SONGLAB.playingId = null;
+  _songChartIdx = -1;
   // sincronizza i menù a tendina
   const keySel = document.getElementById('jam-key'), modeSel = document.getElementById('jam-mode');
   if (keySel) keySel.value = String(tonicPc);
@@ -5550,6 +5617,8 @@ function jamLoadCustomProgression() {
 function jamResetCustomProgression() {
   BT.useCustom = false;
   BT.customProgression = null;
+  SONGLAB.playingId = null;
+  _songChartIdx = -1;
   const status = document.getElementById('jam-custom-status');
   const seq = document.getElementById('jam-scale-seq');
   if (status) { status.textContent = ''; status.className = 'jam-custom-status'; }
@@ -5742,6 +5811,9 @@ function jamClearChordHighlight() {
   const badge = document.getElementById('jam-now-chord');
   if (badge) badge.textContent = '—';
   _jamChordIdx = -1;
+  // spegni anche l'evidenziazione sul chart della canzone
+  _songChartIdx = -1;
+  document.querySelectorAll('#song-chart .sc-chord.now').forEach(d => d.classList.remove('now'));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -5982,6 +6054,336 @@ function jamBuildQuickChords() {
   el.innerHTML = quick.map(s =>
     `<button type="button" class="ccp-chip" onclick="jamAppendChord('${s}')">${s}</button>`
   ).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CHORD LAB · CANZONI — setlist con progressioni per sezione
+// (song → sections[].chords → parseProgressionInput, come previsto sopra).
+// Persistenza in localStorage + export/import JSON. Il play riusa il motore
+// jam esistente (jamLoadCustomProgression), quindi eredita sync base/drum,
+// evidenziazione dell'accordo corrente e sequenza scale.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const SONGLAB_LS_KEY = 'gil_songs_v1';
+const SONGLAB = { songs: [], curId: null, playingId: null, editing: false, selChord: null };
+
+function songlabSeed() {
+  SONGLAB.songs = [{
+    id: 'demo-blues-a',
+    title: 'Esempio · Blues in A',
+    artist: 'demo — modificami o cancellami',
+    sections: [
+      { name: 'Intro',      chords: 'E7♯9:2' },
+      { name: 'Strofa',     chords: 'A7:4 D9:2 A7:2' },
+      { name: 'Ritornello', chords: 'E7 D9 A7 E7♯9' },
+    ],
+  }];
+}
+
+function songlabLoad() {
+  let raw = null;
+  try { raw = localStorage.getItem(SONGLAB_LS_KEY); } catch (e) {}
+  if (raw === null) { songlabSeed(); songlabSave(); }
+  else { try { SONGLAB.songs = JSON.parse(raw) || []; } catch (e) { SONGLAB.songs = []; } }
+  if (!SONGLAB.curId && SONGLAB.songs.length) SONGLAB.curId = SONGLAB.songs[0].id;
+}
+
+function songlabSave() {
+  try { localStorage.setItem(SONGLAB_LS_KEY, JSON.stringify(SONGLAB.songs)); } catch (e) {}
+}
+
+function songlabCur() { return SONGLAB.songs.find(s => s.id === SONGLAB.curId) || null; }
+
+// Tokenizza la stringa accordi di una sezione, marcando i token non riconosciuti.
+// Stessa sintassi di parseProgressionInput ("C:2 G Am F", separatori spazio/virgola/|).
+function songParseTokens(str) {
+  return (str || '').split(/[\s,|]+/).filter(Boolean).map(tok => {
+    let bars = 1, sym = tok;
+    const bm = /[:*](\d+)$/.exec(tok);
+    if (bm) { bars = Math.max(1, Math.min(8, parseInt(bm[1]))); sym = tok.slice(0, bm.index); }
+    return { sym, bars, parsed: parseChordSymbol(sym) };
+  });
+}
+
+function songlabRenderAll() {
+  songlabRenderList();
+  songlabRenderEditor();
+  songlabRenderChart();
+}
+
+function songlabRenderList() {
+  const el = document.getElementById('songlab-list');
+  if (!el) return;
+  el.innerHTML = '';
+  SONGLAB.songs.forEach(song => {
+    const b = document.createElement('button');
+    b.className = 'song-pill' + (song.id === SONGLAB.curId ? ' active' : '');
+    b.textContent = '♪ ' + (song.title || 'senza titolo');
+    b.onclick = () => { SONGLAB.curId = song.id; SONGLAB.selChord = null; songlabCloseChord(); songlabRenderAll(); };
+    el.appendChild(b);
+  });
+  const mk = (label, fn, title) => {
+    const b = document.createElement('button');
+    b.className = 'songlab-action'; b.textContent = label; b.onclick = fn; if (title) b.title = title;
+    el.appendChild(b);
+  };
+  mk('＋ nuova', songlabNew);
+  mk('⬇ export', songlabExport, 'Scarica la setlist in JSON');
+  mk('⬆ import', () => document.getElementById('songlab-file').click(), 'Carica una setlist da JSON');
+}
+
+function songlabNew() {
+  const song = {
+    id: 's' + Date.now().toString(36),
+    title: 'Nuova canzone', artist: '',
+    sections: [{ name: 'Strofa', chords: '' }],
+  };
+  SONGLAB.songs.push(song);
+  SONGLAB.curId = song.id;
+  SONGLAB.editing = true;
+  songlabSave();
+  songlabRenderAll();
+}
+
+function songlabDelete() {
+  const song = songlabCur();
+  if (!song) return;
+  if (!confirm(`Eliminare "${song.title}"?`)) return;
+  SONGLAB.songs = SONGLAB.songs.filter(s => s.id !== song.id);
+  if (SONGLAB.playingId === song.id) SONGLAB.playingId = null;
+  SONGLAB.curId = SONGLAB.songs.length ? SONGLAB.songs[0].id : null;
+  SONGLAB.editing = false;
+  songlabSave();
+  songlabRenderAll();
+}
+
+function songlabToggleEdit() {
+  SONGLAB.editing = !SONGLAB.editing;
+  songlabRenderEditor();
+  songlabRenderChart();
+}
+
+// Editor: gli input aggiornano il modello senza ri-renderizzare (per non perdere
+// il focus); il chart si aggiorna sull'evento change (blur / invio).
+function songlabRenderEditor() {
+  const el = document.getElementById('song-editor');
+  if (!el) return;
+  const song = songlabCur();
+  if (!song || !SONGLAB.editing) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = '';
+  el.className = 'song-editor';
+  el.innerHTML = `
+    <div class="ctrl-label" style="margin-bottom:8px">✏️ Modifica canzone</div>
+    <div class="sed-row">
+      <input type="text" id="sed-title" placeholder="Titolo" value="">
+      <input type="text" id="sed-artist" placeholder="Artista (opzionale)" value="">
+    </div>
+    <div class="ctrl-label" style="margin-bottom:6px">Sezioni</div>
+    <div id="sed-sections"></div>
+    <div class="sed-hint">// sintassi accordi: <b>Am7 D9 G</b> · battute con <b>:</b> → <b>Am7:2</b> · anche 7♭9, 7♯9, maj9, add9, m(maj7), dim7…</div>
+    <div class="sed-row" style="margin-bottom:0">
+      <button class="songlab-action" onclick="songlabAddSection()">＋ sezione</button>
+      <button class="songlab-action" onclick="songlabToggleEdit()">✓ fine</button>
+      <button class="songlab-action" style="margin-left:auto;color:var(--red)" onclick="songlabDelete()">🗑 elimina canzone</button>
+    </div>`;
+  const title = el.querySelector('#sed-title'), artist = el.querySelector('#sed-artist');
+  title.value = song.title || ''; artist.value = song.artist || '';
+  title.oninput = () => { song.title = title.value; songlabSave(); };
+  title.onchange = () => songlabRenderList();
+  artist.oninput = () => { song.artist = artist.value; songlabSave(); };
+  artist.onchange = () => songlabRenderChart();
+  const secWrap = el.querySelector('#sed-sections');
+  song.sections.forEach((sec, i) => {
+    const row = document.createElement('div');
+    row.className = 'sed-section';
+    row.innerHTML = `
+      <input type="text" list="song-sections-dl" placeholder="Sezione" value="">
+      <input type="text" placeholder="es. Am7:2 D9 G" value="" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button class="sed-del" title="Rimuovi sezione">✕</button>`;
+    const [nameIn, chordsIn] = row.querySelectorAll('input');
+    nameIn.value = sec.name || ''; chordsIn.value = sec.chords || '';
+    nameIn.oninput = () => { sec.name = nameIn.value; songlabSave(); };
+    nameIn.onchange = () => songlabRenderChart();
+    chordsIn.oninput = () => { sec.chords = chordsIn.value; songlabSave(); };
+    chordsIn.onchange = () => songlabRenderChart();
+    row.querySelector('.sed-del').onclick = () => {
+      song.sections.splice(i, 1);
+      songlabSave(); songlabRenderEditor(); songlabRenderChart();
+    };
+    secWrap.appendChild(row);
+  });
+}
+
+function songlabAddSection() {
+  const song = songlabCur();
+  if (!song) return;
+  const defaults = ['Intro','Strofa','Ritornello','Bridge','Assolo','Outro'];
+  const used = new Set(song.sections.map(s => s.name));
+  song.sections.push({ name: defaults.find(n => !used.has(n)) || 'Sezione', chords: '' });
+  songlabSave(); songlabRenderEditor(); songlabRenderChart();
+}
+
+// Chart: sezioni con pillole accordo. data-flat = indice nella progressione
+// appiattita (stesso ordine di BT.customProgression quando la canzone suona).
+function songlabRenderChart() {
+  const el = document.getElementById('song-chart');
+  if (!el) return;
+  const song = songlabCur();
+  if (!song) {
+    el.className = '';
+    el.innerHTML = '<div class="songlab-empty">Nessuna canzone in setlist — crea la prima con «＋ nuova».</div>';
+    return;
+  }
+  el.className = 'song-chart';
+  const isPlayingThis = BT.playing && SONGLAB.playingId === song.id;
+  let flat = 0;
+  const sectionsHTML = song.sections.map(sec => {
+    const toks = songParseTokens(sec.chords);
+    const pills = toks.map(t => {
+      if (!t.parsed) return `<div class="sc-chord bad" title="accordo non riconosciuto">${t.sym}</div>`;
+      const idx = flat++;
+      const barsLbl = t.bars > 1 ? `<small>×${t.bars} batt.</small>` : '<small>1 batt.</small>';
+      const sel = SONGLAB.selChord && SONGLAB.selChord.flat === idx ? ' selected' : '';
+      return `<div class="sc-chord${sel}" data-flat="${idx}" data-sym="${t.sym.replace(/"/g,'&quot;')}"
+        onclick="songOpenChord('${t.sym.replace(/'/g, "\\'")}', ${idx})">${t.sym}${barsLbl}</div>`;
+    }).join('');
+    return `<div class="sc-section">
+      <div class="sc-name">${sec.name || 'sezione'}</div>
+      <div class="sc-chords">${pills || '<span class="songlab-empty" style="padding:0">— vuota —</span>'}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="song-chart-head">
+      <div class="song-chart-title">${song.title || 'senza titolo'} ${song.artist ? `<small>· ${song.artist}</small>` : ''}</div>
+      <button class="ccp-btn load" onclick="songTogglePlay()">${isPlayingThis ? '⏸ Stop' : '▶ Suona'}</button>
+      <button class="songlab-action" onclick="songlabToggleEdit()">${SONGLAB.editing ? '✓ fine' : '✏️ modifica'}</button>
+    </div>
+    <div class="sed-hint" style="margin:0">// ${flat} accordi · tap su un accordo per voicing + scala + arpeggio · ▶ per suonarla con la base (batteria + basso + accordi)</div>
+    ${sectionsHTML}`;
+  if (isPlayingThis && _songChartIdx >= 0) {
+    const now = el.querySelector(`.sc-chord[data-flat="${_songChartIdx}"]`);
+    if (now) now.classList.add('now');
+  }
+}
+
+// Carica la canzone nel motore jam e avvia/ferma la base.
+function songTogglePlay() {
+  const song = songlabCur();
+  if (!song) return;
+  if (BT.playing && SONGLAB.playingId === song.id) {
+    jamTogglePlay();
+    songlabRenderChart();
+    return;
+  }
+  const toks = [];
+  song.sections.forEach(sec => songParseTokens(sec.chords).forEach(t => { if (t.parsed) toks.push(t); }));
+  if (!toks.length) return;
+  const input = document.getElementById('jam-custom-chords');
+  if (input) input.value = toks.map(t => t.bars > 1 ? `${t.sym}:${t.bars}` : t.sym).join(' ');
+  jamLoadCustomProgression();
+  SONGLAB.playingId = song.id;
+  if (!BT.playing) jamTogglePlay();
+  songlabRenderChart();
+}
+
+// Evidenzia sul chart l'accordo corrente durante la riproduzione (chiamata
+// da jamUpdateChordBlocks ad ogni step).
+let _songChartIdx = -1;
+function songChartFollow(idx) {
+  if (SONGLAB.playingId === null || idx === _songChartIdx) return;
+  _songChartIdx = idx;
+  document.querySelectorAll('#song-chart .sc-chord').forEach(el =>
+    el.classList.toggle('now', parseInt(el.dataset.flat) === idx));
+}
+
+// Pannello Chord Lab per il singolo accordo (voicing + scale correlate).
+function songOpenChord(sym, flatIdx) {
+  const parsed = parseChordSymbol(sym);
+  if (!parsed) return;
+  SONGLAB.selChord = { sym, flat: flatIdx, rootPc: parsed.rootPc, type: parsed.type };
+  const el = document.getElementById('song-chordlab');
+  if (!el) return;
+  const lib = CHORD_LIB[parsed.type];
+  const rootName = NOTES[parsed.rootPc];
+  const notesHTML = lib.ivs.map(([st, fn]) => {
+    const c = chordFnColor(fn);
+    return `<span class="tdeg" style="color:${c};border-color:${c};background:${c}18">${fn}: <strong>${NOTES[(parsed.rootPc + st) % 12]}</strong></span>`;
+  }).join('');
+  const scalesHTML = lib.scales.map((sk, i) => {
+    const sc = SCALES[sk];
+    if (!sc) return '';
+    return `<div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${sc.color}"></div>
+      <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-mid)">${rootName} ${sc.name}${i === 0 ? ' <span style="color:var(--amber)">★</span>' : ''}</span>
+    </div>`;
+  }).join('');
+  el.style.display = '';
+  el.className = 'song-chordlab';
+  el.innerHTML = `
+    <div class="scl-head">
+      <span class="scl-title">${rootName}${lib.sym}</span>
+      <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim)">${lib.name}</span>
+      <button class="scl-close" onclick="songlabCloseChord()">✕</button>
+    </div>
+    <div class="triad-degrees" style="margin-bottom:8px">${notesHTML}</div>
+    <div class="msect-lbl">Scale per improvvisarci (★ = consigliata)</div>
+    ${scalesHTML}
+    <div class="msect-lbl" style="margin-top:12px">Voicing (tap per ascoltare · le guide tone 3ª/7ª sono cerchiate)</div>
+    <div class="scl-grips" id="scl-grips"></div>`;
+  const grid = el.querySelector('#scl-grips');
+  (lib.grips || []).forEach(grip => grid.appendChild(buildGripCard(parsed.rootPc, grip)));
+  document.querySelectorAll('#song-chart .sc-chord').forEach(p =>
+    p.classList.toggle('selected', parseInt(p.dataset.flat) === flatIdx));
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function songlabCloseChord() {
+  SONGLAB.selChord = null;
+  const el = document.getElementById('song-chordlab');
+  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+  document.querySelectorAll('#song-chart .sc-chord.selected').forEach(p => p.classList.remove('selected'));
+}
+
+// Export/import JSON della setlist (GitHub Pages: nessun backend, file locale).
+function songlabExport() {
+  const blob = new Blob([JSON.stringify(SONGLAB.songs, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'guitar-improv-canzoni.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+function songlabImportFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      let data = JSON.parse(reader.result);
+      if (!Array.isArray(data)) data = [data];
+      const ids = new Set(SONGLAB.songs.map(s => s.id));
+      let added = 0;
+      data.forEach(s => {
+        if (!s || typeof s !== 'object' || !Array.isArray(s.sections)) return;
+        const song = {
+          id: (typeof s.id === 'string' && !ids.has(s.id)) ? s.id : 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+          title: String(s.title || 'senza titolo'),
+          artist: String(s.artist || ''),
+          sections: s.sections.map(sec => ({ name: String(sec.name || 'Sezione'), chords: String(sec.chords || '') })),
+        };
+        ids.add(song.id);
+        SONGLAB.songs.push(song);
+        added++;
+      });
+      if (added) { SONGLAB.curId = SONGLAB.songs[SONGLAB.songs.length - added].id; songlabSave(); }
+      songlabRenderAll();
+    } catch (e) {
+      alert('File JSON non valido: ' + e.message);
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
 }
 
 
@@ -8307,6 +8709,7 @@ window.addEventListener('DOMContentLoaded', function() {
   jamInit();
   initSeventh();
   initNinth();
+  songlabLoad();
   initTunerLedMeter();
   buildCsScaleList();
   buildCsChordTabs();
@@ -8316,6 +8719,7 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="page-jam" class="page">
   <div class="cpage-tabs">
     <button class="cpage-tab-btn active" data-tab="basi" onclick="showBasiSubpage('basi')">🎸 Basi</button>
+    <button class="cpage-tab-btn" data-tab="canzoni" onclick="showBasiSubpage('canzoni');songlabRenderAll()">🎼 Canzoni</button>
     <button class="cpage-tab-btn" data-tab="accordatore" onclick="showBasiSubpage('accordatore')">🎵 Accordatore</button>
     <button class="cpage-tab-btn" data-tab="micfb" onclick="showBasiSubpage('micfb');micFbInit()">🎤 Manico Live</button>
     <button class="cpage-tab-btn" data-tab="looper" onclick="showBasiSubpage('looper')">🔁 Looper</button>
@@ -8511,6 +8915,19 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="fretboard" id="jam-fretboard"></div>
   </div>
   </div><!-- /bpage-basi -->
+  <div id="bpage-canzoni" class="cpage-view">
+    <h2>Chord Lab · Canzoni</h2>
+    <div class="subtitle">// la tua setlist: accordi per sezione, salvati nel browser — tap su un accordo per voicing, scala e arpeggio</div>
+    <div class="songlab-toolbar" id="songlab-list"></div>
+    <div id="song-editor" style="display:none"></div>
+    <div id="song-chordlab" style="display:none"></div>
+    <div id="song-chart"></div>
+    <input type="file" id="songlab-file" accept="application/json,.json" style="display:none" onchange="songlabImportFile(this)">
+    <datalist id="song-sections-dl">
+      <option value="Intro"></option><option value="Strofa"></option><option value="Ritornello"></option>
+      <option value="Bridge"></option><option value="Assolo"></option><option value="Outro"></option>
+    </datalist>
+  </div><!-- /bpage-canzoni -->
   <div id="bpage-accordatore" class="cpage-view">
     <h2>Accordatore</h2>
     <div class="subtitle">// usa il microfono per accordare la chitarra · A = 440 Hz</div>
