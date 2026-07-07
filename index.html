@@ -549,6 +549,54 @@
   /* Modalità arpeggio: nasconde del tutto le note fuori dall'accordo corrente */
   #jam-fretboard.arp-mode .note-dot.chord-dim { display: none; }
 
+  /* ── COLORI PER FUNZIONE dell'accordo corrente (override del ruolo di scala):
+     R=ambra · 3ª=blu · 5ª=verde · 7ª=viola · 9ª=rosa · 4ª=ciano — costanti in
+     tutta l'app (stesso sistema di FN_COLORS). Le GUIDE TONE (3ª e 7ª) hanno
+     il contorno bianco più marcato: sono gli appigli sui cambi di accordo. */
+  #jam-fretboard .note-dot.chord-tone { outline-color: rgba(255,255,255,0.35); }
+  #jam-fretboard .note-dot.chord-tone.gt {
+    outline: 2px solid rgba(255,255,255,0.95);
+    box-shadow: 0 0 14px rgba(255,255,255,0.4), inset 0 2px 4px rgba(255,255,255,0.3);
+  }
+  #jam-fretboard .note-dot.chord-tone.fng-R {
+    background: radial-gradient(circle at 35% 30%, #fde68a 0%, var(--amber) 45%, #b45309 100%);
+    color: #1a1200; text-shadow: 0 1px 0 rgba(255,240,200,0.45);
+  }
+  #jam-fretboard .note-dot.chord-tone.fng-3 {
+    background: radial-gradient(circle at 35% 30%, #bfdbfe 0%, var(--blue) 45%, #1e3a8a 100%);
+    color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+  }
+  #jam-fretboard .note-dot.chord-tone.fng-5 {
+    background: radial-gradient(circle at 35% 30%, #bbf7d0 0%, var(--green) 45%, #14532d 100%);
+    color: #05230f; text-shadow: 0 1px 0 rgba(220,255,230,0.4);
+  }
+  #jam-fretboard .note-dot.chord-tone.fng-7 {
+    background: radial-gradient(circle at 35% 30%, #e9d5ff 0%, var(--purple) 45%, #4a1d96 100%);
+    color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+  }
+  #jam-fretboard .note-dot.chord-tone.fng-9 {
+    background: radial-gradient(circle at 35% 30%, #fbcfe8 0%, #ec4899 45%, #9d174d 100%);
+    color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+  }
+  #jam-fretboard .note-dot.chord-tone.fng-4 {
+    background: radial-gradient(circle at 35% 30%, #a5f3fc 0%, var(--cyan) 45%, #164e63 100%);
+    color: #062a33; text-shadow: 0 1px 0 rgba(200,250,255,0.4);
+  }
+
+  /* ── CHORD LAB: manico overlay a livelli nel pannello canzoni ── */
+  .scl-fb-controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:14px; }
+  .scl-fb-controls select {
+    background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:6px;
+    padding:6px 8px; font-family:'Space Mono',monospace; font-size:11px; max-width:100%;
+  }
+  .scl-fb-wrap { overflow-x:auto; background:var(--bg); border:1px solid var(--border); border-radius:8px; margin-top:8px; }
+  .scl-fb-wrap svg { display:block; min-width:780px; width:100%; height:auto; }
+  .scl-fb-legend {
+    display:flex; gap:12px; flex-wrap:wrap; margin-top:6px;
+    font-family:'Space Mono',monospace; font-size:10px; color:var(--text-mid);
+  }
+  .scl-fb-legend i { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; vertical-align:-1px; }
+
   /* ── MANICO LIVE integrato: la nota rilevata dal microfono ──
      live-exact = la nota che stai suonando (cerchio bianco pulsante; su chitarra
                   lo stesso pitch vive su più corde → più posizioni unisone)
@@ -1743,6 +1791,67 @@
   .beat-led.active  { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 6px rgba(245,158,11,0.8); }
   .beat-led.beat-1.active { background: #ff6a00; border-color: #ff8800; box-shadow: 0 0 10px rgba(255,106,0,0.9); }
 
+  /* ── CHORD LAB · CANZONI (setlist con progressioni per sezione) ── */
+  .songlab-toolbar { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .song-pill {
+    padding:7px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:16px;
+    color:var(--text-mid); font-family:'Space Mono',monospace; font-size:12px; cursor:pointer;
+  }
+  .song-pill.active { border-color:var(--amber); color:var(--amber); background:var(--amber-glow); }
+  .songlab-action {
+    padding:7px 10px; background:var(--bg3); border:1px dashed var(--border); border-radius:8px;
+    color:var(--text-dim); font-size:11px; font-family:'Space Mono',monospace; cursor:pointer;
+  }
+  .songlab-action:hover { border-color:var(--amber-dim); color:var(--amber); }
+  .song-editor {
+    background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+    padding:12px; margin-bottom:14px;
+  }
+  .sed-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .sed-row input[type=text] {
+    flex:1; min-width:130px; background:var(--bg3); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); padding:8px 10px; font-family:'Space Mono',monospace; font-size:13px;
+  }
+  .sed-section {
+    display:grid; grid-template-columns:110px 1fr 30px; gap:6px; margin-bottom:8px; align-items:start;
+  }
+  .sed-section input { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); padding:8px 8px; font-family:'Space Mono',monospace; font-size:12px; }
+  .sed-section .sed-del { background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; padding-top:8px; }
+  .sed-section .sed-del:hover { color:var(--red); }
+  @media (max-width:480px) { .sed-section { grid-template-columns:90px 1fr 26px; } }
+  .sed-hint { font-size:10px; color:var(--text-dim); font-family:'Space Mono',monospace; margin:2px 0 10px; }
+  .song-chart {
+    background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px;
+  }
+  .song-chart-head { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:6px; }
+  .song-chart-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:1px; color:var(--text); flex:1; min-width:120px; }
+  .song-chart-title small { color:var(--text-dim); font-size:12px; font-family:'Space Mono',monospace; letter-spacing:0; }
+  .sc-section { margin-top:12px; }
+  .sc-name {
+    font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:2px;
+    color:var(--amber); margin-bottom:6px;
+  }
+  .sc-chords { display:flex; gap:6px; flex-wrap:wrap; }
+  .sc-chord {
+    padding:8px 11px; background:var(--bg3); border:1px solid var(--border); border-radius:8px;
+    font-family:'Space Mono',monospace; font-size:14px; font-weight:700; color:var(--text); cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:1px; min-width:52px;
+  }
+  .sc-chord small { font-size:9px; font-weight:400; color:var(--text-dim); }
+  .sc-chord:hover { border-color:var(--amber-dim); }
+  .sc-chord.selected { border-color:var(--purple); color:var(--purple); }
+  .sc-chord.now { border-color:var(--amber); color:var(--amber); background:var(--amber-glow); box-shadow:0 0 12px -4px var(--amber); }
+  .sc-chord.bad { border-color:var(--red); color:var(--red); opacity:0.7; cursor:default; }
+  .songlab-empty { color:var(--text-dim); font-size:13px; padding:16px 4px; font-family:'Space Mono',monospace; }
+  .song-chordlab {
+    background:var(--bg2); border:1px solid var(--purple); border-radius:10px; padding:14px; margin-bottom:14px;
+  }
+  .song-chordlab .scl-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+  .song-chordlab .scl-title { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--purple); letter-spacing:1px; }
+  .song-chordlab .scl-close { margin-left:auto; background:none; border:none; color:var(--text-dim); font-size:16px; cursor:pointer; }
+  .scl-grips { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; margin-top:10px; }
+
   /* Chord blocks */
   .chord-display {
     display: flex; gap: 10px;
@@ -2784,6 +2893,7 @@
       <select id="fb-frets" onchange="renderFretboard()">
         <option value="12">12 tasti</option>
         <option value="15" selected>15 tasti</option>
+        <option value="21">21 tasti</option>
         <option value="22">22 tasti</option>
       </select>
     </div>
@@ -2862,6 +2972,7 @@
     <button class="cpage-tab-btn" data-tab="chordscale" onclick="showChordScaleSubpage('chordscale');renderChordScale()">Scala↔Accordi</button>
     <button class="cpage-tab-btn" data-tab="triadi" onclick="showChordScaleSubpage('triadi')">Triadi</button>
     <button class="cpage-tab-btn" data-tab="seventh" onclick="showChordScaleSubpage('seventh')">Acc. 7ª</button>
+    <button class="cpage-tab-btn" data-tab="ninth" onclick="showChordScaleSubpage('ninth')">Acc. 9ª</button>
   </div>
   <div id="spage-scales" class="cpage-view active">
     <h2>Scale Library</h2>
@@ -2974,7 +3085,7 @@
   </div>
   <div id="cspage-seventh" class="cpage-view">
     <h2>Accordi di Settima</h2>
-    <div class="subtitle">// maj7 · dom7 · min7 · semidiminuito · dim7 — forme sul manico per ogni tonalità</div>
+    <div class="subtitle">// maj7 · dom7 · min7 · semidiminuito · dim7 · m(maj7) — forme sul manico per ogni tonalità</div>
     <div class="controls" style="margin-bottom:16px">
       <div class="ctrl-group">
         <div class="ctrl-label">Tonalità</div>
@@ -3012,6 +3123,37 @@
           </div>
         </div>
         <div class="triad-shapes-grid" id="s7-shapes-grid"></div>
+      </div>
+    </div>
+  </div>
+  <div id="cspage-ninth" class="cpage-view">
+    <h2>Accordi di Nona</h2>
+    <div class="subtitle">// maj9 · 9 · m9 · add9 · 7♭9 · 7♯9 — grip pratici: sulla chitarra le none si suonano con voicing parziali (senza 5ª o senza tonica)</div>
+    <div class="controls" style="margin-bottom:16px">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Tonalità</div>
+        <select id="n9-key" onchange="renderNinth()">
+          <option value="0">C</option><option value="1">C# / Db</option>
+          <option value="2">D</option><option value="3">D# / Eb</option>
+          <option value="4">E</option><option value="5">F</option>
+          <option value="6">F# / Gb</option><option value="7">G</option>
+          <option value="8">G# / Ab</option><option value="9">A</option>
+          <option value="10">A# / Bb</option><option value="11">B</option>
+        </select>
+      </div>
+    </div>
+    <div class="triad-type-tabs" id="n9-type-tabs"></div>
+    <div class="triad-layout">
+      <div class="triad-info-col" id="n9-info-col"></div>
+      <div class="triad-shapes-col">
+        <div class="hint-box" style="margin-bottom:14px;font-size:12px">
+          💡 <strong>Perché mancano delle note?</strong> Un accordo di nona completo ha 5 note: sulla chitarra
+          si omette quasi sempre la <strong style="color:#22c55e">5ª</strong> (non definisce la qualità) o la
+          <strong style="color:#f59e0b">tonica</strong> (la suona il basso). Le note irrinunciabili sono le
+          <strong>guide tone</strong> — <strong style="color:#3b82f6">3ª</strong> e <strong style="color:#a855f7">7ª</strong> —
+          più la <strong style="color:#ec4899">9ª</strong> che dà il colore.
+        </div>
+        <div class="triad-shapes-grid" id="n9-shapes-grid"></div>
       </div>
     </div>
   </div>
@@ -3270,6 +3412,8 @@ const SCALES = {
   lydian_dom:     { name:'Lidia Dominante (Lidia ♭7)',  intervals:[0,2,4,6,7,9,10],    formula:'1 2 3 ♯4 5 6 ♭7',       mood:'Jazz fusion. Sognante ma con tensione. Joe Satriani.',     color:'#a78bfa', hybrid:true },
   phrygian_dom:   { name:'Frigia Dominante',            intervals:[0,1,4,5,7,8,10],    formula:'1 ♭2 3 4 5 ♭6 ♭7',      mood:'Spagnola, flamenco, metal orientale. Ozzy, Megadeth.',    color:'#ef4444', hybrid:true },
   bebop_dom:      { name:'Bebop Dominante',             intervals:[0,2,4,5,7,9,10,11], formula:'1 2 3 4 5 6 ♭7 7',      mood:'Jazz bebop. 8 note — una per ogni ottavo sul beat.',       color:'#22c55e', hybrid:true },
+  dim_wh:         { name:'Diminuita (tono-semitono)',   intervals:[0,2,3,5,6,8,9,11],  formula:'1 2 ♭3 4 ♭5 ♭6 6 7',    mood:'Simmetrica: si ripete ogni 3 semitoni. La scala degli accordi dim7.', color:'#8b5cf6', hybrid:true },
+  altered:        { name:'Alterata (Superlocria)',      intervals:[0,1,3,4,6,8,10],    formula:'1 ♭2 ♯2 3 ♭5 ♭6 ♭7',    mood:'Massima tensione sui dominanti alterati (7♭9, 7♯9). VII della minore melodica.', color:'#ef4444', hybrid:true },
 };
 
 const MODES_DATA = [
@@ -4861,23 +5005,172 @@ const DRUM_PATTERNS = {
   },
 };
 
-// Chord intervals (semitones from root)
-const CHORD_IV = {
-  maj:  [0,4,7],
-  min:  [0,3,7],
-  dom7: [0,4,7,10],
-  min7: [0,3,7,10],
-  maj7: [0,4,7,11],
-  dim:  [0,3,6],
-  sus2: [0,2,7],
-  sus4: [0,5,7],
-  m7b5: [0,3,6,10],
+// ═══════════════════════════════════════════════════════════════════════════════
+// DIZIONARIO ACCORDI CENTRALE (CHORD_LIB)
+// Fonte unica riusata da: basi/synth (CHORD_IV derivato), progressione custom,
+// Chord Lab canzoni, tab Acc. 9ª e manico jam (colori per funzione).
+// - ivs:    [semitoni dalla fondamentale, funzione] in ordine di stacking
+// - scales: chiavi di SCALES consigliate — la PRIMA è il default didattico
+//           (maj7→Ionio, 7→Misolidio, m7→Dorico, m7♭5→Locrio, dim7→diminuita,
+//            7♭9/7♯9→frigia dom./alterata)
+// - grips:  voicing SUONABILI e mobili. root = corda della fondamentale
+//           (indici come OPEN_STRING_MIDI: 0=e … 5=E, quindi 5=MI basso, 4=LA).
+//           off = [corda, tasto relativo al tasto della fondamentale, funzione].
+//           Le NONE usano voicing PARZIALI standard (senza 5ª o senza tonica),
+//           come si suonano davvero sulla chitarra — non stack teorici di 5 note.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Color coding costante per FUNZIONE (uguale ovunque: manico, grip, chart):
+// Tonica=ambra · 3ª=blu · 5ª=verde · 7ª=viola · 9ª/estensioni=rosa · sus=ciano
+const FN_COLORS = {
+  'R':'#f59e0b',
+  '3':'#3b82f6', '♭3':'#3b82f6',
+  '5':'#22c55e', '♭5':'#22c55e', '♯5':'#22c55e',
+  '7':'#a855f7', '♭7':'#a855f7', '𝄫7':'#a855f7',
+  '9':'#ec4899', '♭9':'#ec4899', '♯9':'#ec4899',
+  '2':'#ec4899', '4':'#06b6d4',
+};
+function chordFnColor(fn) { return FN_COLORS[fn] || '#888'; }
+// Guide tone = 3ª e 7ª: definiscono la qualità dell'accordo e sono gli appigli
+// per l'improvvisazione sui cambi.
+function isGuideTone(fn) { return fn==='3'||fn==='♭3'||fn==='7'||fn==='♭7'||fn==='𝄫7'; }
+// Famiglia visiva della funzione (per le classi CSS fng-*)
+function chordFnGroup(fn) {
+  if (fn === 'R') return 'R';
+  if (fn === '3' || fn === '♭3') return '3';
+  if (fn === '5' || fn === '♭5' || fn === '♯5') return '5';
+  if (fn === '7' || fn === '♭7' || fn === '𝄫7') return '7';
+  if (fn === '4') return '4';
+  return '9'; // 9, ♭9, ♯9, 2
+}
+
+const CHORD_LIB = {
+  // ── TRIADI ──────────────────────────────────────────────────────────────────
+  maj: { sym:'', name:'Maggiore', ivs:[[0,'R'],[4,'3'],[7,'5']],
+    scales:['penta_major','major','lydian'],
+    grips:[
+      { name:'Forma E (barrè)', root:5, off:[[5,0,'R'],[4,2,'5'],[3,2,'R'],[2,1,'3'],[1,0,'5'],[0,0,'R']] },
+      { name:'Forma A (barrè)', root:4, off:[[4,0,'R'],[3,2,'5'],[2,2,'R'],[1,2,'3'],[0,0,'5']] },
+    ] },
+  min: { sym:'m', name:'Minore', ivs:[[0,'R'],[3,'♭3'],[7,'5']],
+    scales:['penta_minor','natural_minor','dorian'],
+    grips:[
+      { name:'Forma Em (barrè)', root:5, off:[[5,0,'R'],[4,2,'5'],[3,2,'R'],[2,0,'♭3'],[1,0,'5'],[0,0,'R']] },
+      { name:'Forma Am (barrè)', root:4, off:[[4,0,'R'],[3,2,'5'],[2,2,'R'],[1,1,'♭3'],[0,0,'5']] },
+    ] },
+  dim: { sym:'°', name:'Diminuita', ivs:[[0,'R'],[3,'♭3'],[6,'♭5']],
+    scales:['locrian'],
+    grips:[
+      { name:'Radice sul LA', root:4, off:[[4,0,'R'],[3,1,'♭5'],[2,2,'R'],[1,1,'♭3']] },
+    ] },
+  aug: { sym:'+', name:'Aumentata', ivs:[[0,'R'],[4,'3'],[8,'♯5']],
+    scales:['harmonic_minor'],
+    grips:[
+      { name:'Radice sul LA', root:4, off:[[4,0,'R'],[3,-1,'3'],[2,-2,'♯5'],[1,-2,'R']] },
+    ] },
+  sus2: { sym:'sus2', name:'Sospesa 2ª', ivs:[[0,'R'],[2,'2'],[7,'5']],
+    scales:['mixolydian','major'],
+    grips:[
+      { name:'Forma A', root:4, off:[[4,0,'R'],[3,2,'5'],[2,2,'R'],[1,0,'2'],[0,0,'5']] },
+    ] },
+  sus4: { sym:'sus4', name:'Sospesa 4ª', ivs:[[0,'R'],[5,'4'],[7,'5']],
+    scales:['mixolydian'],
+    grips:[
+      { name:'Forma E', root:5, off:[[5,0,'R'],[4,2,'5'],[3,2,'R'],[2,2,'4'],[1,0,'5'],[0,0,'R']] },
+    ] },
+  // ── SETTIME ────────────────────────────────────────────────────────────────
+  maj7: { sym:'maj7', name:'Maggiore 7ª', ivs:[[0,'R'],[4,'3'],[7,'5'],[11,'7']],
+    scales:['major','lydian','melodic_minor'],
+    grips:[
+      { name:'Drop-3 · radice sul MI', root:5, off:[[5,0,'R'],[3,1,'7'],[2,1,'3'],[1,0,'5']] },
+      { name:'Drop-2 · radice sul LA', root:4, off:[[4,0,'R'],[3,2,'5'],[2,1,'7'],[1,2,'3']] },
+    ] },
+  dom7: { sym:'7', name:'Dominante 7ª', ivs:[[0,'R'],[4,'3'],[7,'5'],[10,'♭7']],
+    scales:['mixolydian','blues','miso_penta'],
+    grips:[
+      { name:'Drop-3 · radice sul MI', root:5, off:[[5,0,'R'],[3,0,'♭7'],[2,1,'3'],[1,0,'5']] },
+      { name:'Drop-2 · radice sul LA', root:4, off:[[4,0,'R'],[3,2,'5'],[2,0,'♭7'],[1,2,'3']] },
+    ] },
+  min7: { sym:'m7', name:'Minore 7ª', ivs:[[0,'R'],[3,'♭3'],[7,'5'],[10,'♭7']],
+    scales:['dorian','natural_minor','penta_minor'],
+    grips:[
+      { name:'Drop-3 · radice sul MI', root:5, off:[[5,0,'R'],[3,0,'♭7'],[2,0,'♭3'],[1,0,'5']] },
+      { name:'Drop-2 · radice sul LA', root:4, off:[[4,0,'R'],[3,2,'5'],[2,0,'♭7'],[1,1,'♭3']] },
+    ] },
+  m7b5: { sym:'m7♭5', name:'Semidiminuito', ivs:[[0,'R'],[3,'♭3'],[6,'♭5'],[10,'♭7']],
+    scales:['locrian'],
+    grips:[
+      { name:'Drop-3 · radice sul MI', root:5, off:[[5,0,'R'],[3,0,'♭7'],[2,0,'♭3'],[1,-1,'♭5']] },
+      { name:'Drop-2 · radice sul LA', root:4, off:[[4,0,'R'],[3,1,'♭5'],[2,0,'♭7'],[1,1,'♭3']] },
+    ] },
+  dim7: { sym:'°7', name:'Diminuito 7ª', ivs:[[0,'R'],[3,'♭3'],[6,'♭5'],[9,'𝄫7']],
+    scales:['dim_wh','harmonic_minor'],
+    grips:[
+      { name:'Radice sul MI', root:5, off:[[5,0,'R'],[3,-1,'𝄫7'],[2,0,'♭3'],[1,-1,'♭5']] },
+      { name:'Radice sul LA', root:4, off:[[4,0,'R'],[3,1,'♭5'],[2,-1,'𝄫7'],[1,1,'♭3']] },
+    ] },
+  minmaj7: { sym:'m(maj7)', name:'Minore/Maggiore 7ª', ivs:[[0,'R'],[3,'♭3'],[7,'5'],[11,'7']],
+    scales:['harmonic_minor','melodic_minor'],
+    grips:[
+      { name:'Radice sul MI', root:5, off:[[5,0,'R'],[3,1,'7'],[2,0,'♭3'],[1,0,'5']] },
+      { name:'Radice sul LA', root:4, off:[[4,0,'R'],[3,2,'5'],[2,1,'7'],[1,1,'♭3']] },
+    ] },
+  // ── NONE (voicing PARZIALI e suonabili) ────────────────────────────────────
+  maj9: { sym:'maj9', name:'Maggiore 9ª', ivs:[[0,'R'],[4,'3'],[7,'5'],[11,'7'],[14,'9']],
+    scales:['major','lydian'],
+    grips:[
+      { name:'Senza 5ª · radice sul LA', root:4, off:[[4,0,'R'],[3,-1,'3'],[2,1,'7'],[1,0,'9']] },
+      { name:'Senza 3ª (aperto) · radice sul MI', root:5, off:[[5,0,'R'],[3,1,'7'],[2,-1,'9'],[1,0,'5']] },
+    ] },
+  dom9: { sym:'9', name:'Dominante 9ª', ivs:[[0,'R'],[4,'3'],[7,'5'],[10,'♭7'],[14,'9']],
+    scales:['mixolydian','lydian_dom','bebop_dom'],
+    grips:[
+      { name:'Grip funk (con 5ª al canto)', root:4, off:[[4,0,'R'],[3,-1,'3'],[2,0,'♭7'],[1,0,'9'],[0,0,'5']] },
+      { name:'Senza tonica (comping)', root:4, off:[[3,-1,'3'],[2,0,'♭7'],[1,0,'9'],[0,0,'5']] },
+    ] },
+  min9: { sym:'m9', name:'Minore 9ª', ivs:[[0,'R'],[3,'♭3'],[7,'5'],[10,'♭7'],[14,'9']],
+    scales:['dorian','natural_minor','melodic_minor'],
+    grips:[
+      { name:'Senza 5ª · radice sul LA', root:4, off:[[4,0,'R'],[3,-2,'♭3'],[2,0,'♭7'],[1,0,'9']] },
+      { name:'Senza tonica (comping)', root:4, off:[[3,-2,'♭3'],[2,0,'♭7'],[1,0,'9'],[0,0,'5']] },
+    ] },
+  add9: { sym:'add9', name:'Add 9', ivs:[[0,'R'],[4,'3'],[7,'5'],[14,'9']],
+    scales:['major','penta_major'],
+    grips:[
+      { name:'Con 3ª · radice sul LA', root:4, off:[[4,0,'R'],[3,-1,'3'],[2,2,'R'],[1,0,'9']] },
+      { name:'Senza 3ª (sound aperto rock)', root:4, off:[[4,0,'R'],[3,2,'5'],[2,2,'R'],[1,0,'9'],[0,0,'5']] },
+    ] },
+  dom7b9: { sym:'7♭9', name:'Dominante 7♭9', ivs:[[0,'R'],[4,'3'],[7,'5'],[10,'♭7'],[13,'♭9']],
+    scales:['phrygian_dom','harmonic_minor','altered'],
+    grips:[
+      { name:'Jazz (dim7 sopra la tonica)', root:4, off:[[4,0,'R'],[3,-1,'3'],[2,0,'♭7'],[1,-1,'♭9']] },
+      { name:'♭9 al canto · radice sul MI', root:5, off:[[5,0,'R'],[3,0,'♭7'],[2,1,'3'],[1,0,'5'],[0,1,'♭9']] },
+    ] },
+  dom7s9: { sym:'7♯9', name:'Dominante 7♯9 (Hendrix)', ivs:[[0,'R'],[4,'3'],[7,'5'],[10,'♭7'],[15,'♯9']],
+    scales:['altered','blues','penta_minor'],
+    grips:[
+      { name:'Grip Hendrix', root:4, off:[[4,0,'R'],[3,-1,'3'],[2,0,'♭7'],[1,1,'♯9']] },
+    ] },
 };
 
-const CHORD_QUAL_LABEL = {
-  maj:'', min:'m', dom7:'7', min7:'m7', maj7:'maj7', dim:'°', sus2:'sus2',
-  sus4:'sus4', m7b5:'m7♭5',
-};
+// Derivati per compatibilità: intervalli per il synth e label di qualità.
+const CHORD_IV = {};
+const CHORD_QUAL_LABEL = {};
+Object.entries(CHORD_LIB).forEach(([k, c]) => {
+  CHORD_IV[k] = c.ivs.map(x => x[0]);
+  CHORD_QUAL_LABEL[k] = c.sym;
+});
+
+// Posiziona un grip sul manico per una data fondamentale.
+// Ritorna [{str, fret, fn}] con tasti assoluti (grip mobile, mai sotto il tasto 1).
+function chordGripAbs(rootPc, grip) {
+  const rootStr = grip.root;
+  let rootFret = ((rootPc - OPEN_STRING_MIDI[rootStr]) % 12 + 12) % 12;
+  const minRel = Math.min(...grip.off.map(o => o[1]));
+  while (rootFret + minRel < 1) rootFret += 12;
+  if (rootFret + Math.max(...grip.off.map(o => o[1])) > 15 && rootFret >= 12) rootFret -= 12;
+  return grip.off.map(([str, rel, fn]) => ({ str, fret: rootFret + rel, fn }));
+}
 
 // ─── MIDI / FREQ ──────────────────────────────────────────────────────────────
 function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
@@ -5044,6 +5337,8 @@ function jamUpdateChordBlocks(loopStep) {
     const chord = BT.progression[activeIdx];
     jamHighlightChord((BT.rootIdx + chord.s) % 12, chord.t);
   }
+  // Chord Lab canzoni: segui l'accordo corrente anche sul chart della canzone
+  songChartFollow(activeIdx);
 }
 
 // ─── PUBLIC API ──────────────────────────────────────────────────────────────
@@ -5242,8 +5537,28 @@ function noteNameToPc(name) {
   return ((pc % 12) + 12) % 12;
 }
 
-// Simbolo accordo → {rootPc, type}. Mappa i suffissi comuni sul vocabolario CHORD_IV,
-// con fallback ragionevoli per estensioni non sintetizzabili (9/11/13 → 7 corrispondente).
+// Simbolo accordo → {rootPc, type}. Mappa i suffissi comuni sul vocabolario CHORD_LIB,
+// con fallback ragionevoli per le estensioni non modellate (11/13 → 7 corrispondente).
+const CHORD_SUFFIX_MAP = {
+  '':'maj', 'maj':'maj', '6':'maj',
+  'm':'min', 'min':'min', 'minor':'min', 'm6':'min',
+  'dim':'dim', 'o':'dim',
+  'aug':'aug', '+':'aug',
+  'sus2':'sus2',
+  'sus4':'sus4', 'sus':'sus4', '7sus4':'sus4', '7sus':'sus4',
+  'maj7':'maj7', 'ma7':'maj7', 'maj13':'maj7',
+  '7':'dom7', 'dom7':'dom7', '11':'dom7', '13':'dom7',
+  'm7':'min7', 'min7':'min7', 'm11':'min7', 'm13':'min7',
+  'm7b5':'m7b5', 'min7b5':'m7b5', 'm7-5':'m7b5', 'halfdim':'m7b5',
+  'dim7':'dim7', 'o7':'dim7',
+  'mmaj7':'minmaj7', 'm(maj7)':'minmaj7', 'minmaj7':'minmaj7', 'mm7':'minmaj7',
+  'maj9':'maj9', 'ma9':'maj9',
+  '9':'dom9', 'dom9':'dom9',
+  'm9':'min9', 'min9':'min9',
+  'add9':'add9', 'add2':'add9', '2':'add9',
+  '7b9':'dom7b9',
+  '7#9':'dom7s9',
+};
 function parseChordSymbol(sym) {
   const s = sym.trim();
   const m = /^([a-gA-G][#b♯♭]?)(.*)$/.exec(s);
@@ -5251,21 +5566,18 @@ function parseChordSymbol(sym) {
   const rootPc = noteNameToPc(m[1]);
   if (rootPc < 0) return null;
   let q = m[2].replace(/\s+/g, '');
-  // normalizza alcuni glifi
-  q = q.replace('Δ', 'maj7').replace('ø', 'm7b5').replace('°', 'dim').replace('-', 'm');
+  // normalizza glifi e alterazioni
+  q = q.replace('Δ', 'maj7').replace('ø', 'm7b5').replace('°7', 'dim7').replace('°', 'dim')
+       .replace('-', 'm').replace(/♭/g, 'b').replace(/♯/g, '#');
+  // 'M' maiuscola = maggiore (prima del lowercase, per non confonderla con 'm')
+  if (q === 'M') q = 'maj'; else if (q === 'M7') q = 'maj7'; else if (q === 'M9') q = 'maj9';
   const ql = q.toLowerCase();
-  let type;
-  if (q === '' || ql === 'maj' || ql === 'add9' || ql === '6' || ql === 'M') type = 'maj';
-  else if (ql === 'm7b5' || ql === 'min7b5' || ql === 'm7-5' || ql === 'halfdim') type = 'm7b5';
-  else if (ql === 'dim' || ql === 'dim7' || ql === 'o' || ql === 'o7') type = 'dim';
-  else if (ql === 'maj7' || ql === 'maj9' || ql === 'maj13' || q === 'M7' || ql === 'ma7') type = 'maj7';
-  else if (ql === 'sus2') type = 'sus2';
-  else if (ql === 'sus4' || ql === 'sus' || ql === '7sus4' || ql === '7sus') type = 'sus4';
-  else if (ql === 'm7' || ql === 'min7' || ql === 'm9' || ql === 'm11' || ql === 'm13' || ql === 'm6') type = 'min7';
-  else if (ql === 'm' || ql === 'min' || ql === 'minor') type = 'min';
-  else if (ql === '7' || ql === '9' || ql === '11' || ql === '13' || ql === 'dom7' || ql === '7b9' || ql === '7#9') type = 'dom7';
-  else if (ql.startsWith('m')) type = 'min';   // fallback minore (mMaj7, m ecc.)
-  else type = 'maj';                            // fallback maggiore (aug, +, 6, …)
+  let type = CHORD_SUFFIX_MAP[ql];
+  if (!type) {
+    if (ql.startsWith('maj')) type = 'maj7';
+    else if (ql.startsWith('m')) type = 'min';  // fallback minore
+    else type = 'maj';                          // fallback maggiore
+  }
   return { rootPc, type };
 }
 
@@ -5304,7 +5616,7 @@ function detectSongKey(chords) {
         score += scaleSet.has(c.rootPc) ? 1 : -1.5;
         // qualità coerente col grado: tonica maggiore vuole accordo maggiore, ecc.
         if (c.rootPc === tonic) {
-          const isMinorChord = c.type === 'min' || c.type === 'min7' || c.type === 'm7b5';
+          const isMinorChord = ['min','min7','min9','minmaj7','m7b5','dim','dim7'].includes(c.type);
           if (cand.modeKey === 'major' && !isMinorChord) score += 1.5;
           if (cand.modeKey === 'natural_minor' && isMinorChord) score += 1.5;
         }
@@ -5317,20 +5629,11 @@ function detectSongKey(chords) {
   return { tonicPc: best.tonicPc, modeKey: best.modeKey };
 }
 
-// Scala consigliata per un singolo accordo (per la "sequenza di scale")
+// Scala consigliata per un singolo accordo (per la "sequenza di scale").
+// Centralizzata: è la prima scala del tipo nel dizionario CHORD_LIB.
 function chordScaleSuggestion(type) {
-  switch (type) {
-    case 'maj':  return 'penta_major';
-    case 'min':  return 'penta_minor';
-    case 'dom7': return 'mixolydian';
-    case 'maj7': return 'major';
-    case 'min7': return 'dorian';
-    case 'dim':
-    case 'm7b5': return 'locrian';
-    case 'sus2':
-    case 'sus4': return 'mixolydian';
-    default:     return 'major';
-  }
+  const c = CHORD_LIB[type];
+  return (c && c.scales && c.scales[0]) || 'major';
 }
 
 // Carica la progressione digitata: rileva tonalità, sincronizza i select, ridisegna.
@@ -5347,6 +5650,10 @@ function jamLoadCustomProgression() {
   BT.modeKey = modeKey;
   BT.customProgression = chords.map(c => ({ rootPc: c.rootPc, t: c.type, b: c.bars, sym: c.sym }));
   BT.useCustom = true;
+  // Nuovo caricamento manuale: scollega il chart della canzone (songTogglePlay
+  // reimposta playingId subito dopo questa chiamata quando arriva da una canzone)
+  SONGLAB.playingId = null;
+  _songChartIdx = -1;
   // sincronizza i menù a tendina
   const keySel = document.getElementById('jam-key'), modeSel = document.getElementById('jam-mode');
   if (keySel) keySel.value = String(tonicPc);
@@ -5368,6 +5675,8 @@ function jamLoadCustomProgression() {
 function jamResetCustomProgression() {
   BT.useCustom = false;
   BT.customProgression = null;
+  SONGLAB.playingId = null;
+  _songChartIdx = -1;
   const status = document.getElementById('jam-custom-status');
   const seq = document.getElementById('jam-scale-seq');
   if (status) { status.textContent = ''; status.className = 'jam-custom-status'; }
@@ -5458,7 +5767,7 @@ function renderJamFretboard() {
   const scale = SCALES[jamScaleKey()];
   if (!scale) return;
   const scaleSet = new Set(scale.intervals.map(i => (keyIndex + i) % 12));
-  const fretCount = 15;
+  const fretCount = 21;
   const fretWidths = [0];
   for (let f = 1; f <= fretCount; f++) fretWidths.push(Math.round(58 - f * 1.1));
   const OPEN_COL_W = 40, NUT_W = 14;
@@ -5534,16 +5843,27 @@ function renderJamFretboard() {
   if (JLIVE.running) JLIVE.lastMidi = -1;
 }
 
-// Accende i toni dell'accordo corrente, attenua le altre note della scala
+// Accende i toni dell'accordo corrente colorandoli per FUNZIONE (R/3/5/7/9),
+// attenua le altre note della scala. Le guide tone (3ª/7ª) hanno il ring bianco.
+const _FNG_CLASSES = ['fng-R','fng-3','fng-5','fng-7','fng-9','fng-4','gt'];
 function jamHighlightChord(chordRootPc, chordType) {
   const fb = document.getElementById('jam-fretboard');
   if (!fb) return;
-  const toneSet = new Set((CHORD_IV[chordType] || [0,4,7]).map(iv => (chordRootPc + iv) % 12));
+  const lib = CHORD_LIB[chordType];
+  const toneMap = {};   // pitch class → funzione ('R','3','♭7',…)
+  (lib ? lib.ivs : [[0,'R'],[4,'3'],[7,'5']]).forEach(([st, fn]) => {
+    toneMap[(chordRootPc + st) % 12] = fn;
+  });
   fb.querySelectorAll('.note-dot').forEach(dot => {
     const pc = parseInt(dot.dataset.pc);
-    const isTone = toneSet.has(pc);
-    dot.classList.toggle('chord-tone', isTone);
-    dot.classList.toggle('chord-dim', !isTone);
+    const fn = toneMap[pc];
+    dot.classList.remove(..._FNG_CLASSES);
+    dot.classList.toggle('chord-tone', fn !== undefined);
+    dot.classList.toggle('chord-dim', fn === undefined);
+    if (fn !== undefined) {
+      dot.classList.add('fng-' + chordFnGroup(fn));
+      if (isGuideTone(fn)) dot.classList.add('gt');
+    }
   });
   const badge = document.getElementById('jam-now-chord');
   if (badge) {
@@ -5556,10 +5876,13 @@ function jamHighlightChord(chordRootPc, chordType) {
 // Torna alla scala "piena" (nessun accordo evidenziato)
 function jamClearChordHighlight() {
   const fb = document.getElementById('jam-fretboard');
-  if (fb) fb.querySelectorAll('.note-dot').forEach(d => d.classList.remove('chord-tone', 'chord-dim'));
+  if (fb) fb.querySelectorAll('.note-dot').forEach(d => d.classList.remove('chord-tone', 'chord-dim', ..._FNG_CLASSES));
   const badge = document.getElementById('jam-now-chord');
   if (badge) badge.textContent = '—';
   _jamChordIdx = -1;
+  // spegni anche l'evidenziazione sul chart della canzone
+  _songChartIdx = -1;
+  document.querySelectorAll('#song-chart .sc-chord.now').forEach(d => d.classList.remove('now'));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -5601,7 +5924,7 @@ function liveUpdateAnchorFromKey() {
 }
 function liveSetAnchor(v) {
   const n = parseInt(v);
-  if (!isNaN(n)) LIVE_ANCHOR = Math.max(0, Math.min(15, n));
+  if (!isNaN(n)) LIVE_ANCHOR = Math.max(0, Math.min(18, n));
   JLIVE.lastPos = null; MICFB.lastPos = null;
   if (JLIVE.running && JLIVE.lastMidi !== -1) jamLiveHighlight(JLIVE.lastMidi);
   if (MICFB.running && MICFB.lastMidi !== -1) micFbHighlight(MICFB.lastMidi);
@@ -5796,10 +6119,494 @@ function jamInit() {
 function jamBuildQuickChords() {
   const el = document.getElementById('jam-quick-chords');
   if (!el) return;
-  const quick = ['C','G','D','A','E','F','Am','Em','Dm','Bm','G7','C7','Dm7','Am7','Fmaj7','Cmaj7'];
+  const quick = ['C','G','D','A','E','F','Am','Em','Dm','Bm','G7','C7','Dm7','Am7','Fmaj7','Cmaj7','C9','Am9','Cmaj9','Gadd9','B7♭9','E7♯9'];
   el.innerHTML = quick.map(s =>
     `<button type="button" class="ccp-chip" onclick="jamAppendChord('${s}')">${s}</button>`
   ).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CHORD LAB · CANZONI — setlist con progressioni per sezione
+// (song → sections[].chords → parseProgressionInput, come previsto sopra).
+// Persistenza in localStorage + export/import JSON. Il play riusa il motore
+// jam esistente (jamLoadCustomProgression), quindi eredita sync base/drum,
+// evidenziazione dell'accordo corrente e sequenza scale.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const SONGLAB_LS_KEY = 'gil_songs_v1';
+const SONGLAB = { songs: [], curId: null, playingId: null, editing: false, selChord: null };
+
+function songlabSeed() {
+  SONGLAB.songs = [{
+    id: 'demo-blues-a',
+    title: 'Esempio · Blues in A',
+    artist: 'demo — modificami o cancellami',
+    sections: [
+      { name: 'Intro',      chords: 'E7♯9:2' },
+      { name: 'Strofa',     chords: 'A7:4 D9:2 A7:2' },
+      { name: 'Ritornello', chords: 'E7 D9 A7 E7♯9' },
+    ],
+  }];
+}
+
+function songlabLoad() {
+  let raw = null;
+  try { raw = localStorage.getItem(SONGLAB_LS_KEY); } catch (e) {}
+  if (raw === null) { songlabSeed(); songlabSave(); }
+  else { try { SONGLAB.songs = JSON.parse(raw) || []; } catch (e) { SONGLAB.songs = []; } }
+  if (!SONGLAB.curId && SONGLAB.songs.length) SONGLAB.curId = SONGLAB.songs[0].id;
+}
+
+function songlabSave() {
+  try { localStorage.setItem(SONGLAB_LS_KEY, JSON.stringify(SONGLAB.songs)); } catch (e) {}
+}
+
+function songlabCur() { return SONGLAB.songs.find(s => s.id === SONGLAB.curId) || null; }
+
+// Tokenizza la stringa accordi di una sezione, marcando i token non riconosciuti.
+// Stessa sintassi di parseProgressionInput ("C:2 G Am F", separatori spazio/virgola/|).
+function songParseTokens(str) {
+  return (str || '').split(/[\s,|]+/).filter(Boolean).map(tok => {
+    let bars = 1, sym = tok;
+    const bm = /[:*](\d+)$/.exec(tok);
+    if (bm) { bars = Math.max(1, Math.min(8, parseInt(bm[1]))); sym = tok.slice(0, bm.index); }
+    return { sym, bars, parsed: parseChordSymbol(sym) };
+  });
+}
+
+function songlabRenderAll() {
+  songlabRenderList();
+  songlabRenderEditor();
+  songlabRenderChart();
+}
+
+function songlabRenderList() {
+  const el = document.getElementById('songlab-list');
+  if (!el) return;
+  el.innerHTML = '';
+  SONGLAB.songs.forEach(song => {
+    const b = document.createElement('button');
+    b.className = 'song-pill' + (song.id === SONGLAB.curId ? ' active' : '');
+    b.textContent = '♪ ' + (song.title || 'senza titolo');
+    b.onclick = () => { SONGLAB.curId = song.id; SONGLAB.selChord = null; songlabCloseChord(); songlabRenderAll(); };
+    el.appendChild(b);
+  });
+  const mk = (label, fn, title) => {
+    const b = document.createElement('button');
+    b.className = 'songlab-action'; b.textContent = label; b.onclick = fn; if (title) b.title = title;
+    el.appendChild(b);
+  };
+  mk('＋ nuova', songlabNew);
+  mk('⬇ export', songlabExport, 'Scarica la setlist in JSON');
+  mk('⬆ import', () => document.getElementById('songlab-file').click(), 'Carica una setlist da JSON');
+}
+
+function songlabNew() {
+  const song = {
+    id: 's' + Date.now().toString(36),
+    title: 'Nuova canzone', artist: '',
+    sections: [{ name: 'Strofa', chords: '' }],
+  };
+  SONGLAB.songs.push(song);
+  SONGLAB.curId = song.id;
+  SONGLAB.editing = true;
+  songlabSave();
+  songlabRenderAll();
+}
+
+function songlabDelete() {
+  const song = songlabCur();
+  if (!song) return;
+  if (!confirm(`Eliminare "${song.title}"?`)) return;
+  SONGLAB.songs = SONGLAB.songs.filter(s => s.id !== song.id);
+  if (SONGLAB.playingId === song.id) SONGLAB.playingId = null;
+  SONGLAB.curId = SONGLAB.songs.length ? SONGLAB.songs[0].id : null;
+  SONGLAB.editing = false;
+  songlabSave();
+  songlabRenderAll();
+}
+
+function songlabToggleEdit() {
+  SONGLAB.editing = !SONGLAB.editing;
+  songlabRenderEditor();
+  songlabRenderChart();
+}
+
+// Editor: gli input aggiornano il modello senza ri-renderizzare (per non perdere
+// il focus); il chart si aggiorna sull'evento change (blur / invio).
+function songlabRenderEditor() {
+  const el = document.getElementById('song-editor');
+  if (!el) return;
+  const song = songlabCur();
+  if (!song || !SONGLAB.editing) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = '';
+  el.className = 'song-editor';
+  el.innerHTML = `
+    <div class="ctrl-label" style="margin-bottom:8px">✏️ Modifica canzone</div>
+    <div class="sed-row">
+      <input type="text" id="sed-title" placeholder="Titolo" value="">
+      <input type="text" id="sed-artist" placeholder="Artista (opzionale)" value="">
+    </div>
+    <div class="ctrl-label" style="margin-bottom:6px">Sezioni</div>
+    <div id="sed-sections"></div>
+    <div class="sed-hint">// sintassi accordi: <b>Am7 D9 G</b> · battute con <b>:</b> → <b>Am7:2</b> · anche 7♭9, 7♯9, maj9, add9, m(maj7), dim7…</div>
+    <div class="sed-row" style="margin-bottom:0">
+      <button class="songlab-action" onclick="songlabAddSection()">＋ sezione</button>
+      <button class="songlab-action" onclick="songlabToggleEdit()">✓ fine</button>
+      <button class="songlab-action" style="margin-left:auto;color:var(--red)" onclick="songlabDelete()">🗑 elimina canzone</button>
+    </div>`;
+  const title = el.querySelector('#sed-title'), artist = el.querySelector('#sed-artist');
+  title.value = song.title || ''; artist.value = song.artist || '';
+  title.oninput = () => { song.title = title.value; songlabSave(); };
+  title.onchange = () => songlabRenderList();
+  artist.oninput = () => { song.artist = artist.value; songlabSave(); };
+  artist.onchange = () => songlabRenderChart();
+  const secWrap = el.querySelector('#sed-sections');
+  song.sections.forEach((sec, i) => {
+    const row = document.createElement('div');
+    row.className = 'sed-section';
+    row.innerHTML = `
+      <input type="text" list="song-sections-dl" placeholder="Sezione" value="">
+      <input type="text" placeholder="es. Am7:2 D9 G" value="" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button class="sed-del" title="Rimuovi sezione">✕</button>`;
+    const [nameIn, chordsIn] = row.querySelectorAll('input');
+    nameIn.value = sec.name || ''; chordsIn.value = sec.chords || '';
+    nameIn.oninput = () => { sec.name = nameIn.value; songlabSave(); };
+    nameIn.onchange = () => songlabRenderChart();
+    chordsIn.oninput = () => { sec.chords = chordsIn.value; songlabSave(); };
+    chordsIn.onchange = () => songlabRenderChart();
+    row.querySelector('.sed-del').onclick = () => {
+      song.sections.splice(i, 1);
+      songlabSave(); songlabRenderEditor(); songlabRenderChart();
+    };
+    secWrap.appendChild(row);
+  });
+}
+
+function songlabAddSection() {
+  const song = songlabCur();
+  if (!song) return;
+  const defaults = ['Intro','Strofa','Ritornello','Bridge','Assolo','Outro'];
+  const used = new Set(song.sections.map(s => s.name));
+  song.sections.push({ name: defaults.find(n => !used.has(n)) || 'Sezione', chords: '' });
+  songlabSave(); songlabRenderEditor(); songlabRenderChart();
+}
+
+// Chart: sezioni con pillole accordo. data-flat = indice nella progressione
+// appiattita (stesso ordine di BT.customProgression quando la canzone suona).
+function songlabRenderChart() {
+  const el = document.getElementById('song-chart');
+  if (!el) return;
+  const song = songlabCur();
+  if (!song) {
+    el.className = '';
+    el.innerHTML = '<div class="songlab-empty">Nessuna canzone in setlist — crea la prima con «＋ nuova».</div>';
+    return;
+  }
+  el.className = 'song-chart';
+  const isPlayingThis = BT.playing && SONGLAB.playingId === song.id;
+  let flat = 0;
+  const sectionsHTML = song.sections.map(sec => {
+    const toks = songParseTokens(sec.chords);
+    const pills = toks.map(t => {
+      if (!t.parsed) return `<div class="sc-chord bad" title="accordo non riconosciuto">${t.sym}</div>`;
+      const idx = flat++;
+      const barsLbl = t.bars > 1 ? `<small>×${t.bars} batt.</small>` : '<small>1 batt.</small>';
+      const sel = SONGLAB.selChord && SONGLAB.selChord.flat === idx ? ' selected' : '';
+      return `<div class="sc-chord${sel}" data-flat="${idx}" data-sym="${t.sym.replace(/"/g,'&quot;')}"
+        onclick="songOpenChord('${t.sym.replace(/'/g, "\\'")}', ${idx})">${t.sym}${barsLbl}</div>`;
+    }).join('');
+    return `<div class="sc-section">
+      <div class="sc-name">${sec.name || 'sezione'}</div>
+      <div class="sc-chords">${pills || '<span class="songlab-empty" style="padding:0">— vuota —</span>'}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="song-chart-head">
+      <div class="song-chart-title">${song.title || 'senza titolo'} ${song.artist ? `<small>· ${song.artist}</small>` : ''}</div>
+      <button class="ccp-btn load" onclick="songTogglePlay()">${isPlayingThis ? '⏸ Stop' : '▶ Suona'}</button>
+      <button class="songlab-action" onclick="songlabToggleEdit()">${SONGLAB.editing ? '✓ fine' : '✏️ modifica'}</button>
+    </div>
+    <div class="sed-hint" style="margin:0">// ${flat} accordi · tap su un accordo per voicing + scala + arpeggio · ▶ per suonarla con la base (batteria + basso + accordi)</div>
+    ${sectionsHTML}`;
+  if (isPlayingThis && _songChartIdx >= 0) {
+    const now = el.querySelector(`.sc-chord[data-flat="${_songChartIdx}"]`);
+    if (now) now.classList.add('now');
+  }
+}
+
+// Carica la canzone nel motore jam e avvia/ferma la base.
+function songTogglePlay() {
+  const song = songlabCur();
+  if (!song) return;
+  if (BT.playing && SONGLAB.playingId === song.id) {
+    jamTogglePlay();
+    songlabRenderChart();
+    return;
+  }
+  const toks = [];
+  song.sections.forEach(sec => songParseTokens(sec.chords).forEach(t => { if (t.parsed) toks.push(t); }));
+  if (!toks.length) return;
+  const input = document.getElementById('jam-custom-chords');
+  if (input) input.value = toks.map(t => t.bars > 1 ? `${t.sym}:${t.bars}` : t.sym).join(' ');
+  jamLoadCustomProgression();
+  SONGLAB.playingId = song.id;
+  if (!BT.playing) jamTogglePlay();
+  songlabRenderChart();
+}
+
+// Evidenzia sul chart l'accordo corrente durante la riproduzione (chiamata
+// da jamUpdateChordBlocks ad ogni step).
+let _songChartIdx = -1;
+function songChartFollow(idx) {
+  if (SONGLAB.playingId === null || idx === _songChartIdx) return;
+  _songChartIdx = idx;
+  document.querySelectorAll('#song-chart .sc-chord').forEach(el =>
+    el.classList.toggle('now', parseInt(el.dataset.flat) === idx));
+}
+
+// ── Pannello Chord Lab per il singolo accordo ──────────────────────────────
+// Overlay a livelli sullo stesso manico (metodo scelto in fase di studio):
+//   1. SCALA di riferimento — tenue, è il "terreno"
+//   2. ARPEGGIO / note dell'accordo — accese, colorate per funzione: le TARGET
+//   3. GRIP — contorno tratteggiato del voicing scelto
+// Tutti i livelli sono togglabili; guide tone (3ª/7ª) cerchiate di bianco.
+const SCL_FB = { showScale: true, showArp: true, showGrip: false, gripIdx: 0, scaleKey: null };
+
+function songOpenChord(sym, flatIdx) {
+  const parsed = parseChordSymbol(sym);
+  if (!parsed) return;
+  SONGLAB.selChord = { sym, flat: flatIdx, rootPc: parsed.rootPc, type: parsed.type };
+  const el = document.getElementById('song-chordlab');
+  if (!el) return;
+  const lib = CHORD_LIB[parsed.type];
+  const rootName = NOTES[parsed.rootPc];
+  SCL_FB.scaleKey = (lib.scales && lib.scales[0]) || 'major';
+  SCL_FB.showScale = true; SCL_FB.showArp = true; SCL_FB.showGrip = false; SCL_FB.gripIdx = 0;
+
+  const notesHTML = lib.ivs.map(([st, fn]) => {
+    const c = chordFnColor(fn);
+    return `<span class="tdeg" style="color:${c};border-color:${c};background:${c}18">${fn}: <strong>${NOTES[(parsed.rootPc + st) % 12]}</strong></span>`;
+  }).join('');
+  const scaleOpts = (lib.scales || ['major']).map((sk, i) => {
+    const sc = SCALES[sk];
+    return sc ? `<option value="${sk}">${rootName} ${sc.name}${i === 0 ? ' ★' : ''}</option>` : '';
+  }).join('');
+  const canStudy = songlabStudyTarget(parsed.type) !== null;
+
+  el.style.display = '';
+  el.className = 'song-chordlab';
+  el.innerHTML = `
+    <div class="scl-head">
+      <span class="scl-title">${rootName}${lib.sym}</span>
+      <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim)">${lib.name}</span>
+      <button class="scl-close" onclick="songlabCloseChord()">✕</button>
+    </div>
+    <div class="triad-degrees" style="margin-bottom:4px">${notesHTML}</div>
+    <div class="scl-fb-controls">
+      <div class="jam-fb-toggle">
+        <button id="scl-t-scale" class="active" onclick="sclToggle('scale')">SCALA</button>
+        <button id="scl-t-arp" class="active" onclick="sclToggle('arp')">ARPEGGIO</button>
+        <button id="scl-t-grip" onclick="sclToggle('grip')">GRIP</button>
+      </div>
+      <select id="scl-scale-sel" onchange="sclSetScale(this.value)" title="Scala di riferimento (★ = consigliata per questo accordo)">${scaleOpts}</select>
+    </div>
+    <div class="scl-fb-wrap"><svg id="scl-fb-svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="scl-fb-legend">
+      <span><i style="background:#f59e0b"></i>R</span>
+      <span><i style="background:#3b82f6"></i>3ª</span>
+      <span><i style="background:#22c55e"></i>5ª</span>
+      <span><i style="background:#a855f7"></i>7ª</span>
+      <span><i style="background:#ec4899"></i>9ª</span>
+      <span><i style="background:transparent;box-shadow:0 0 0 2px rgba(255,255,255,0.85)"></i>guide tone</span>
+      <span><i style="background:transparent;box-shadow:0 0 0 2px var(--amber);opacity:.8"></i>grip (tratteggio)</span>
+    </div>
+    <div class="msect-lbl" style="margin-top:12px">Voicing (tap = ascolta e mostra sul manico · guide tone cerchiate)</div>
+    <div class="scl-grips" id="scl-grips"></div>
+    ${canStudy ? `<div style="margin-top:12px"><button class="songlab-action" onclick="songlabGoStudy()">🎯 Studia forme e inversioni per set di corde →</button></div>` : ''}`;
+
+  const grid = el.querySelector('#scl-grips');
+  (lib.grips || []).forEach((grip, i) => {
+    const card = buildGripCard(parsed.rootPc, grip);
+    card.addEventListener('click', () => {
+      SCL_FB.gripIdx = i;
+      if (!SCL_FB.showGrip) sclToggle('grip'); else sclDrawFretboard();
+    });
+    grid.appendChild(card);
+  });
+  sclDrawFretboard();
+  document.querySelectorAll('#song-chart .sc-chord').forEach(p =>
+    p.classList.toggle('selected', parseInt(p.dataset.flat) === flatIdx));
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function sclToggle(layer) {
+  if (layer === 'scale') SCL_FB.showScale = !SCL_FB.showScale;
+  else if (layer === 'arp') SCL_FB.showArp = !SCL_FB.showArp;
+  else if (layer === 'grip') SCL_FB.showGrip = !SCL_FB.showGrip;
+  const map = { scale: 'scl-t-scale', arp: 'scl-t-arp', grip: 'scl-t-grip' };
+  const btn = document.getElementById(map[layer]);
+  if (btn) btn.classList.toggle('active',
+    layer === 'scale' ? SCL_FB.showScale : layer === 'arp' ? SCL_FB.showArp : SCL_FB.showGrip);
+  sclDrawFretboard();
+}
+
+function sclSetScale(key) { SCL_FB.scaleKey = key; sclDrawFretboard(); }
+
+// Disegna il manico overlay (SVG, 15 tasti, scrollabile su mobile)
+function sclDrawFretboard() {
+  const svg = document.getElementById('scl-fb-svg');
+  const sel = SONGLAB.selChord;
+  if (!svg || !sel) return;
+  const lib = CHORD_LIB[sel.type];
+  const toneMap = {};
+  lib.ivs.forEach(([st, fn]) => { toneMap[(sel.rootPc + st) % 12] = fn; });
+  const sc = SCALES[SCL_FB.scaleKey];
+  const scaleSet = new Set((sc ? sc.intervals : []).map(iv => (sel.rootPc + iv) % 12));
+  const grip = lib.grips && lib.grips[SCL_FB.gripIdx];
+  const gripPos = new Set();
+  if (SCL_FB.showGrip && grip) chordGripAbs(sel.rootPc, grip).forEach(g => gripPos.add(g.str + ':' + g.fret));
+
+  const ML = 26, MT = 14, FW = 38, SH = 21, FRETS = 21;
+  const W = ML + FRETS * FW + 8, H = MT + 5 * SH + 18;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  let out = '';
+  // capotasto + tasti
+  out += `<line x1="${ML}" y1="${MT}" x2="${ML}" y2="${MT + 5 * SH}" stroke="#d4af6a" stroke-width="3"/>`;
+  for (let f = 1; f <= FRETS; f++) {
+    const x = ML + f * FW;
+    out += `<line x1="${x}" y1="${MT}" x2="${x}" y2="${MT + 5 * SH}" stroke="#3d3020" stroke-width="1.5"/>`;
+  }
+  // segnatasti
+  [3,5,7,9,15,17,19,21].forEach(f => { out += `<circle cx="${ML + (f - 0.5) * FW}" cy="${MT + 2.5 * SH}" r="3" fill="#222"/>`; });
+  out += `<circle cx="${ML + 11.5 * FW}" cy="${MT + 1.5 * SH}" r="3" fill="#222"/><circle cx="${ML + 11.5 * FW}" cy="${MT + 3.5 * SH}" r="3" fill="#222"/>`;
+  // corde + note
+  for (let s = 0; s < 6; s++) {
+    const y = MT + s * SH;
+    out += `<line x1="${ML}" y1="${y}" x2="${ML + FRETS * FW}" y2="${y}" stroke="#c8a84b" stroke-width="${s < 3 ? 1 : 1.5}" opacity="0.7"/>`;
+    out += `<text x="${ML - 16}" y="${y + 3}" font-size="8" fill="#8a8a8a" font-family="monospace">${STRING_NAMES[s]}</text>`;
+    for (let f = 0; f <= FRETS; f++) {
+      const pc = (OPEN_STRINGS[s] + f) % 12;
+      const fn = toneMap[pc];
+      const inScale = scaleSet.has(pc);
+      const cx = f === 0 ? ML - 8 : ML + (f - 0.5) * FW;
+      const isChordDot = SCL_FB.showArp && fn !== undefined;
+      const isScaleDot = !isChordDot && SCL_FB.showScale && inScale;
+      if (isChordDot) {
+        const col = chordFnColor(fn);
+        if (isGuideTone(fn)) out += `<circle cx="${cx}" cy="${y}" r="9.5" fill="none" stroke="#fff" stroke-width="1.6" opacity="0.9"/>`;
+        out += `<circle cx="${cx}" cy="${y}" r="7.5" fill="${col}"/>`;
+        out += `<text x="${cx}" y="${y + 2.8}" text-anchor="middle" font-size="7" font-weight="bold" fill="#000" font-family="monospace">${fn}</text>`;
+      } else if (isScaleDot) {
+        out += `<circle cx="${cx}" cy="${y}" r="6" fill="#191919" stroke="${sc ? sc.color : '#666'}" stroke-width="1" opacity="0.75"/>`;
+        out += `<text x="${cx}" y="${y + 2.5}" text-anchor="middle" font-size="6" fill="#777" font-family="monospace">${NOTES[pc]}</text>`;
+      }
+      if (gripPos.has(s + ':' + f)) {
+        out += `<circle cx="${cx}" cy="${y}" r="11.5" fill="none" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="3 2.4" opacity="0.95"/>`;
+      }
+    }
+  }
+  // numeri tasto
+  for (let f = 0; f <= FRETS; f++) {
+    out += `<text x="${f === 0 ? ML - 8 : ML + (f - 0.5) * FW}" y="${MT + 5 * SH + 13}" text-anchor="middle" font-size="7.5" fill="#555" font-family="monospace">${f}</text>`;
+  }
+  svg.innerHTML = out;
+}
+
+// Pagina di studio corrispondente al tipo di accordo (triadi / 7ª / 9ª)
+const _STUDY_TRIAD = { maj: 'major', min: 'minor', dim: 'diminished', aug: 'augmented' };
+const _STUDY_S7 = ['maj7','dom7','min7','m7b5','dim7','minmaj7'];
+function songlabStudyTarget(type) {
+  if (_STUDY_TRIAD[type]) return 'triadi';
+  if (_STUDY_S7.includes(type)) return 'seventh';
+  if (typeof NINTH_TYPES !== 'undefined' && NINTH_TYPES.includes(type)) return 'ninth';
+  return null;
+}
+function songlabGoStudy() {
+  const sel = SONGLAB.selChord;
+  if (!sel) return;
+  const target = songlabStudyTarget(sel.type);
+  if (!target) return;
+  if (target === 'triadi') {
+    TR_STATE.type = _STUDY_TRIAD[sel.type];
+    document.getElementById('tr-key').value = String(sel.rootPc);
+    document.querySelectorAll('#triad-type-tabs .triad-tab').forEach((b, i) => {
+      const k = Object.keys(TRIAD_TYPES)[i];
+      b.classList.toggle('active', k === TR_STATE.type);
+      b.querySelector('span').style.color = k === TR_STATE.type ? TRIAD_TYPES[k].color : '';
+    });
+    renderTriads();
+  } else if (target === 'seventh') {
+    S7_STATE.type = sel.type;
+    document.getElementById('s7-key').value = String(sel.rootPc);
+    document.querySelectorAll('#s7-type-tabs .triad-tab').forEach((b, i) => {
+      const k = Object.keys(SEVENTH_CHORD_TYPES)[i];
+      b.classList.toggle('active', k === S7_STATE.type);
+      b.querySelector('span').style.color = k === S7_STATE.type ? SEVENTH_CHORD_TYPES[k].color : '';
+    });
+    renderSeventh();
+  } else {
+    N9_STATE.type = sel.type;
+    document.getElementById('n9-key').value = String(sel.rootPc);
+    document.querySelectorAll('#n9-type-tabs .triad-tab').forEach((b, i) => {
+      const k = NINTH_TYPES[i];
+      b.classList.toggle('active', k === N9_STATE.type);
+      b.querySelector('span').style.color = k === N9_STATE.type ? N9_UI_COLORS[k] : '';
+    });
+    renderNinth();
+  }
+  showPage('scales');
+  showChordScaleSubpage(target);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function songlabCloseChord() {
+  SONGLAB.selChord = null;
+  const el = document.getElementById('song-chordlab');
+  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+  document.querySelectorAll('#song-chart .sc-chord.selected').forEach(p => p.classList.remove('selected'));
+}
+
+// Export/import JSON della setlist (GitHub Pages: nessun backend, file locale).
+function songlabExport() {
+  const blob = new Blob([JSON.stringify(SONGLAB.songs, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'guitar-improv-canzoni.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+function songlabImportFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      let data = JSON.parse(reader.result);
+      if (!Array.isArray(data)) data = [data];
+      const ids = new Set(SONGLAB.songs.map(s => s.id));
+      let added = 0;
+      data.forEach(s => {
+        if (!s || typeof s !== 'object' || !Array.isArray(s.sections)) return;
+        const song = {
+          id: (typeof s.id === 'string' && !ids.has(s.id)) ? s.id : 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+          title: String(s.title || 'senza titolo'),
+          artist: String(s.artist || ''),
+          sections: s.sections.map(sec => ({ name: String(sec.name || 'Sezione'), chords: String(sec.chords || '') })),
+        };
+        ids.add(song.id);
+        SONGLAB.songs.push(song);
+        added++;
+      });
+      if (added) { SONGLAB.curId = SONGLAB.songs[SONGLAB.songs.length - added].id; songlabSave(); }
+      songlabRenderAll();
+    } catch (e) {
+      alert('File JSON non valido: ' + e.message);
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
 }
 
 
@@ -6127,6 +6934,12 @@ const SEVENTH_CHORD_TYPES = {
     mood: 'Massima tensione, simmetrico. Si ripete ogni 3 semitoni — solo 3 accordi diversi esistono.',
     usage: 'Passaggio cromatico, sostituzione della dominante, VII°7 in minore armonica.',
   },
+  minmaj7: {
+    name: 'Minore/Magg. 7ª', symbol: 'm(maj7)', intervals: [0,3,7,11], formula: '1 – ♭3 – 5 – 7',
+    color: '#06b6d4',
+    mood: 'Misterioso, cinematografico, noir. La sensibile dentro un accordo minore.',
+    usage: 'Im(maj7) da minore armonica/melodica. Cliché line: Am → Am(maj7) → Am7 → Am6.',
+  },
 };
 
 const STRING_SETS_4 = [
@@ -6352,6 +7165,159 @@ function setS7StringSet(idx) {
   S7_STATE.stringSet = idx;
   document.querySelectorAll('#s7-strset-tabs .strset-tab').forEach((b, i) => b.classList.toggle('active', i === idx));
   renderSeventh();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ACCORDI DI NONA — grip curati dal dizionario centrale CHORD_LIB
+// (voicing parziali reali: senza 5ª o senza tonica, mai stack teorici di 5 note)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const NINTH_TYPES = ['maj9','dom9','min9','add9','dom7b9','dom7s9'];
+const N9_UI_COLORS = { maj9:'#f59e0b', dom9:'#fb923c', min9:'#3b82f6', add9:'#22c55e', dom7b9:'#ef4444', dom7s9:'#a855f7' };
+const N9_INFO = {
+  maj9:   { mood:'Etereo, aperto, neo-soul. Il maj7 con più aria.', usage:'Imaj9 e IVmaj9. Pop sofisticato, R&B, ballad. Prova ad arpeggiarlo lentamente.' },
+  dom9:   { mood:'Funk e blues maturo. La 9ª ammorbidisce la tensione del 7.', usage:'V9, oppure I9-IV9 nel funk (James Brown) e nel blues jazzato.' },
+  min9:   { mood:'Vellutato, notturno. Il suono minore del neo-soul e della fusion.', usage:'IIm9 nei ii-V-I, Im9 come tonica minore moderna.' },
+  add9:   { mood:'Brillante, arioso, pop-rock anni 90. Triade + colore, senza 7ª.', usage:'Al posto della triade maggiore quando serve più apertura (Oasis, U2, John Mayer).' },
+  dom7b9: { mood:'Tensione scura che DEVE risolvere. Il dominante delle cadenze minori.', usage:'V7♭9 → Im. Dentro c\'è un dim7: si sposta di 3 tasti in 3 tasti.' },
+  dom7s9: { mood:'Il "Purple Haze chord". Maggiore e minore insieme: puro attrito rock.', usage:'Funk-rock e blues aggressivo (E7♯9 di Hendrix). Improvvisaci sopra con blues/alterata.' },
+};
+const N9_STATE = { type:'dom9', keyIdx:0 };
+
+// Diagramma SVG generico di un grip su 6 corde (orizzontale, cantino in alto).
+// gripAbs = [{str, fret, fn}] con tasti assoluti; le corde assenti sono mute (×).
+function drawGripSVG(gripAbs) {
+  const byStr = {};
+  gripAbs.forEach(g => { byStr[g.str] = g; });
+  const frets = gripAbs.map(g => g.fret);
+  const minF = Math.min(...frets), maxF = Math.max(...frets);
+  const displayStart = Math.max(0, minF - 1);
+  const displayEnd = Math.max(maxF + 1, displayStart + 4);
+  const nFrets = displayEnd - displayStart + 1;
+
+  const W = 190, cellW = (W - 32) / nFrets, cellH = 22;
+  const H = 6 * cellH + 16;
+  const sNames = ['e','B','G','D','A','E'];
+
+  let svg = `<svg class="mini-fb" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<rect width="${W}" height="${H}" fill="#141414" rx="6"/>`;
+  for (let f = displayStart; f <= displayEnd; f++) {
+    const x = 28 + (f - displayStart) * cellW + cellW / 2;
+    svg += `<text x="${x}" y="9" text-anchor="middle" font-size="7" fill="#555" font-family="monospace">${f === 0 ? '' : f}</text>`;
+  }
+  if (displayStart === 0) {
+    svg += `<rect x="${28 + cellW - 1.5}" y="11" width="3" height="${6 * cellH}" fill="#d4af6a" rx="1"/>`;
+  }
+  for (let f = displayStart; f <= displayEnd; f++) {
+    const x = 28 + (f - displayStart) * cellW;
+    svg += `<line x1="${x}" y1="11" x2="${x}" y2="${11 + 6 * cellH}" stroke="#3d3020" stroke-width="1"/>`;
+  }
+  for (let s = 0; s < 6; s++) {
+    const y = 11 + s * cellH + cellH / 2;
+    svg += `<line x1="26" y1="${y}" x2="${W - 4}" y2="${y}" stroke="#c8a84b" stroke-width="0.8" opacity="0.45"/>`;
+    svg += `<text x="20" y="${y + 3}" text-anchor="middle" font-size="8" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
+    const g = byStr[s];
+    if (!g) {
+      svg += `<text x="${28 + cellW / 2}" y="${y + 3}" text-anchor="middle" font-size="8" fill="#666" font-family="monospace">×</text>`;
+      continue;
+    }
+    const x = 28 + (g.fret - displayStart) * cellW + cellW / 2;
+    const col = chordFnColor(g.fn);
+    if (isGuideTone(g.fn)) svg += `<circle cx="${x}" cy="${y}" r="${cellH / 2 - 1.5}" fill="none" stroke="#fff" stroke-width="1.2" opacity="0.85"/>`;
+    svg += `<circle cx="${x}" cy="${y}" r="${cellH / 2 - 3.5}" fill="${col}" opacity="0.92"/>`;
+    svg += `<text x="${x}" y="${y + 3}" text-anchor="middle" font-size="7" fill="#000" font-weight="bold" font-family="monospace">${g.fn}</text>`;
+  }
+  svg += '</svg>';
+  return svg;
+}
+
+function playGripNotes(gripAbs) {
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+  [...gripAbs].sort((a, b) => b.str - a.str).forEach((g, i) => {
+    playNote(midiToFreq(OPEN_STRING_MIDI[g.str] + g.fret), now + i * 0.07, 1.4);
+  });
+}
+
+// Card di un grip (titolo + diagramma + pillole nota·funzione), riusata da
+// pagina Acc. 9ª e Chord Lab. Tap = arpeggio del voicing.
+function buildGripCard(rootPc, grip) {
+  const abs = chordGripAbs(rootPc, grip);
+  const card = document.createElement('div');
+  card.className = 'triad-shape-card';
+  const pills = [...abs].sort((a, b) => b.str - a.str).map(g => {
+    const c = chordFnColor(g.fn);
+    const n = NOTES[(OPEN_STRING_MIDI[g.str] + g.fret) % 12];
+    return `<span class="shape-note" style="color:${c};border-color:${c};background:${c}18">${n}·${g.fn}</span>`;
+  }).join('');
+  card.innerHTML = `
+    <div class="shape-title">${grip.name} · pos. ${Math.min(...abs.map(g => g.fret))}</div>
+    ${drawGripSVG(abs)}
+    <div class="shape-notes-row">${pills}</div>`;
+  card.onclick = () => playGripNotes(abs);
+  return card;
+}
+
+function renderNinth() {
+  const keySel = document.getElementById('n9-key');
+  if (!keySel) return;
+  N9_STATE.keyIdx = parseInt(keySel.value);
+  const lib = CHORD_LIB[N9_STATE.type];
+  const uiCol = N9_UI_COLORS[N9_STATE.type];
+  const info = N9_INFO[N9_STATE.type];
+  const keyName = NOTES[N9_STATE.keyIdx];
+
+  const degreesHTML = lib.ivs.map(([st, fn]) => {
+    const c = chordFnColor(fn);
+    const n = NOTES[(N9_STATE.keyIdx + st) % 12];
+    return `<span class="tdeg" style="color:${c};border-color:${c};background:${c}18">${fn}: <strong>${n}</strong></span>`;
+  }).join('');
+  const scalesHTML = lib.scales.map((sk, i) => {
+    const sc = SCALES[sk];
+    if (!sc) return '';
+    return `<div style="display:flex;align-items:center;gap:6px;margin-top:5px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${sc.color}"></div>
+      <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-mid)">${keyName} ${sc.name}${i === 0 ? ' <span style="color:var(--amber)">★ default</span>' : ''}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('n9-info-col').innerHTML = `
+    <h3 style="color:${uiCol}">${keyName}${lib.sym}</h3>
+    <div class="triad-formula">${lib.ivs.map(([, fn]) => fn).join(' – ')}</div>
+    <div class="triad-mood">${info.mood}</div>
+    <div class="triad-degrees">${degreesHTML}</div>
+    <div class="msect-lbl">Usato come</div>
+    <div class="hint-box" style="font-size:12px">${info.usage}</div>
+    <div class="msect-lbl" style="margin-top:14px">Scale per improvvisarci</div>
+    ${scalesHTML}
+    <div class="msect-lbl" style="margin-top:14px">Guide tone</div>
+    <div class="hint-box" style="font-size:12px">Le note cerchiate di bianco (3ª e 7ª) definiscono la qualità: tienile quando cambi accordo.</div>`;
+
+  const grid = document.getElementById('n9-shapes-grid');
+  grid.innerHTML = '';
+  lib.grips.forEach(grip => grid.appendChild(buildGripCard(N9_STATE.keyIdx, grip)));
+}
+
+function initNinth() {
+  const container = document.getElementById('n9-type-tabs');
+  if (!container) return;
+  NINTH_TYPES.forEach(key => {
+    const lib = CHORD_LIB[key];
+    const btn = document.createElement('button');
+    btn.className = 'triad-tab' + (key === N9_STATE.type ? ' active' : '');
+    btn.innerHTML = `<span style="color:${key === N9_STATE.type ? N9_UI_COLORS[key] : ''}">${lib.sym}</span>&nbsp;<span style="font-size:9px;opacity:0.55">${lib.name}</span>`;
+    btn.onclick = () => {
+      N9_STATE.type = key;
+      container.querySelectorAll('.triad-tab').forEach((b, i) => {
+        const k = NINTH_TYPES[i];
+        b.classList.toggle('active', k === key);
+        b.querySelector('span').style.color = k === key ? N9_UI_COLORS[k] : '';
+      });
+      renderNinth();
+    };
+    container.appendChild(btn);
+  });
+  renderNinth();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -7965,6 +8931,8 @@ window.addEventListener('DOMContentLoaded', function() {
   initPenta5();
   jamInit();
   initSeventh();
+  initNinth();
+  songlabLoad();
   initTunerLedMeter();
   buildCsScaleList();
   buildCsChordTabs();
@@ -7974,6 +8942,7 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="page-jam" class="page">
   <div class="cpage-tabs">
     <button class="cpage-tab-btn active" data-tab="basi" onclick="showBasiSubpage('basi')">🎸 Basi</button>
+    <button class="cpage-tab-btn" data-tab="canzoni" onclick="showBasiSubpage('canzoni');songlabRenderAll()">🎼 Canzoni</button>
     <button class="cpage-tab-btn" data-tab="accordatore" onclick="showBasiSubpage('accordatore')">🎵 Accordatore</button>
     <button class="cpage-tab-btn" data-tab="micfb" onclick="showBasiSubpage('micfb');micFbInit()">🎤 Manico Live</button>
     <button class="cpage-tab-btn" data-tab="looper" onclick="showBasiSubpage('looper')">🔁 Looper</button>
@@ -8145,7 +9114,7 @@ window.addEventListener('DOMContentLoaded', function() {
     <button class="jam-live-btn" id="jam-live-btn" onclick="jamLiveToggle()">🎤 Suona live</button>
     <button class="jam-live-btn active" id="jam-single-btn" onclick="liveToggleSingle()" title="Mostra una sola posizione della nota, invece di tutti i punti dove si può suonare">1 posizione</button>
     <span class="jam-pos-ctrl" title="Tasto di partenza del box della scala: la nota suonata viene mostrata nella posizione più vicina a questo tasto (auto in base alla tonalità, modificabile)">🎯 dal tasto
-      <input type="number" id="jam-pos-fret" min="0" max="15" value="5" oninput="liveSetAnchor(this.value)">
+      <input type="number" id="jam-pos-fret" min="0" max="18" value="5" oninput="liveSetAnchor(this.value)">
     </span>
     <div class="jam-now-wrap">
       <span class="jam-now-lbl">Ora suona</span>
@@ -8161,6 +9130,8 @@ window.addEventListener('DOMContentLoaded', function() {
     <span><i class="lg lg-third"></i>3ª</span>
     <span><i class="lg lg-fifth"></i>5ª</span>
     <span><i class="lg lg-seventh"></i>7ª</span>
+    <span><i class="lg" style="background:#ec4899"></i>9ª</span>
+    <span><i class="lg" style="background:transparent;box-shadow:0 0 0 2px rgba(255,255,255,0.9)"></i>Guide tone (3ª/7ª dell'accordo)</span>
     <span><i class="lg lg-live"></i>Nota che suoni (mic)</span>
     <span class="lg-hint">// attiva <strong>🎤 Suona live</strong>: la nota che suoni dal microfono si cerchia sul manico — vedi insieme scala e note reali</span>
     <span class="lg-hint" style="color:var(--amber);font-weight:700">build v8 · 05-07 17:20</span>
@@ -8169,6 +9140,19 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="fretboard" id="jam-fretboard"></div>
   </div>
   </div><!-- /bpage-basi -->
+  <div id="bpage-canzoni" class="cpage-view">
+    <h2>Chord Lab · Canzoni</h2>
+    <div class="subtitle">// la tua setlist: accordi per sezione, salvati nel browser — tap su un accordo per voicing, scala e arpeggio</div>
+    <div class="songlab-toolbar" id="songlab-list"></div>
+    <div id="song-editor" style="display:none"></div>
+    <div id="song-chordlab" style="display:none"></div>
+    <div id="song-chart"></div>
+    <input type="file" id="songlab-file" accept="application/json,.json" style="display:none" onchange="songlabImportFile(this)">
+    <datalist id="song-sections-dl">
+      <option value="Intro"></option><option value="Strofa"></option><option value="Ritornello"></option>
+      <option value="Bridge"></option><option value="Assolo"></option><option value="Outro"></option>
+    </datalist>
+  </div><!-- /bpage-canzoni -->
   <div id="bpage-accordatore" class="cpage-view">
     <h2>Accordatore</h2>
     <div class="subtitle">// usa il microfono per accordare la chitarra · A = 440 Hz</div>
@@ -8964,7 +9948,7 @@ function micFbInit() {
   if (MICFB.built) return;
   const fb = document.getElementById('micfb-fretboard');
   if (!fb) return;
-  const fretCount = 15;
+  const fretCount = 21;
   const fretWidths = [0];
   for (let f = 1; f <= fretCount; f++) fretWidths.push(Math.round(58 - f * 1.1));
   const OPEN_COL_W = 40, NUT_W = 14;
