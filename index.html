@@ -3270,6 +3270,8 @@ const SCALES = {
   lydian_dom:     { name:'Lidia Dominante (Lidia ♭7)',  intervals:[0,2,4,6,7,9,10],    formula:'1 2 3 ♯4 5 6 ♭7',       mood:'Jazz fusion. Sognante ma con tensione. Joe Satriani.',     color:'#a78bfa', hybrid:true },
   phrygian_dom:   { name:'Frigia Dominante',            intervals:[0,1,4,5,7,8,10],    formula:'1 ♭2 3 4 5 ♭6 ♭7',      mood:'Spagnola, flamenco, metal orientale. Ozzy, Megadeth.',    color:'#ef4444', hybrid:true },
   bebop_dom:      { name:'Bebop Dominante',             intervals:[0,2,4,5,7,9,10,11], formula:'1 2 3 4 5 6 ♭7 7',      mood:'Jazz bebop. 8 note — una per ogni ottavo sul beat.',       color:'#22c55e', hybrid:true },
+  dim_wh:         { name:'Diminuita (tono-semitono)',   intervals:[0,2,3,5,6,8,9,11],  formula:'1 2 ♭3 4 ♭5 ♭6 6 7',    mood:'Simmetrica: si ripete ogni 3 semitoni. La scala degli accordi dim7.', color:'#8b5cf6', hybrid:true },
+  altered:        { name:'Alterata (Superlocria)',      intervals:[0,1,3,4,6,8,10],    formula:'1 ♭2 ♯2 3 ♭5 ♭6 ♭7',    mood:'Massima tensione sui dominanti alterati (7♭9, 7♯9). VII della minore melodica.', color:'#ef4444', hybrid:true },
 };
 
 const MODES_DATA = [
@@ -4861,23 +4863,163 @@ const DRUM_PATTERNS = {
   },
 };
 
-// Chord intervals (semitones from root)
-const CHORD_IV = {
-  maj:  [0,4,7],
-  min:  [0,3,7],
-  dom7: [0,4,7,10],
-  min7: [0,3,7,10],
-  maj7: [0,4,7,11],
-  dim:  [0,3,6],
-  sus2: [0,2,7],
-  sus4: [0,5,7],
-  m7b5: [0,3,6,10],
+// ═══════════════════════════════════════════════════════════════════════════════
+// DIZIONARIO ACCORDI CENTRALE (CHORD_LIB)
+// Fonte unica riusata da: basi/synth (CHORD_IV derivato), progressione custom,
+// Chord Lab canzoni, tab Acc. 9ª e manico jam (colori per funzione).
+// - ivs:    [semitoni dalla fondamentale, funzione] in ordine di stacking
+// - scales: chiavi di SCALES consigliate — la PRIMA è il default didattico
+//           (maj7→Ionio, 7→Misolidio, m7→Dorico, m7♭5→Locrio, dim7→diminuita,
+//            7♭9/7♯9→frigia dom./alterata)
+// - grips:  voicing SUONABILI e mobili. root = corda della fondamentale
+//           (indici come OPEN_STRING_MIDI: 0=e … 5=E, quindi 5=MI basso, 4=LA).
+//           off = [corda, tasto relativo al tasto della fondamentale, funzione].
+//           Le NONE usano voicing PARZIALI standard (senza 5ª o senza tonica),
+//           come si suonano davvero sulla chitarra — non stack teorici di 5 note.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Color coding costante per FUNZIONE (uguale ovunque: manico, grip, chart):
+// Tonica=ambra · 3ª=blu · 5ª=verde · 7ª=viola · 9ª/estensioni=rosa · sus=ciano
+const FN_COLORS = {
+  'R':'#f59e0b',
+  '3':'#3b82f6', '♭3':'#3b82f6',
+  '5':'#22c55e', '♭5':'#22c55e', '♯5':'#22c55e',
+  '7':'#a855f7', '♭7':'#a855f7', '𝄫7':'#a855f7',
+  '9':'#ec4899', '♭9':'#ec4899', '♯9':'#ec4899',
+  '2':'#ec4899', '4':'#06b6d4',
+};
+function chordFnColor(fn) { return FN_COLORS[fn] || '#888'; }
+// Guide tone = 3ª e 7ª: definiscono la qualità dell'accordo e sono gli appigli
+// per l'improvvisazione sui cambi.
+function isGuideTone(fn) { return fn==='3'||fn==='♭3'||fn==='7'||fn==='♭7'||fn==='𝄫7'; }
+
+const CHORD_LIB = {
+  // ── TRIADI ──────────────────────────────────────────────────────────────────
+  maj: { sym:'', name:'Maggiore', ivs:[[0,'R'],[4,'3'],[7,'5']],
+    scales:['penta_major','major','lydian'],
+    grips:[
+      { name:'Forma E (barrè)', root:5, off:[[5,0,'R'],[4,2,'5'],[3,2,'R'],[2,1,'3'],[1,0,'5'],[0,0,'R']] },
+      { name:'Forma A (barrè)', root:4, off:[[4,0,'R'],[3,2,'5'],[2,2,'R'],[1,2,'3'],[0,0,'5']] },
+    ] },
+  min: { sym:'m', name:'Minore', ivs:[[0,'R'],[3,'♭3'],[7,'5']],
+    scales:['penta_minor','natural_minor','dorian'],
+    grips:[
+      { name:'Forma Em (barrè)', root:5, off:[[5,0,'R'],[4,2,'5'],[3,2,'R'],[2,0,'♭3'],[1,0,'5'],[0,0,'R']] },
+      { name:'Forma Am (barrè)', root:4, off:[[4,0,'R'],[3,2,'5'],[2,2,'R'],[1,1,'♭3'],[0,0,'5']] },
+    ] },
+  dim: { sym:'°', name:'Diminuita', ivs:[[0,'R'],[3,'♭3'],[6,'♭5']],
+    scales:['locrian'],
+    grips:[
+      { name:'Radice sul LA', root:4, off:[[4,0,'R'],[3,1,'♭5'],[2,2,'R'],[1,1,'♭3']] },
+    ] },
+  aug: { sym:'+', name:'Aumentata', ivs:[[0,'R'],[4,'3'],[8,'♯5']],
+    scales:['harmonic_minor'],
+    grips:[
+      { name:'Radice sul LA', root:4, off:[[4,0,'R'],[3,-1,'3'],[2,-2,'♯5'],[1,-2,'R']] },
+    ] },
+  sus2: { sym:'sus2', name:'Sospesa 2ª', ivs:[[0,'R'],[2,'2'],[7,'5']],
+    scales:['mixolydian','major'],
+    grips:[
+      { name:'Forma A', root:4, off:[[4,0,'R'],[3,2,'5'],[2,2,'R'],[1,0,'2'],[0,0,'5']] },
+    ] },
+  sus4: { sym:'sus4', name:'Sospesa 4ª', ivs:[[0,'R'],[5,'4'],[7,'5']],
+    scales:['mixolydian'],
+    grips:[
+      { name:'Forma E', root:5, off:[[5,0,'R'],[4,2,'5'],[3,2,'R'],[2,2,'4'],[1,0,'5'],[0,0,'R']] },
+    ] },
+  // ── SETTIME ────────────────────────────────────────────────────────────────
+  maj7: { sym:'maj7', name:'Maggiore 7ª', ivs:[[0,'R'],[4,'3'],[7,'5'],[11,'7']],
+    scales:['major','lydian','melodic_minor'],
+    grips:[
+      { name:'Drop-3 · radice sul MI', root:5, off:[[5,0,'R'],[3,1,'7'],[2,1,'3'],[1,0,'5']] },
+      { name:'Drop-2 · radice sul LA', root:4, off:[[4,0,'R'],[3,2,'5'],[2,1,'7'],[1,2,'3']] },
+    ] },
+  dom7: { sym:'7', name:'Dominante 7ª', ivs:[[0,'R'],[4,'3'],[7,'5'],[10,'♭7']],
+    scales:['mixolydian','blues','miso_penta'],
+    grips:[
+      { name:'Drop-3 · radice sul MI', root:5, off:[[5,0,'R'],[3,0,'♭7'],[2,1,'3'],[1,0,'5']] },
+      { name:'Drop-2 · radice sul LA', root:4, off:[[4,0,'R'],[3,2,'5'],[2,0,'♭7'],[1,2,'3']] },
+    ] },
+  min7: { sym:'m7', name:'Minore 7ª', ivs:[[0,'R'],[3,'♭3'],[7,'5'],[10,'♭7']],
+    scales:['dorian','natural_minor','penta_minor'],
+    grips:[
+      { name:'Drop-3 · radice sul MI', root:5, off:[[5,0,'R'],[3,0,'♭7'],[2,0,'♭3'],[1,0,'5']] },
+      { name:'Drop-2 · radice sul LA', root:4, off:[[4,0,'R'],[3,2,'5'],[2,0,'♭7'],[1,1,'♭3']] },
+    ] },
+  m7b5: { sym:'m7♭5', name:'Semidiminuito', ivs:[[0,'R'],[3,'♭3'],[6,'♭5'],[10,'♭7']],
+    scales:['locrian'],
+    grips:[
+      { name:'Drop-3 · radice sul MI', root:5, off:[[5,0,'R'],[3,0,'♭7'],[2,0,'♭3'],[1,-1,'♭5']] },
+      { name:'Drop-2 · radice sul LA', root:4, off:[[4,0,'R'],[3,1,'♭5'],[2,0,'♭7'],[1,1,'♭3']] },
+    ] },
+  dim7: { sym:'°7', name:'Diminuito 7ª', ivs:[[0,'R'],[3,'♭3'],[6,'♭5'],[9,'𝄫7']],
+    scales:['dim_wh','harmonic_minor'],
+    grips:[
+      { name:'Radice sul MI', root:5, off:[[5,0,'R'],[3,-1,'𝄫7'],[2,0,'♭3'],[1,-1,'♭5']] },
+      { name:'Radice sul LA', root:4, off:[[4,0,'R'],[3,1,'♭5'],[2,-1,'𝄫7'],[1,1,'♭3']] },
+    ] },
+  minmaj7: { sym:'m(maj7)', name:'Minore/Maggiore 7ª', ivs:[[0,'R'],[3,'♭3'],[7,'5'],[11,'7']],
+    scales:['harmonic_minor','melodic_minor'],
+    grips:[
+      { name:'Radice sul MI', root:5, off:[[5,0,'R'],[3,1,'7'],[2,0,'♭3'],[1,0,'5']] },
+      { name:'Radice sul LA', root:4, off:[[4,0,'R'],[3,2,'5'],[2,1,'7'],[1,1,'♭3']] },
+    ] },
+  // ── NONE (voicing PARZIALI e suonabili) ────────────────────────────────────
+  maj9: { sym:'maj9', name:'Maggiore 9ª', ivs:[[0,'R'],[4,'3'],[7,'5'],[11,'7'],[14,'9']],
+    scales:['major','lydian'],
+    grips:[
+      { name:'Senza 5ª · radice sul LA', root:4, off:[[4,0,'R'],[3,-1,'3'],[2,1,'7'],[1,0,'9']] },
+      { name:'Senza 3ª (aperto) · radice sul MI', root:5, off:[[5,0,'R'],[3,1,'7'],[2,-1,'9'],[1,0,'5']] },
+    ] },
+  dom9: { sym:'9', name:'Dominante 9ª', ivs:[[0,'R'],[4,'3'],[7,'5'],[10,'♭7'],[14,'9']],
+    scales:['mixolydian','lydian_dom','bebop_dom'],
+    grips:[
+      { name:'Grip funk (con 5ª al canto)', root:4, off:[[4,0,'R'],[3,-1,'3'],[2,0,'♭7'],[1,0,'9'],[0,0,'5']] },
+      { name:'Senza tonica (comping)', root:4, off:[[3,-1,'3'],[2,0,'♭7'],[1,0,'9'],[0,0,'5']] },
+    ] },
+  min9: { sym:'m9', name:'Minore 9ª', ivs:[[0,'R'],[3,'♭3'],[7,'5'],[10,'♭7'],[14,'9']],
+    scales:['dorian','natural_minor','melodic_minor'],
+    grips:[
+      { name:'Senza 5ª · radice sul LA', root:4, off:[[4,0,'R'],[3,-2,'♭3'],[2,0,'♭7'],[1,0,'9']] },
+      { name:'Senza tonica (comping)', root:4, off:[[3,-2,'♭3'],[2,0,'♭7'],[1,0,'9'],[0,0,'5']] },
+    ] },
+  add9: { sym:'add9', name:'Add 9', ivs:[[0,'R'],[4,'3'],[7,'5'],[14,'9']],
+    scales:['major','penta_major'],
+    grips:[
+      { name:'Con 3ª · radice sul LA', root:4, off:[[4,0,'R'],[3,-1,'3'],[2,2,'R'],[1,0,'9']] },
+      { name:'Senza 3ª (sound aperto rock)', root:4, off:[[4,0,'R'],[3,2,'5'],[2,2,'R'],[1,0,'9'],[0,0,'5']] },
+    ] },
+  dom7b9: { sym:'7♭9', name:'Dominante 7♭9', ivs:[[0,'R'],[4,'3'],[7,'5'],[10,'♭7'],[13,'♭9']],
+    scales:['phrygian_dom','harmonic_minor','altered'],
+    grips:[
+      { name:'Jazz (dim7 sopra la tonica)', root:4, off:[[4,0,'R'],[3,-1,'3'],[2,0,'♭7'],[1,-1,'♭9']] },
+      { name:'♭9 al canto · radice sul MI', root:5, off:[[5,0,'R'],[3,0,'♭7'],[2,1,'3'],[1,0,'5'],[0,1,'♭9']] },
+    ] },
+  dom7s9: { sym:'7♯9', name:'Dominante 7♯9 (Hendrix)', ivs:[[0,'R'],[4,'3'],[7,'5'],[10,'♭7'],[15,'♯9']],
+    scales:['altered','blues','penta_minor'],
+    grips:[
+      { name:'Grip Hendrix', root:4, off:[[4,0,'R'],[3,-1,'3'],[2,0,'♭7'],[1,1,'♯9']] },
+    ] },
 };
 
-const CHORD_QUAL_LABEL = {
-  maj:'', min:'m', dom7:'7', min7:'m7', maj7:'maj7', dim:'°', sus2:'sus2',
-  sus4:'sus4', m7b5:'m7♭5',
-};
+// Derivati per compatibilità: intervalli per il synth e label di qualità.
+const CHORD_IV = {};
+const CHORD_QUAL_LABEL = {};
+Object.entries(CHORD_LIB).forEach(([k, c]) => {
+  CHORD_IV[k] = c.ivs.map(x => x[0]);
+  CHORD_QUAL_LABEL[k] = c.sym;
+});
+
+// Posiziona un grip sul manico per una data fondamentale.
+// Ritorna [{str, fret, fn}] con tasti assoluti (grip mobile, mai sotto il tasto 1).
+function chordGripAbs(rootPc, grip) {
+  const rootStr = grip.root;
+  let rootFret = ((rootPc - OPEN_STRING_MIDI[rootStr]) % 12 + 12) % 12;
+  const minRel = Math.min(...grip.off.map(o => o[1]));
+  while (rootFret + minRel < 1) rootFret += 12;
+  if (rootFret + Math.max(...grip.off.map(o => o[1])) > 15 && rootFret >= 12) rootFret -= 12;
+  return grip.off.map(([str, rel, fn]) => ({ str, fret: rootFret + rel, fn }));
+}
 
 // ─── MIDI / FREQ ──────────────────────────────────────────────────────────────
 function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
@@ -5242,8 +5384,28 @@ function noteNameToPc(name) {
   return ((pc % 12) + 12) % 12;
 }
 
-// Simbolo accordo → {rootPc, type}. Mappa i suffissi comuni sul vocabolario CHORD_IV,
-// con fallback ragionevoli per estensioni non sintetizzabili (9/11/13 → 7 corrispondente).
+// Simbolo accordo → {rootPc, type}. Mappa i suffissi comuni sul vocabolario CHORD_LIB,
+// con fallback ragionevoli per le estensioni non modellate (11/13 → 7 corrispondente).
+const CHORD_SUFFIX_MAP = {
+  '':'maj', 'maj':'maj', '6':'maj',
+  'm':'min', 'min':'min', 'minor':'min', 'm6':'min',
+  'dim':'dim', 'o':'dim',
+  'aug':'aug', '+':'aug',
+  'sus2':'sus2',
+  'sus4':'sus4', 'sus':'sus4', '7sus4':'sus4', '7sus':'sus4',
+  'maj7':'maj7', 'ma7':'maj7', 'maj13':'maj7',
+  '7':'dom7', 'dom7':'dom7', '11':'dom7', '13':'dom7',
+  'm7':'min7', 'min7':'min7', 'm11':'min7', 'm13':'min7',
+  'm7b5':'m7b5', 'min7b5':'m7b5', 'm7-5':'m7b5', 'halfdim':'m7b5',
+  'dim7':'dim7', 'o7':'dim7',
+  'mmaj7':'minmaj7', 'm(maj7)':'minmaj7', 'minmaj7':'minmaj7', 'mm7':'minmaj7',
+  'maj9':'maj9', 'ma9':'maj9',
+  '9':'dom9', 'dom9':'dom9',
+  'm9':'min9', 'min9':'min9',
+  'add9':'add9', 'add2':'add9', '2':'add9',
+  '7b9':'dom7b9',
+  '7#9':'dom7s9',
+};
 function parseChordSymbol(sym) {
   const s = sym.trim();
   const m = /^([a-gA-G][#b♯♭]?)(.*)$/.exec(s);
@@ -5251,21 +5413,18 @@ function parseChordSymbol(sym) {
   const rootPc = noteNameToPc(m[1]);
   if (rootPc < 0) return null;
   let q = m[2].replace(/\s+/g, '');
-  // normalizza alcuni glifi
-  q = q.replace('Δ', 'maj7').replace('ø', 'm7b5').replace('°', 'dim').replace('-', 'm');
+  // normalizza glifi e alterazioni
+  q = q.replace('Δ', 'maj7').replace('ø', 'm7b5').replace('°7', 'dim7').replace('°', 'dim')
+       .replace('-', 'm').replace(/♭/g, 'b').replace(/♯/g, '#');
+  // 'M' maiuscola = maggiore (prima del lowercase, per non confonderla con 'm')
+  if (q === 'M') q = 'maj'; else if (q === 'M7') q = 'maj7'; else if (q === 'M9') q = 'maj9';
   const ql = q.toLowerCase();
-  let type;
-  if (q === '' || ql === 'maj' || ql === 'add9' || ql === '6' || ql === 'M') type = 'maj';
-  else if (ql === 'm7b5' || ql === 'min7b5' || ql === 'm7-5' || ql === 'halfdim') type = 'm7b5';
-  else if (ql === 'dim' || ql === 'dim7' || ql === 'o' || ql === 'o7') type = 'dim';
-  else if (ql === 'maj7' || ql === 'maj9' || ql === 'maj13' || q === 'M7' || ql === 'ma7') type = 'maj7';
-  else if (ql === 'sus2') type = 'sus2';
-  else if (ql === 'sus4' || ql === 'sus' || ql === '7sus4' || ql === '7sus') type = 'sus4';
-  else if (ql === 'm7' || ql === 'min7' || ql === 'm9' || ql === 'm11' || ql === 'm13' || ql === 'm6') type = 'min7';
-  else if (ql === 'm' || ql === 'min' || ql === 'minor') type = 'min';
-  else if (ql === '7' || ql === '9' || ql === '11' || ql === '13' || ql === 'dom7' || ql === '7b9' || ql === '7#9') type = 'dom7';
-  else if (ql.startsWith('m')) type = 'min';   // fallback minore (mMaj7, m ecc.)
-  else type = 'maj';                            // fallback maggiore (aug, +, 6, …)
+  let type = CHORD_SUFFIX_MAP[ql];
+  if (!type) {
+    if (ql.startsWith('maj')) type = 'maj7';
+    else if (ql.startsWith('m')) type = 'min';  // fallback minore
+    else type = 'maj';                          // fallback maggiore
+  }
   return { rootPc, type };
 }
 
@@ -5304,7 +5463,7 @@ function detectSongKey(chords) {
         score += scaleSet.has(c.rootPc) ? 1 : -1.5;
         // qualità coerente col grado: tonica maggiore vuole accordo maggiore, ecc.
         if (c.rootPc === tonic) {
-          const isMinorChord = c.type === 'min' || c.type === 'min7' || c.type === 'm7b5';
+          const isMinorChord = ['min','min7','min9','minmaj7','m7b5','dim','dim7'].includes(c.type);
           if (cand.modeKey === 'major' && !isMinorChord) score += 1.5;
           if (cand.modeKey === 'natural_minor' && isMinorChord) score += 1.5;
         }
@@ -5317,20 +5476,11 @@ function detectSongKey(chords) {
   return { tonicPc: best.tonicPc, modeKey: best.modeKey };
 }
 
-// Scala consigliata per un singolo accordo (per la "sequenza di scale")
+// Scala consigliata per un singolo accordo (per la "sequenza di scale").
+// Centralizzata: è la prima scala del tipo nel dizionario CHORD_LIB.
 function chordScaleSuggestion(type) {
-  switch (type) {
-    case 'maj':  return 'penta_major';
-    case 'min':  return 'penta_minor';
-    case 'dom7': return 'mixolydian';
-    case 'maj7': return 'major';
-    case 'min7': return 'dorian';
-    case 'dim':
-    case 'm7b5': return 'locrian';
-    case 'sus2':
-    case 'sus4': return 'mixolydian';
-    default:     return 'major';
-  }
+  const c = CHORD_LIB[type];
+  return (c && c.scales && c.scales[0]) || 'major';
 }
 
 // Carica la progressione digitata: rileva tonalità, sincronizza i select, ridisegna.
@@ -5796,7 +5946,7 @@ function jamInit() {
 function jamBuildQuickChords() {
   const el = document.getElementById('jam-quick-chords');
   if (!el) return;
-  const quick = ['C','G','D','A','E','F','Am','Em','Dm','Bm','G7','C7','Dm7','Am7','Fmaj7','Cmaj7'];
+  const quick = ['C','G','D','A','E','F','Am','Em','Dm','Bm','G7','C7','Dm7','Am7','Fmaj7','Cmaj7','C9','Am9','Cmaj9','Gadd9','B7♭9','E7♯9'];
   el.innerHTML = quick.map(s =>
     `<button type="button" class="ccp-chip" onclick="jamAppendChord('${s}')">${s}</button>`
   ).join('');
