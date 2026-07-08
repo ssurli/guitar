@@ -1807,6 +1807,25 @@
     background:var(--bg2); border:1px solid var(--border); border-radius:10px;
     padding:12px; margin-bottom:14px;
   }
+  /* Repertorio dei maestri */
+  .song-repertoire {
+    background:var(--bg2); border:1px solid var(--amber-dim); border-radius:10px;
+    padding:12px; margin-bottom:14px;
+  }
+  .rep-head {
+    display:flex; gap:8px; align-items:flex-start; margin-bottom:10px;
+    font-family:'Space Mono',monospace; font-size:11px; color:var(--text-mid);
+  }
+  .rep-head .scl-close { margin-left:auto; background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; flex-shrink:0; }
+  .rep-artist { margin-bottom:10px; }
+  .rep-artist-name { font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:1px; margin-bottom:5px; }
+  .rep-songs { display:flex; gap:6px; flex-wrap:wrap; }
+  .rep-song {
+    padding:6px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:14px;
+    color:var(--text-mid); font-family:'Space Mono',monospace; font-size:11px; cursor:pointer;
+  }
+  .rep-song:hover { border-color:var(--amber); color:var(--amber); }
+  .rep-song.added { opacity:0.5; cursor:default; border-style:dashed; color:var(--green); }
   .sed-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
   .sed-row input[type=text] {
     flex:1; min-width:130px; background:var(--bg3); border:1px solid var(--border); border-radius:6px;
@@ -1851,6 +1870,30 @@
   .song-chordlab .scl-title { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--purple); letter-spacing:1px; }
   .song-chordlab .scl-close { margin-left:auto; background:none; border:none; color:var(--text-dim); font-size:16px; cursor:pointer; }
   .scl-grips { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; margin-top:10px; }
+
+  /* Popup tablatura accordo (riusato dai chip "accordi compatibili") */
+  .chord-modal-backdrop {
+    position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:1000;
+    display:flex; align-items:center; justify-content:center; padding:16px;
+  }
+  .chord-modal {
+    background:var(--bg2); border:1px solid var(--amber-dim); border-radius:12px;
+    max-width:440px; width:100%; max-height:88vh; overflow-y:auto; padding:16px;
+    box-shadow:0 20px 60px -20px rgba(0,0,0,0.85);
+  }
+  .chord-modal-head { display:flex; align-items:baseline; gap:10px; margin-bottom:8px; }
+  .chord-modal-title { font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:1px; color:var(--amber); }
+  .chord-modal-close { margin-left:auto; background:none; border:none; color:var(--text-dim); font-size:20px; cursor:pointer; }
+  .chord-modal .scl-grips { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+
+  /* Pulsante "← torna indietro" per i rimandi al manico */
+  #nav-return-bar {
+    position:fixed; left:12px; bottom:14px; z-index:900;
+    background:var(--amber); color:#1a1200; border:none; border-radius:20px;
+    font-family:'Space Mono',monospace; font-size:12px; font-weight:700;
+    padding:9px 15px; cursor:pointer; box-shadow:0 6px 20px -6px rgba(0,0,0,0.75);
+  }
+  #nav-return-bar:hover { filter:brightness(1.08); }
 
   /* Chord blocks */
   .chord-display {
@@ -2554,7 +2597,8 @@
     padding: 8px 14px; cursor: pointer; transition: all 0.15s;
     font-family: 'Space Mono', monospace;
   }
-  .cs-chord-chip:hover { border-color: var(--amber-dim); }
+  .cs-chord-chip { cursor: pointer; }
+  .cs-chord-chip:hover { border-color: var(--amber); }
   .cs-chord-chip .chip-sym { font-size: 15px; font-weight: bold; }
   .cs-chord-chip .chip-label { font-size: 9px; color: var(--text-dim); }
 
@@ -4389,7 +4433,9 @@ function renderFretboard() {
   strContainer.className = 'strings-container';
 
   // String thickness: e=0.6px, B=0.8px, G=1px, D=1.4px, A=1.8px, E=2.2px
-  const STRING_HEIGHTS = ['0.65px', '0.85px', '1.1px', '1.5px', '1.9px', '2.3px'];
+  // altezze minime ≥1px: sotto 1px le corde sottili (mi cantino, SI) non vengono
+  // disegnate sui display non-retina → sembravano "mancanti"
+  const STRING_HEIGHTS = ['1px', '1.15px', '1.4px', '1.7px', '2px', '2.3px'];
 
   for (let s = 0; s < 6; s++) {
     const row = document.createElement('div');
@@ -4747,13 +4793,15 @@ function renderModesPage() {
 }
 
 function loadScaleOnFretboard(scaleKey, posIdx, posType) {
+  navArm();
   document.getElementById('fb-scale').value = scaleKey;
-  showPage('fretboard');
+  showPage('fretboard', true);
   renderFretboard();
   if (posIdx !== undefined && posType === 'nps') {
     const modeBtn = document.getElementById('mode-nps-btn');
     if (modeBtn) { FB_STATE.mode = 'nps'; FB_STATE.npsPosition = posIdx; renderFretboard(); }
   }
+  window.scrollTo(0, 0);
 }
 
 // ─── PROGRESSIONS PAGE ────────────────────────────────────────────────────────
@@ -5574,9 +5622,26 @@ function parseChordSymbol(sym) {
   const ql = q.toLowerCase();
   let type = CHORD_SUFFIX_MAP[ql];
   if (!type) {
-    if (ql.startsWith('maj')) type = 'maj7';
-    else if (ql.startsWith('m')) type = 'min';  // fallback minore
-    else type = 'maj';                          // fallback maggiore
+    // Fallback per famiglia: sceglie il voicing praticabile più vicino nel
+    // dizionario (le estensioni oltre la 9ª — 11/13/♭13 — si suonano sopra).
+    const has = re => re.test(ql);
+    if (ql.startsWith('sus2')) type = 'sus2';
+    else if (ql.startsWith('sus')) type = 'sus4';
+    else if (ql[0] === '6') type = 'maj';                    // 6, 6/9
+    else if (ql.startsWith('maj') || ql.startsWith('ma')) type = 'maj7';
+    else if (ql[0] === 'm') {                                // famiglia minore
+      if (has(/maj7/)) type = 'minmaj7';
+      else if (has(/7b5|7-5/)) type = 'm7b5';
+      else if (has(/[79]|1[13]/)) type = 'min7';
+      else type = 'min';
+    }
+    else if (has(/^[0-9]/)) {                                // famiglia dominante
+      if (has(/b9/)) type = 'dom7b9';
+      else if (has(/#9/)) type = 'dom7s9';
+      else if (has(/9/)) type = 'dom9';
+      else type = 'dom7';                                    // 7, 11, 13, 7b5, 7#11…
+    }
+    else type = 'maj';
   }
   return { rootPc, type };
 }
@@ -5793,7 +5858,9 @@ function renderJamFretboard() {
   // Corde
   const strContainer = document.createElement('div');
   strContainer.className = 'strings-container';
-  const STRING_HEIGHTS = ['0.65px', '0.85px', '1.1px', '1.5px', '1.9px', '2.3px'];
+  // altezze minime ≥1px: sotto 1px le corde sottili (mi cantino, SI) non vengono
+  // disegnate sui display non-retina → sembravano "mancanti"
+  const STRING_HEIGHTS = ['1px', '1.15px', '1.4px', '1.7px', '2px', '2.3px'];
 
   for (let s = 0; s < 6; s++) {
     const row = document.createElement('div');
@@ -6136,6 +6203,15 @@ function jamBuildQuickChords() {
 const SONGLAB_LS_KEY = 'gil_songs_v1';
 const SONGLAB = { songs: [], curId: null, playingId: null, editing: false, selChord: null };
 
+// Id univoco anche per canzoni create nello stesso millisecondo (Date.now() da
+// solo collide su creazioni ravvicinate → pill duplicate/sovrascritte).
+function songlabNewId() {
+  let id;
+  do { id = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  while (SONGLAB.songs.some(s => s.id === id));
+  return id;
+}
+
 function songlabSeed() {
   SONGLAB.songs = [{
     id: 'demo-blues-a',
@@ -6176,6 +6252,7 @@ function songParseTokens(str) {
 
 function songlabRenderAll() {
   songlabRenderList();
+  songlabRenderRepertoire();
   songlabRenderEditor();
   songlabRenderChart();
 }
@@ -6197,13 +6274,60 @@ function songlabRenderList() {
     el.appendChild(b);
   };
   mk('＋ nuova', songlabNew);
+  mk('🎸 repertorio', songlabToggleRepertoire, 'Aggiungi un brano dal repertorio dei maestri');
   mk('⬇ export', songlabExport, 'Scarica la setlist in JSON');
   mk('⬆ import', () => document.getElementById('songlab-file').click(), 'Carica una setlist da JSON');
 }
 
+// Pannello "repertorio": i brani dei MAESTRI (già presenti nell'app) diventano
+// canzoni pronte da riempire con gli accordi. Aggancia il repertorio esistente
+// invece di duplicarlo.
+let _songRepOpen = false;
+function songlabToggleRepertoire() {
+  _songRepOpen = !_songRepOpen;
+  songlabRenderRepertoire();
+}
+function songlabRenderRepertoire() {
+  const el = document.getElementById('song-repertoire');
+  if (!el) return;
+  if (!_songRepOpen || typeof MAESTRI === 'undefined') { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = '';
+  el.className = 'song-repertoire';
+  // titoli già in setlist (per marcare come aggiunti)
+  const present = new Set(SONGLAB.songs.map(s => (s.title || '').toLowerCase()));
+  const groups = MAESTRI.map(m => {
+    const chips = m.songs.map(title => {
+      const added = present.has(title.toLowerCase());
+      return `<button class="rep-song${added ? ' added' : ''}" ${added ? 'disabled' : ''}
+        onclick="songlabAddFromRepertoire(${JSON.stringify(m.name).replace(/"/g,'&quot;')}, ${JSON.stringify(title).replace(/"/g,'&quot;')})">
+        ${added ? '✓ ' : '＋ '}${title}</button>`;
+    }).join('');
+    return `<div class="rep-artist">
+      <div class="rep-artist-name" style="color:${m.color}">${m.name}</div>
+      <div class="rep-songs">${chips}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="rep-head">
+      <span>🎸 Repertorio dei maestri — tocca un brano per aggiungerlo alla tua setlist (poi inserisci gli accordi)</span>
+      <button class="scl-close" onclick="songlabToggleRepertoire()">✕</button>
+    </div>
+    ${groups}`;
+}
+function songlabAddFromRepertoire(artist, title) {
+  if (SONGLAB.songs.some(s => (s.title || '').toLowerCase() === title.toLowerCase())) return;
+  const song = { id: songlabNewId(), title, artist, sections: [{ name: 'Strofa', chords: '' }] };
+  SONGLAB.songs.push(song);
+  SONGLAB.curId = song.id;
+  SONGLAB.editing = true;
+  _songRepOpen = false;
+  songlabSave();
+  songlabRenderAll();
+}
+
 function songlabNew() {
   const song = {
-    id: 's' + Date.now().toString(36),
+    id: songlabNewId(),
     title: 'Nuova canzone', artist: '',
     sections: [{ name: 'Strofa', chords: '' }],
   };
@@ -6555,7 +6679,8 @@ function songlabGoStudy() {
     });
     renderNinth();
   }
-  showPage('scales');
+  navArm();
+  showPage('scales', true);
   showChordScaleSubpage(target);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -6590,7 +6715,7 @@ function songlabImportFile(input) {
       data.forEach(s => {
         if (!s || typeof s !== 'object' || !Array.isArray(s.sections)) return;
         const song = {
-          id: (typeof s.id === 'string' && !ids.has(s.id)) ? s.id : 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+          id: (typeof s.id === 'string' && !ids.has(s.id)) ? s.id : songlabNewId(),
           title: String(s.title || 'senza titolo'),
           artist: String(s.artist || ''),
           sections: s.sections.map(sec => ({ name: String(sec.name || 'Sezione'), chords: String(sec.chords || '') })),
@@ -8284,13 +8409,49 @@ function clearP5Highlights() {
 
 function initPenta5() { renderPenta5(); }
 
-function showPage(name) {
+function showPage(name, keepReturn) {
+  // Navigazione manuale (nav in alto) → annulla l'eventuale "torna indietro"
+  if (!keepReturn) navDisarm();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => {
     if (b.getAttribute('onclick').includes("'" + name + "'")) b.classList.add('active');
   });
+}
+
+// ── Navigazione "← torna indietro" per i rimandi al manico ───────────────────
+// I link "Vedi sul manico" / "Apri nel Fretboard" / "Studia" saltano ad un'altra
+// pagina; qui memorizziamo la pagina di partenza e mostriamo un pulsante per
+// tornarci esattamente dove si era (le sotto-pagine restano intatte).
+const NAV_PAGE_LABELS = { fretboard:'Fretboard', scales:'Scale & Accordi', caged:'CAGED', penta5:'5 Box Penta', circle:'Circolo', jam:'Basi', audio:'Audio', technique:'Tecnica' };
+let _navReturn = null;
+function navCurrentPage() { const p = document.querySelector('.page.active'); return p ? p.id.replace('page-', '') : null; }
+function navArm() {
+  const origin = navCurrentPage();
+  if (!origin) return;
+  _navReturn = { page: origin, scrollY: window.scrollY, label: NAV_PAGE_LABELS[origin] || 'indietro' };
+  let bar = document.getElementById('nav-return-bar');
+  if (!bar) {
+    bar = document.createElement('button');
+    bar.id = 'nav-return-bar';
+    bar.onclick = navReturn;
+    document.body.appendChild(bar);
+  }
+  bar.textContent = `← Torna a ${_navReturn.label}`;
+  bar.style.display = 'block';
+}
+function navReturn() {
+  if (!_navReturn) return;
+  const r = _navReturn;
+  navDisarm();
+  showPage(r.page, true);
+  window.scrollTo(0, r.scrollY);
+}
+function navDisarm() {
+  _navReturn = null;
+  const bar = document.getElementById('nav-return-bar');
+  if (bar) bar.style.display = 'none';
 }
 
 // ─── METRONOMO STANDALONE ─────────────────────────────────────────────────────
@@ -8807,6 +8968,51 @@ function drawScalePos(keyIdx, scaleIntervals, startFret) {
   return s;
 }
 
+// ── Popup tablatura accordo ─────────────────────────────────────────────────
+// Riusa CHORD_LIB + buildGripCard: mostra i voicing suonabili di un accordo.
+// Per gli accordi estesi non modellati (11/13/alterazioni) mostra il voicing
+// base più vicino, segnalandolo. Usato dai chip "accordi compatibili".
+let _chordModalKeyHandler = null;
+function openChordPopup(sym) {
+  const parsed = parseChordSymbol(sym);
+  if (!parsed) return;
+  const lib = CHORD_LIB[parsed.type];
+  const rootName = NOTES[parsed.rootPc];
+  const canonical = rootName + lib.sym;
+  const simplified = canonical.replace(/\s/g, '').toLowerCase() !== sym.replace(/\s/g, '').toLowerCase();
+  const notesHTML = lib.ivs.map(([st, fn]) => {
+    const c = chordFnColor(fn);
+    return `<span class="tdeg" style="color:${c};border-color:${c};background:${c}18">${fn}: <strong>${NOTES[(parsed.rootPc + st) % 12]}</strong></span>`;
+  }).join('');
+
+  closeChordPopup();
+  const backdrop = document.createElement('div');
+  backdrop.className = 'chord-modal-backdrop';
+  backdrop.onclick = e => { if (e.target === backdrop) closeChordPopup(); };
+  const modal = document.createElement('div');
+  modal.className = 'chord-modal';
+  modal.innerHTML = `
+    <div class="chord-modal-head">
+      <span class="chord-modal-title">${sym}</span>
+      <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim)">${lib.name}</span>
+      <button class="chord-modal-close" onclick="closeChordPopup()">✕</button>
+    </div>
+    <div class="triad-degrees" style="margin-bottom:8px">${notesHTML}</div>
+    ${simplified ? `<div class="sed-hint" style="margin:0 0 10px">// voicing base <b>${canonical}</b> — le estensioni/alterazioni si aggiungono sopra</div>` : ''}
+    <div class="msect-lbl">Voicing (tap = ascolta · guide tone 3ª/7ª cerchiate)</div>
+    <div class="scl-grips" id="chord-modal-grips"></div>`;
+  backdrop.appendChild(modal);
+  document.body.appendChild(backdrop);
+  const grid = modal.querySelector('#chord-modal-grips');
+  (lib.grips || []).forEach(g => grid.appendChild(buildGripCard(parsed.rootPc, g)));
+  _chordModalKeyHandler = e => { if (e.key === 'Escape') closeChordPopup(); };
+  document.addEventListener('keydown', _chordModalKeyHandler);
+}
+function closeChordPopup() {
+  document.querySelectorAll('.chord-modal-backdrop').forEach(b => b.remove());
+  if (_chordModalKeyHandler) { document.removeEventListener('keydown', _chordModalKeyHandler); _chordModalKeyHandler = null; }
+}
+
 function renderCsDetail() {
   const sc = CS_SCALES.find(s => s.key === CS_STATE.scaleKey);
   if (!sc) return;
@@ -8823,10 +9029,11 @@ function renderCsDetail() {
     </div>`;
   }).join('');
 
-  // Chord chips
+  // Chord chips — cliccabili: aprono il popup con la tablatura del voicing
   const chordChips = sc.chords.map(ch => {
-    return `<div class="cs-chord-chip" title="${ch.desc}">
-      <span class="chip-sym" style="color:${sc.color}">${NOTES[keyIdx]}${ch.sym}</span>
+    const full = `${NOTES[keyIdx]}${ch.sym}`;
+    return `<div class="cs-chord-chip" title="${ch.desc} — tocca per il voicing" onclick="openChordPopup('${full}')">
+      <span class="chip-sym" style="color:${sc.color}">${full}</span>
       <span class="chip-label">${ch.desc}</span>
     </div>`;
   }).join('');
@@ -9144,6 +9351,7 @@ window.addEventListener('DOMContentLoaded', function() {
     <h2>Chord Lab · Canzoni</h2>
     <div class="subtitle">// la tua setlist: accordi per sezione, salvati nel browser — tap su un accordo per voicing, scala e arpeggio</div>
     <div class="songlab-toolbar" id="songlab-list"></div>
+    <div id="song-repertoire" style="display:none"></div>
     <div id="song-editor" style="display:none"></div>
     <div id="song-chordlab" style="display:none"></div>
     <div id="song-chart"></div>
@@ -9971,7 +10179,9 @@ function micFbInit() {
 
   const strContainer = document.createElement('div');
   strContainer.className = 'strings-container';
-  const STRING_HEIGHTS = ['0.65px', '0.85px', '1.1px', '1.5px', '1.9px', '2.3px'];
+  // altezze minime ≥1px: sotto 1px le corde sottili (mi cantino, SI) non vengono
+  // disegnate sui display non-retina → sembravano "mancanti"
+  const STRING_HEIGHTS = ['1px', '1.15px', '1.4px', '1.7px', '2px', '2.3px'];
 
   for (let s = 0; s < 6; s++) {
     const row = document.createElement('div');
@@ -11694,12 +11904,14 @@ function selectCircleKey(i) {
 }
 
 function loadCircleKey(noteIdx) {
+  navArm();
   document.getElementById('fb-scale').value =
     document.getElementById('fb-scale').value || 'major';
   document.getElementById('fb-key').value = noteIdx;
   FB_STATE.keyIndex = noteIdx;
-  showPage('fretboard');
+  showPage('fretboard', true);
   renderFretboard();
+  window.scrollTo(0, 0);
 }
 
 // ─── CIRCLE MODES ────────────────────────────────────────────────────────────
