@@ -1886,6 +1886,15 @@
   .chord-modal-close { margin-left:auto; background:none; border:none; color:var(--text-dim); font-size:20px; cursor:pointer; }
   .chord-modal .scl-grips { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
 
+  /* Pulsante "← torna indietro" per i rimandi al manico */
+  #nav-return-bar {
+    position:fixed; left:12px; bottom:14px; z-index:900;
+    background:var(--amber); color:#1a1200; border:none; border-radius:20px;
+    font-family:'Space Mono',monospace; font-size:12px; font-weight:700;
+    padding:9px 15px; cursor:pointer; box-shadow:0 6px 20px -6px rgba(0,0,0,0.75);
+  }
+  #nav-return-bar:hover { filter:brightness(1.08); }
+
   /* Chord blocks */
   .chord-display {
     display: flex; gap: 10px;
@@ -4784,13 +4793,15 @@ function renderModesPage() {
 }
 
 function loadScaleOnFretboard(scaleKey, posIdx, posType) {
+  navArm();
   document.getElementById('fb-scale').value = scaleKey;
-  showPage('fretboard');
+  showPage('fretboard', true);
   renderFretboard();
   if (posIdx !== undefined && posType === 'nps') {
     const modeBtn = document.getElementById('mode-nps-btn');
     if (modeBtn) { FB_STATE.mode = 'nps'; FB_STATE.npsPosition = posIdx; renderFretboard(); }
   }
+  window.scrollTo(0, 0);
 }
 
 // ─── PROGRESSIONS PAGE ────────────────────────────────────────────────────────
@@ -6668,7 +6679,8 @@ function songlabGoStudy() {
     });
     renderNinth();
   }
-  showPage('scales');
+  navArm();
+  showPage('scales', true);
   showChordScaleSubpage(target);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -8397,13 +8409,49 @@ function clearP5Highlights() {
 
 function initPenta5() { renderPenta5(); }
 
-function showPage(name) {
+function showPage(name, keepReturn) {
+  // Navigazione manuale (nav in alto) → annulla l'eventuale "torna indietro"
+  if (!keepReturn) navDisarm();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => {
     if (b.getAttribute('onclick').includes("'" + name + "'")) b.classList.add('active');
   });
+}
+
+// ── Navigazione "← torna indietro" per i rimandi al manico ───────────────────
+// I link "Vedi sul manico" / "Apri nel Fretboard" / "Studia" saltano ad un'altra
+// pagina; qui memorizziamo la pagina di partenza e mostriamo un pulsante per
+// tornarci esattamente dove si era (le sotto-pagine restano intatte).
+const NAV_PAGE_LABELS = { fretboard:'Fretboard', scales:'Scale & Accordi', caged:'CAGED', penta5:'5 Box Penta', circle:'Circolo', jam:'Basi', audio:'Audio', technique:'Tecnica' };
+let _navReturn = null;
+function navCurrentPage() { const p = document.querySelector('.page.active'); return p ? p.id.replace('page-', '') : null; }
+function navArm() {
+  const origin = navCurrentPage();
+  if (!origin) return;
+  _navReturn = { page: origin, scrollY: window.scrollY, label: NAV_PAGE_LABELS[origin] || 'indietro' };
+  let bar = document.getElementById('nav-return-bar');
+  if (!bar) {
+    bar = document.createElement('button');
+    bar.id = 'nav-return-bar';
+    bar.onclick = navReturn;
+    document.body.appendChild(bar);
+  }
+  bar.textContent = `← Torna a ${_navReturn.label}`;
+  bar.style.display = 'block';
+}
+function navReturn() {
+  if (!_navReturn) return;
+  const r = _navReturn;
+  navDisarm();
+  showPage(r.page, true);
+  window.scrollTo(0, r.scrollY);
+}
+function navDisarm() {
+  _navReturn = null;
+  const bar = document.getElementById('nav-return-bar');
+  if (bar) bar.style.display = 'none';
 }
 
 // ─── METRONOMO STANDALONE ─────────────────────────────────────────────────────
@@ -11856,12 +11904,14 @@ function selectCircleKey(i) {
 }
 
 function loadCircleKey(noteIdx) {
+  navArm();
   document.getElementById('fb-scale').value =
     document.getElementById('fb-scale').value || 'major';
   document.getElementById('fb-key').value = noteIdx;
   FB_STATE.keyIndex = noteIdx;
-  showPage('fretboard');
+  showPage('fretboard', true);
   renderFretboard();
+  window.scrollTo(0, 0);
 }
 
 // ─── CIRCLE MODES ────────────────────────────────────────────────────────────
