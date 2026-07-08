@@ -1807,6 +1807,25 @@
     background:var(--bg2); border:1px solid var(--border); border-radius:10px;
     padding:12px; margin-bottom:14px;
   }
+  /* Repertorio dei maestri */
+  .song-repertoire {
+    background:var(--bg2); border:1px solid var(--amber-dim); border-radius:10px;
+    padding:12px; margin-bottom:14px;
+  }
+  .rep-head {
+    display:flex; gap:8px; align-items:flex-start; margin-bottom:10px;
+    font-family:'Space Mono',monospace; font-size:11px; color:var(--text-mid);
+  }
+  .rep-head .scl-close { margin-left:auto; background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; flex-shrink:0; }
+  .rep-artist { margin-bottom:10px; }
+  .rep-artist-name { font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:1px; margin-bottom:5px; }
+  .rep-songs { display:flex; gap:6px; flex-wrap:wrap; }
+  .rep-song {
+    padding:6px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:14px;
+    color:var(--text-mid); font-family:'Space Mono',monospace; font-size:11px; cursor:pointer;
+  }
+  .rep-song:hover { border-color:var(--amber); color:var(--amber); }
+  .rep-song.added { opacity:0.5; cursor:default; border-style:dashed; color:var(--green); }
   .sed-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
   .sed-row input[type=text] {
     flex:1; min-width:130px; background:var(--bg3); border:1px solid var(--border); border-radius:6px;
@@ -6189,6 +6208,7 @@ function songParseTokens(str) {
 
 function songlabRenderAll() {
   songlabRenderList();
+  songlabRenderRepertoire();
   songlabRenderEditor();
   songlabRenderChart();
 }
@@ -6210,8 +6230,55 @@ function songlabRenderList() {
     el.appendChild(b);
   };
   mk('＋ nuova', songlabNew);
+  mk('🎸 repertorio', songlabToggleRepertoire, 'Aggiungi un brano dal repertorio dei maestri');
   mk('⬇ export', songlabExport, 'Scarica la setlist in JSON');
   mk('⬆ import', () => document.getElementById('songlab-file').click(), 'Carica una setlist da JSON');
+}
+
+// Pannello "repertorio": i brani dei MAESTRI (già presenti nell'app) diventano
+// canzoni pronte da riempire con gli accordi. Aggancia il repertorio esistente
+// invece di duplicarlo.
+let _songRepOpen = false;
+function songlabToggleRepertoire() {
+  _songRepOpen = !_songRepOpen;
+  songlabRenderRepertoire();
+}
+function songlabRenderRepertoire() {
+  const el = document.getElementById('song-repertoire');
+  if (!el) return;
+  if (!_songRepOpen || typeof MAESTRI === 'undefined') { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = '';
+  el.className = 'song-repertoire';
+  // titoli già in setlist (per marcare come aggiunti)
+  const present = new Set(SONGLAB.songs.map(s => (s.title || '').toLowerCase()));
+  const groups = MAESTRI.map(m => {
+    const chips = m.songs.map(title => {
+      const added = present.has(title.toLowerCase());
+      return `<button class="rep-song${added ? ' added' : ''}" ${added ? 'disabled' : ''}
+        onclick="songlabAddFromRepertoire(${JSON.stringify(m.name).replace(/"/g,'&quot;')}, ${JSON.stringify(title).replace(/"/g,'&quot;')})">
+        ${added ? '✓ ' : '＋ '}${title}</button>`;
+    }).join('');
+    return `<div class="rep-artist">
+      <div class="rep-artist-name" style="color:${m.color}">${m.name}</div>
+      <div class="rep-songs">${chips}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="rep-head">
+      <span>🎸 Repertorio dei maestri — tocca un brano per aggiungerlo alla tua setlist (poi inserisci gli accordi)</span>
+      <button class="scl-close" onclick="songlabToggleRepertoire()">✕</button>
+    </div>
+    ${groups}`;
+}
+function songlabAddFromRepertoire(artist, title) {
+  if (SONGLAB.songs.some(s => (s.title || '').toLowerCase() === title.toLowerCase())) return;
+  const song = { id: songlabNewId(), title, artist, sections: [{ name: 'Strofa', chords: '' }] };
+  SONGLAB.songs.push(song);
+  SONGLAB.curId = song.id;
+  SONGLAB.editing = true;
+  _songRepOpen = false;
+  songlabSave();
+  songlabRenderAll();
 }
 
 function songlabNew() {
@@ -9157,6 +9224,7 @@ window.addEventListener('DOMContentLoaded', function() {
     <h2>Chord Lab · Canzoni</h2>
     <div class="subtitle">// la tua setlist: accordi per sezione, salvati nel browser — tap su un accordo per voicing, scala e arpeggio</div>
     <div class="songlab-toolbar" id="songlab-list"></div>
+    <div id="song-repertoire" style="display:none"></div>
     <div id="song-editor" style="display:none"></div>
     <div id="song-chordlab" style="display:none"></div>
     <div id="song-chart"></div>
