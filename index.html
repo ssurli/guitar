@@ -1871,6 +1871,21 @@
   .song-chordlab .scl-close { margin-left:auto; background:none; border:none; color:var(--text-dim); font-size:16px; cursor:pointer; }
   .scl-grips { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; margin-top:10px; }
 
+  /* Popup tablatura accordo (riusato dai chip "accordi compatibili") */
+  .chord-modal-backdrop {
+    position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:1000;
+    display:flex; align-items:center; justify-content:center; padding:16px;
+  }
+  .chord-modal {
+    background:var(--bg2); border:1px solid var(--amber-dim); border-radius:12px;
+    max-width:440px; width:100%; max-height:88vh; overflow-y:auto; padding:16px;
+    box-shadow:0 20px 60px -20px rgba(0,0,0,0.85);
+  }
+  .chord-modal-head { display:flex; align-items:baseline; gap:10px; margin-bottom:8px; }
+  .chord-modal-title { font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:1px; color:var(--amber); }
+  .chord-modal-close { margin-left:auto; background:none; border:none; color:var(--text-dim); font-size:20px; cursor:pointer; }
+  .chord-modal .scl-grips { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+
   /* Chord blocks */
   .chord-display {
     display: flex; gap: 10px;
@@ -2573,7 +2588,8 @@
     padding: 8px 14px; cursor: pointer; transition: all 0.15s;
     font-family: 'Space Mono', monospace;
   }
-  .cs-chord-chip:hover { border-color: var(--amber-dim); }
+  .cs-chord-chip { cursor: pointer; }
+  .cs-chord-chip:hover { border-color: var(--amber); }
   .cs-chord-chip .chip-sym { font-size: 15px; font-weight: bold; }
   .cs-chord-chip .chip-label { font-size: 9px; color: var(--text-dim); }
 
@@ -5595,9 +5611,26 @@ function parseChordSymbol(sym) {
   const ql = q.toLowerCase();
   let type = CHORD_SUFFIX_MAP[ql];
   if (!type) {
-    if (ql.startsWith('maj')) type = 'maj7';
-    else if (ql.startsWith('m')) type = 'min';  // fallback minore
-    else type = 'maj';                          // fallback maggiore
+    // Fallback per famiglia: sceglie il voicing praticabile più vicino nel
+    // dizionario (le estensioni oltre la 9ª — 11/13/♭13 — si suonano sopra).
+    const has = re => re.test(ql);
+    if (ql.startsWith('sus2')) type = 'sus2';
+    else if (ql.startsWith('sus')) type = 'sus4';
+    else if (ql[0] === '6') type = 'maj';                    // 6, 6/9
+    else if (ql.startsWith('maj') || ql.startsWith('ma')) type = 'maj7';
+    else if (ql[0] === 'm') {                                // famiglia minore
+      if (has(/maj7/)) type = 'minmaj7';
+      else if (has(/7b5|7-5/)) type = 'm7b5';
+      else if (has(/[79]|1[13]/)) type = 'min7';
+      else type = 'min';
+    }
+    else if (has(/^[0-9]/)) {                                // famiglia dominante
+      if (has(/b9/)) type = 'dom7b9';
+      else if (has(/#9/)) type = 'dom7s9';
+      else if (has(/9/)) type = 'dom9';
+      else type = 'dom7';                                    // 7, 11, 13, 7b5, 7#11…
+    }
+    else type = 'maj';
   }
   return { rootPc, type };
 }
@@ -8887,6 +8920,51 @@ function drawScalePos(keyIdx, scaleIntervals, startFret) {
   return s;
 }
 
+// ── Popup tablatura accordo ─────────────────────────────────────────────────
+// Riusa CHORD_LIB + buildGripCard: mostra i voicing suonabili di un accordo.
+// Per gli accordi estesi non modellati (11/13/alterazioni) mostra il voicing
+// base più vicino, segnalandolo. Usato dai chip "accordi compatibili".
+let _chordModalKeyHandler = null;
+function openChordPopup(sym) {
+  const parsed = parseChordSymbol(sym);
+  if (!parsed) return;
+  const lib = CHORD_LIB[parsed.type];
+  const rootName = NOTES[parsed.rootPc];
+  const canonical = rootName + lib.sym;
+  const simplified = canonical.replace(/\s/g, '').toLowerCase() !== sym.replace(/\s/g, '').toLowerCase();
+  const notesHTML = lib.ivs.map(([st, fn]) => {
+    const c = chordFnColor(fn);
+    return `<span class="tdeg" style="color:${c};border-color:${c};background:${c}18">${fn}: <strong>${NOTES[(parsed.rootPc + st) % 12]}</strong></span>`;
+  }).join('');
+
+  closeChordPopup();
+  const backdrop = document.createElement('div');
+  backdrop.className = 'chord-modal-backdrop';
+  backdrop.onclick = e => { if (e.target === backdrop) closeChordPopup(); };
+  const modal = document.createElement('div');
+  modal.className = 'chord-modal';
+  modal.innerHTML = `
+    <div class="chord-modal-head">
+      <span class="chord-modal-title">${sym}</span>
+      <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim)">${lib.name}</span>
+      <button class="chord-modal-close" onclick="closeChordPopup()">✕</button>
+    </div>
+    <div class="triad-degrees" style="margin-bottom:8px">${notesHTML}</div>
+    ${simplified ? `<div class="sed-hint" style="margin:0 0 10px">// voicing base <b>${canonical}</b> — le estensioni/alterazioni si aggiungono sopra</div>` : ''}
+    <div class="msect-lbl">Voicing (tap = ascolta · guide tone 3ª/7ª cerchiate)</div>
+    <div class="scl-grips" id="chord-modal-grips"></div>`;
+  backdrop.appendChild(modal);
+  document.body.appendChild(backdrop);
+  const grid = modal.querySelector('#chord-modal-grips');
+  (lib.grips || []).forEach(g => grid.appendChild(buildGripCard(parsed.rootPc, g)));
+  _chordModalKeyHandler = e => { if (e.key === 'Escape') closeChordPopup(); };
+  document.addEventListener('keydown', _chordModalKeyHandler);
+}
+function closeChordPopup() {
+  document.querySelectorAll('.chord-modal-backdrop').forEach(b => b.remove());
+  if (_chordModalKeyHandler) { document.removeEventListener('keydown', _chordModalKeyHandler); _chordModalKeyHandler = null; }
+}
+
 function renderCsDetail() {
   const sc = CS_SCALES.find(s => s.key === CS_STATE.scaleKey);
   if (!sc) return;
@@ -8903,10 +8981,11 @@ function renderCsDetail() {
     </div>`;
   }).join('');
 
-  // Chord chips
+  // Chord chips — cliccabili: aprono il popup con la tablatura del voicing
   const chordChips = sc.chords.map(ch => {
-    return `<div class="cs-chord-chip" title="${ch.desc}">
-      <span class="chip-sym" style="color:${sc.color}">${NOTES[keyIdx]}${ch.sym}</span>
+    const full = `${NOTES[keyIdx]}${ch.sym}`;
+    return `<div class="cs-chord-chip" title="${ch.desc} — tocca per il voicing" onclick="openChordPopup('${full}')">
+      <span class="chip-sym" style="color:${sc.color}">${full}</span>
       <span class="chip-label">${ch.desc}</span>
     </div>`;
   }).join('');
