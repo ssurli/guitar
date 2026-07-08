@@ -4389,7 +4389,9 @@ function renderFretboard() {
   strContainer.className = 'strings-container';
 
   // String thickness: e=0.6px, B=0.8px, G=1px, D=1.4px, A=1.8px, E=2.2px
-  const STRING_HEIGHTS = ['0.65px', '0.85px', '1.1px', '1.5px', '1.9px', '2.3px'];
+  // altezze minime ≥1px: sotto 1px le corde sottili (mi cantino, SI) non vengono
+  // disegnate sui display non-retina → sembravano "mancanti"
+  const STRING_HEIGHTS = ['1px', '1.15px', '1.4px', '1.7px', '2px', '2.3px'];
 
   for (let s = 0; s < 6; s++) {
     const row = document.createElement('div');
@@ -5793,7 +5795,9 @@ function renderJamFretboard() {
   // Corde
   const strContainer = document.createElement('div');
   strContainer.className = 'strings-container';
-  const STRING_HEIGHTS = ['0.65px', '0.85px', '1.1px', '1.5px', '1.9px', '2.3px'];
+  // altezze minime ≥1px: sotto 1px le corde sottili (mi cantino, SI) non vengono
+  // disegnate sui display non-retina → sembravano "mancanti"
+  const STRING_HEIGHTS = ['1px', '1.15px', '1.4px', '1.7px', '2px', '2.3px'];
 
   for (let s = 0; s < 6; s++) {
     const row = document.createElement('div');
@@ -6136,6 +6140,15 @@ function jamBuildQuickChords() {
 const SONGLAB_LS_KEY = 'gil_songs_v1';
 const SONGLAB = { songs: [], curId: null, playingId: null, editing: false, selChord: null };
 
+// Id univoco anche per canzoni create nello stesso millisecondo (Date.now() da
+// solo collide su creazioni ravvicinate → pill duplicate/sovrascritte).
+function songlabNewId() {
+  let id;
+  do { id = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  while (SONGLAB.songs.some(s => s.id === id));
+  return id;
+}
+
 function songlabSeed() {
   SONGLAB.songs = [{
     id: 'demo-blues-a',
@@ -6203,7 +6216,7 @@ function songlabRenderList() {
 
 function songlabNew() {
   const song = {
-    id: 's' + Date.now().toString(36),
+    id: songlabNewId(),
     title: 'Nuova canzone', artist: '',
     sections: [{ name: 'Strofa', chords: '' }],
   };
@@ -6590,7 +6603,7 @@ function songlabImportFile(input) {
       data.forEach(s => {
         if (!s || typeof s !== 'object' || !Array.isArray(s.sections)) return;
         const song = {
-          id: (typeof s.id === 'string' && !ids.has(s.id)) ? s.id : 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+          id: (typeof s.id === 'string' && !ids.has(s.id)) ? s.id : songlabNewId(),
           title: String(s.title || 'senza titolo'),
           artist: String(s.artist || ''),
           sections: s.sections.map(sec => ({ name: String(sec.name || 'Sezione'), chords: String(sec.chords || '') })),
@@ -9971,7 +9984,9 @@ function micFbInit() {
 
   const strContainer = document.createElement('div');
   strContainer.className = 'strings-container';
-  const STRING_HEIGHTS = ['0.65px', '0.85px', '1.1px', '1.5px', '1.9px', '2.3px'];
+  // altezze minime ≥1px: sotto 1px le corde sottili (mi cantino, SI) non vengono
+  // disegnate sui display non-retina → sembravano "mancanti"
+  const STRING_HEIGHTS = ['1px', '1.15px', '1.4px', '1.7px', '2px', '2.3px'];
 
   for (let s = 0; s < 6; s++) {
     const row = document.createElement('div');
