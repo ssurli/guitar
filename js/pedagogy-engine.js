@@ -10,7 +10,10 @@
  *   - indice di coscienza 0–100 RICALCOLABILE dallo storico
  *   - pianificazione sessioni mobile (5–10 min, mix ripasso/nuovo)
  *
- * Contratti condivisi: vedi docs/coscienza-del-manico-piano-integrazione.md §2.
+ * Contratti CANONICI condivisi con l'Agente B (FretboardTheory): usa `pitchClass`
+ * (non `pc`), tipo evento `Attempt`, record di ripetizione spaziata `MasteryCell`,
+ * etichette di grado in ASCII ('b3', '#4') in chiavi/id/logica. Il ♭ unicode è
+ * riservato alla sola UI (che lo deriva dall'etichetta ASCII).
  * Determinismo: ogni funzione che "sceglie" riceve `rng` e `now` iniettati.
  * ==========================================================================*/
 (function (root, factory) {
@@ -27,7 +30,7 @@
   const WEIGHTS = { coverage: 0.30, accuracy: 0.30, speed: 0.20, application: 0.20 };
   const UNLOCK = { acc: 0.85, ewmaRtMs: 3000, minSeen: 8 }; // gate di sblocco drill
   const NEW_RATIO = 0.30;                      // quota "nuovo materiale" vs ripasso
-  const HISTORY_CAP = 500;                     // ring buffer eventi
+  const HISTORY_CAP = 500;                     // ring buffer di Attempt
   const DEFAULT_MAX_FRET = 12;
   const ACC_DECAY = 0.97;                      // decadimento accuratezza pesata sul recente
   const ITEMS_PER_MIN = 4;                     // stima per pianificare la sessione
@@ -36,7 +39,8 @@
   const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const OPEN_STRING_MIDI = [64, 59, 55, 50, 45, 40]; // 0=e cantino … 5=E basso
   const STRING_NAMES = ['e', 'B', 'G', 'D', 'A', 'E'];
-  const INTERVAL_LABELS = { 0: '1', 1: '♭2', 2: '2', 3: '♭3', 4: '3', 5: '4', 6: '♭5', 7: '5', 8: '♭6', 9: '6', 10: '♭7', 11: '7' };
+  // Etichette di grado in ASCII (contratto canonico). Il ♭ unicode è solo per la UI.
+  const INTERVAL_LABELS = { 0: '1', 1: 'b2', 2: '2', 3: 'b3', 4: '3', 5: '4', 6: 'b5', 7: '5', 8: 'b6', 9: '6', 10: 'b7', 11: '7' };
   const INTERVAL_FULL = { 1: 'seconda minore', 2: 'seconda maggiore', 3: 'terza minore', 4: 'terza maggiore', 5: 'quarta giusta', 6: 'quarta aumentata', 7: 'quinta giusta', 8: 'sesta minore', 9: 'sesta maggiore', 10: 'settima minore', 11: 'settima maggiore', 12: 'ottava' };
   const SCALES = {
     ionian: [0, 2, 4, 5, 7, 9, 11], dorian: [0, 2, 3, 5, 7, 9, 10], phrygian: [0, 1, 3, 5, 7, 8, 10],
@@ -73,16 +77,16 @@
     return arr;
   }
 
-  // ─── NoteRef & helper geometria/etichette (contratto §2.1) ─────────────────
+  // ─── Note & helper geometria/etichette (contratto canonico) ────────────────
   const cellId = (string, fret) => `${string}:${fret}`;
-  const pairId = (keyPc, degreeSemitone) => `${keyPc}:${degreeSemitone}`;
+  const pairId = (keyPitchClass, degreeSemitone) => `${keyPitchClass}:${degreeSemitone}`;
 
   function cellToNote(string, fret, ctx) {
     const midi = OPEN_STRING_MIDI[string] + fret;
-    const pc = mod12(midi);
-    const note = { pc, midi, string, fret, name: NOTES[pc], octave: Math.floor(midi / 12) - 1 };
-    if (ctx && ctx.keyPc != null) {
-      const deg = mod12(pc - ctx.keyPc);
+    const pitchClass = mod12(midi);
+    const note = { pitchClass, midi, string, fret, name: NOTES[pitchClass], octave: Math.floor(midi / 12) - 1 };
+    if (ctx && ctx.keyPitchClass != null) {
+      const deg = mod12(pitchClass - ctx.keyPitchClass);
       note.degreeSemitone = deg;
       note.degreeLabel = INTERVAL_LABELS[deg];
       if (ctx.mode && SCALES[ctx.mode]) note.inScale = SCALES[ctx.mode].indexOf(deg) !== -1;
@@ -99,8 +103,8 @@
     return out;
   }
   // Doppia etichettatura: nome assoluto + grado. SEMPRE entrambi (pilastro 1).
-  function dualLabels(pc, keyPc) {
-    return { name: NOTES[pc], degree: keyPc != null ? INTERVAL_LABELS[mod12(pc - keyPc)] : null };
+  function dualLabels(pitchClass, keyPitchClass) {
+    return { name: NOTES[pitchClass], degree: keyPitchClass != null ? INTERVAL_LABELS[mod12(pitchClass - keyPitchClass)] : null };
   }
   function octaveShapesOf(note, opts) { return midiToCells(note.midi, opts); }
   function intervalFrom(note, semitones, opts) {
@@ -129,7 +133,7 @@
   };
   const PREREQ = { 1: [], 2: [1], 3: [2], 4: [1], 5: [4], 6: [5], 7: [2, 5, 6] };
 
-  // ─── Leitner (ripetizione spaziata) ────────────────────────────────────────
+  // ─── MasteryCell (record di ripetizione spaziata, alla Leitner) ────────────
   function newRec(id) { return { id, box: 1, due: 0, seen: 0, correct: 0, ewmaRt: 0, lastResult: false, lastSeen: 0 }; }
   function updateRec(rec, correct, rtMs, now) {
     const r = Object.assign({}, rec);
@@ -142,9 +146,9 @@
   }
 
   // ─── Ricostruzione stato derivato dallo STORICO (index ricalcolabile) ──────
-  function replay(events, opts) {
+  function replay(attempts, opts) {
     const cells = {}, pairs = {}, drills = {};
-    for (const e of events) {
+    for (const e of attempts) {
       for (const cid of (e.cellIds || [])) cells[cid] = updateRec(cells[cid] || newRec(cid), e.correct, e.rtMs, e.at);
       if (e.pairId) pairs[e.pairId] = updateRec(pairs[e.pairId] || newRec(e.pairId), e.correct, e.rtMs, e.at);
       const d = drills[e.drill] || { id: e.drill, seen: 0, correct: 0, ewmaRt: 0, accuracy: 0 };
@@ -156,39 +160,39 @@
     return { cells, pairs, drills };
   }
 
-  function weightedAccuracy(events) {
+  function weightedAccuracy(attempts) {
     let sw = 0, sc = 0, w = 1;
-    for (let i = events.length - 1; i >= 0; i--) {
-      sw += w; sc += w * (events[i].correct ? 1 : 0);
+    for (let i = attempts.length - 1; i >= 0; i--) {
+      sw += w; sc += w * (attempts[i].correct ? 1 : 0);
       w *= ACC_DECAY; if (w < 1e-3) break;
     }
     return sw ? sc / sw : 0;
   }
-  function speedScore(events) {
+  function speedScore(attempts) {
     const arr = [];
-    for (let i = events.length - 1; i >= 0 && arr.length < 40; i--) if (events[i].correct) arr.push(events[i].rtMs);
+    for (let i = attempts.length - 1; i >= 0 && arr.length < 40; i--) if (attempts[i].correct) arr.push(attempts[i].rtMs);
     if (!arr.length) return 0;
     const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
     return clamp(1 - (mean - RT_FLOOR) / (RT_CEIL - RT_FLOOR), 0, 1);
   }
 
-  // Indice di coscienza 0–100 — RICALCOLABILE puramente da uno storico eventi.
+  // Indice di coscienza 0–100 — RICALCOLABILE puramente da uno storico di Attempt.
   // Pesi: copertura·accuratezza·velocità·applicazione (rinormalizzati se una
   // dimensione non ha ancora dati, es. drill 7 non giocato).
-  function computeIndexFromHistory(events, opts) {
+  function computeIndexFromHistory(attempts, opts) {
     opts = opts || {};
     const maxFret = opts.maxFret || DEFAULT_MAX_FRET;
     const weights = opts.weights || WEIGHTS;
-    const derived = replay(events, opts);
+    const derived = replay(attempts, opts);
 
     const denom = opts.coverageCells || (6 * (maxFret + 1));
     let mastered = 0;
     for (const id in derived.cells) if (derived.cells[id].box >= 4) mastered++;
     const coverage = clamp(mastered / denom, 0, 1);
 
-    const accuracy = weightedAccuracy(events);
-    const speed = speedScore(events);
-    const d7 = events.filter((e) => e.drill === 7);
+    const accuracy = weightedAccuracy(attempts);
+    const speed = speedScore(attempts);
+    const d7 = attempts.filter((e) => e.drill === 7);
     const application = d7.length ? weightedAccuracy(d7) : null;
 
     const dims = [['coverage', coverage], ['accuracy', accuracy], ['speed', speed]];
@@ -200,7 +204,7 @@
     return {
       index, coverage, accuracy, speed, application: application == null ? 0 : application,
       hasApplication: application != null,
-      updatedAt: events.length ? events[events.length - 1].at : (opts.now || 0),
+      updatedAt: attempts.length ? attempts[attempts.length - 1].at : (opts.now || 0),
     };
   }
 
@@ -242,14 +246,14 @@
   function candidateCells(state, inScaleOnly) {
     const [lo, hi] = zoneFrets(state);
     const sc = state.settings && state.settings.stringConstraint;
-    const keyPc = state.settings && state.settings.keyPc;
+    const keyPitchClass = state.settings && state.settings.keyPitchClass;
     const mode = state.settings && state.settings.mode;
     const cells = [];
     for (let s = 0; s < 6; s++) {
       if (sc != null && sc !== s) continue;
       for (let f = lo; f <= hi; f++) {
-        if (inScaleOnly && keyPc != null && mode && SCALES[mode]) {
-          const deg = mod12(mod12(OPEN_STRING_MIDI[s] + f) - keyPc);
+        if (inScaleOnly && keyPitchClass != null && mode && SCALES[mode]) {
+          const deg = mod12(mod12(OPEN_STRING_MIDI[s] + f) - keyPitchClass);
           if (SCALES[mode].indexOf(deg) === -1) continue;
         }
         cells.push({ string: s, fret: f });
@@ -272,10 +276,10 @@
     }
     return best;
   }
-  function weakestPair(state, degrees, keyPc, now, rng, avoidId) {
+  function weakestPair(state, degrees, keyPitchClass, now, rng, avoidId) {
     let best = null, bestKey = Infinity;
     for (const deg of degrees) {
-      const id = pairId(keyPc, deg);
+      const id = pairId(keyPitchClass, deg);
       const rec = state.pairs && state.pairs[id];
       let key;
       if (!rec) key = 0 + rng() * 0.4;
@@ -300,15 +304,15 @@
     const rng = (opts && opts.rng) || Math.random;
     const now = (opts && opts.now != null) ? opts.now : Date.now();
     const spec = DRILLS[drillId];
-    const keyPc = (state.settings && state.settings.keyPc != null) ? state.settings.keyPc : 0;
+    const keyPitchClass = (state.settings && state.settings.keyPitchClass != null) ? state.settings.keyPitchClass : 0;
     const mode = (state.settings && state.settings.mode) || 'ionian';
     const modeLabel = MODE_LABELS[mode] || mode;
-    const keyName = NOTES[keyPc];
+    const keyName = NOTES[keyPitchClass];
     const scale = SCALES[mode] || SCALES.ionian;
     const avoid = state.lastTargetId;
 
     const base = {
-      drill: drillId, keyPc, mode, responseType: spec.responseType, verify: spec.verify,
+      drill: drillId, keyPitchClass, mode, responseType: spec.responseType, verify: spec.verify,
       matchKind: spec.matchKind, ask: spec.ask, given: spec.given, timed: spec.timed,
       windowMs: spec.windowMs || null, createdAt: now,
     };
@@ -316,11 +320,11 @@
     switch (drillId) {
       case 1: {  // NOMINA NOTA — dato tasto, chiedi il NOME (grado mostrato dopo)
         const c = weakestCell(candidateCells(state, false), state, now, rng, avoid);
-        const note = cellToNote(c.string, c.fret, { keyPc, mode });
+        const note = cellToNote(c.string, c.fret, { keyPitchClass, mode });
         return Object.assign(base, {
-          target: note, labels: dualLabels(note.pc, keyPc),
-          cellIds: [cellId(c.string, c.fret)], pairId: pairId(keyPc, note.degreeSemitone),
-          expect: { name: note.name, pc: note.pc },
+          target: note, labels: dualLabels(note.pitchClass, keyPitchClass),
+          cellIds: [cellId(c.string, c.fret)], pairId: pairId(keyPitchClass, note.degreeSemitone),
+          expect: { name: note.name, pitchClass: note.pitchClass },
           choices: pickChoices(note.name, NOTES.slice(), 4, rng),
           prompt: `Corda ${STRING_NAMES[c.string]}, tasto ${c.fret}: che nota è?`,
           successHint: `${note.name} · grado ${note.degreeLabel} in ${keyName} ${modeLabel}`,
@@ -328,11 +332,11 @@
       }
       case 4: {  // NOMINA GRADO — dato tasto, chiedi il GRADO (nome mostrato dopo)
         const c = weakestCell(candidateCells(state, true), state, now, rng, avoid);
-        const note = cellToNote(c.string, c.fret, { keyPc, mode });
+        const note = cellToNote(c.string, c.fret, { keyPitchClass, mode });
         const degChoices = scale.map((d) => INTERVAL_LABELS[d]);
         return Object.assign(base, {
-          target: note, labels: dualLabels(note.pc, keyPc),
-          cellIds: [cellId(c.string, c.fret)], pairId: pairId(keyPc, note.degreeSemitone),
+          target: note, labels: dualLabels(note.pitchClass, keyPitchClass),
+          cellIds: [cellId(c.string, c.fret)], pairId: pairId(keyPitchClass, note.degreeSemitone),
           expect: { degree: note.degreeLabel, degreeSemitone: note.degreeSemitone },
           choices: pickChoices(note.degreeLabel, degChoices, Math.min(4, degChoices.length), rng),
           prompt: `In ${keyName} ${modeLabel}, corda ${STRING_NAMES[c.string]} tasto ${c.fret}: che grado è?`,
@@ -341,71 +345,71 @@
       }
       case 2: {  // TROVA NOTA — dato NOME, suona ovunque (pitch-class)
         const c = weakestCell(candidateCells(state, false), state, now, rng, avoid);
-        const note = cellToNote(c.string, c.fret, { keyPc, mode });
+        const note = cellToNote(c.string, c.fret, { keyPitchClass, mode });
         return Object.assign(base, {
-          target: { pc: note.pc, name: note.name }, labels: dualLabels(note.pc, keyPc),
-          cellIds: [], pairId: pairId(keyPc, note.degreeSemitone),
-          expect: { pc: note.pc },
+          target: { pitchClass: note.pitchClass, name: note.name }, labels: dualLabels(note.pitchClass, keyPitchClass),
+          cellIds: [], pairId: pairId(keyPitchClass, note.degreeSemitone),
+          expect: { pitchClass: note.pitchClass },
           prompt: `Suona la nota ${note.name} (in qualsiasi posizione)`,
           successHint: `${note.name} · grado ${note.degreeLabel}`,
         });
       }
       case 3: {  // MAPPA OTTAVE — dato NOME, suona tutte le ottave entro X sec
         const c = weakestCell(candidateCells(state, false), state, now, rng, avoid);
-        const note = cellToNote(c.string, c.fret, { keyPc, mode });
+        const note = cellToNote(c.string, c.fret, { keyPitchClass, mode });
         const allCells = [];
         for (let s = 0; s < 6; s++) for (let f = 0; f <= DEFAULT_MAX_FRET; f++)
-          if (mod12(OPEN_STRING_MIDI[s] + f) === note.pc) allCells.push(cellId(s, f));
+          if (mod12(OPEN_STRING_MIDI[s] + f) === note.pitchClass) allCells.push(cellId(s, f));
         return Object.assign(base, {
-          target: { pc: note.pc, name: note.name }, labels: dualLabels(note.pc, keyPc),
-          cellIds: [], pairId: pairId(keyPc, note.degreeSemitone),
-          expect: { pc: note.pc, octaveCells: allCells },
+          target: { pitchClass: note.pitchClass, name: note.name }, labels: dualLabels(note.pitchClass, keyPitchClass),
+          cellIds: [], pairId: pairId(keyPitchClass, note.degreeSemitone),
+          expect: { pitchClass: note.pitchClass, octaveCells: allCells },
           prompt: `Suona TUTTE le ottave di ${note.name} entro ${Math.round(spec.windowMs / 1000)}s`,
           successHint: `${allCells.length} posizioni · grado ${note.degreeLabel}`,
         });
       }
       case 5: {  // TROVA GRADO — data tonalità, suona il grado richiesto
-        const deg = weakestPair(state, scale, keyPc, now, rng, avoid);
-        const pc = mod12(keyPc + deg);
+        const deg = weakestPair(state, scale, keyPitchClass, now, rng, avoid);
+        const pitchClass = mod12(keyPitchClass + deg);
         return Object.assign(base, {
-          target: { pc, degreeSemitone: deg }, labels: dualLabels(pc, keyPc),
-          cellIds: [], pairId: pairId(keyPc, deg),
-          expect: { pc, degreeSemitone: deg },
+          target: { pitchClass, degreeSemitone: deg }, labels: dualLabels(pitchClass, keyPitchClass),
+          cellIds: [], pairId: pairId(keyPitchClass, deg),
+          expect: { pitchClass, degreeSemitone: deg },
           prompt: `In ${keyName} ${modeLabel}, suona la ${INTERVAL_LABELS[deg]}`,
-          successHint: `${INTERVAL_LABELS[deg]} · nota ${NOTES[pc]}`,
+          successHint: `${INTERVAL_LABELS[deg]} · nota ${NOTES[pitchClass]}`,
         });
       }
       case 6: {  // SALTO D'INTERVALLO — da un'ancora, suona N sopra
         const c = weakestCell(candidateCells(state, false), state, now, rng, avoid);
-        const anchor = cellToNote(c.string, c.fret, { keyPc, mode });
+        const anchor = cellToNote(c.string, c.fret, { keyPitchClass, mode });
         const intervals = [3, 4, 5, 7, 9, 12];
         const iv = intervals[Math.floor(rng() * intervals.length)];
-        const pc = mod12(anchor.pc + iv);
+        const pitchClass = mod12(anchor.pitchClass + iv);
         return Object.assign(base, {
-          target: { pc, fromMidi: anchor.midi, interval: iv }, labels: dualLabels(pc, keyPc),
-          anchor: anchor, cellIds: [], pairId: pairId(keyPc, mod12(pc - keyPc)),
-          expect: { pc },
+          target: { pitchClass, fromMidi: anchor.midi, interval: iv }, labels: dualLabels(pitchClass, keyPitchClass),
+          anchor: anchor, cellIds: [], pairId: pairId(keyPitchClass, mod12(pitchClass - keyPitchClass)),
+          expect: { pitchClass },
           prompt: `Da ${anchor.name} (corda ${STRING_NAMES[c.string]}, tasto ${c.fret}): suona una ${INTERVAL_FULL[iv]} sopra`,
-          successHint: `${NOTES[pc]} · grado ${INTERVAL_LABELS[mod12(pc - keyPc)]}`,
+          successHint: `${NOTES[pitchClass]} · grado ${INTERVAL_LABELS[mod12(pitchClass - keyPitchClass)]}`,
         });
       }
       case 7: {  // TARGET-TONE IMPROV — atterra sul chord-tone sul downbeat
         // Enfasi sulle guide tone (3ª/7ª): pesi maggiori.
         const bag = [CHORD_TONES[1], CHORD_TONES[3], CHORD_TONES[1], CHORD_TONES[3], CHORD_TONES[0], CHORD_TONES[2]];
         const ct = bag[Math.floor(rng() * bag.length)];
-        const chordRootPc = (opts && opts.chordRootPc != null) ? opts.chordRootPc : null;
+        const chordRootPitchClass = (opts && opts.chordRootPitchClass != null) ? opts.chordRootPitchClass : null;
         // Nome assoluto risolto se conosciamo l'accordo; il grado (chord-tone) è sempre noto.
-        let name = null, pc = null, degreeInKey = null;
-        if (chordRootPc != null) {
-          pc = mod12(chordRootPc + ct.st);
-          name = NOTES[pc];
-          degreeInKey = INTERVAL_LABELS[mod12(pc - keyPc)];
+        let name = null, pitchClass = null, degreeInKey = null;
+        if (chordRootPitchClass != null) {
+          pitchClass = mod12(chordRootPitchClass + ct.st);
+          name = NOTES[pitchClass];
+          degreeInKey = INTERVAL_LABELS[mod12(pitchClass - keyPitchClass)];
         }
         return Object.assign(base, {
-          target: { chordToneSemitone: ct.st, chordToneLabel: ct.label, pc },
+          target: { chordToneSemitone: ct.st, chordToneLabel: ct.label, pitchClass },
           labels: { name: name || '(risolto sul beat)', degree: ct.label, degreeInKey },
-          cellIds: [], pairId: (pc != null ? pairId(keyPc, mod12(pc - keyPc)) : null),
-          expect: { chordToneSemitone: ct.st, pc },
+          cellIds: [], pairId: (pitchClass != null ? pairId(keyPitchClass, mod12(pitchClass - keyPitchClass)) : null),
+          expect: { chordToneSemitone: ct.st, pitchClass },
           prompt: `Sul beat, atterra sulla ${ct.label} dell'accordo corrente`,
           successHint: `chord-tone ${ct.label}${name ? ' · ' + name : ''}`,
         });
@@ -441,11 +445,11 @@
     const unlocked = unlockedDrills(state);
     const wantNew = rng() < (opts.newRatio != null ? opts.newRatio : NEW_RATIO);
     const drillId = pickDrill(state, unlocked, wantNew, rng, now);
-    return generateItem(drillId, state, { rng, now, chordRootPc: opts.chordRootPc });
+    return generateItem(drillId, state, { rng, now, chordRootPitchClass: opts.chordRootPitchClass });
   }
 
   // ─── Verifica esito (condizione di successo, pura) ─────────────────────────
-  // response: {value} per tap/choice ; {pc, midi} per il suono.
+  // response: {value} per tap/choice ; {pitchClass, midi} per il suono.
   function check(item, response) {
     if (!item || !response) return false;
     switch (item.matchKind) {
@@ -456,11 +460,11 @@
       }
       case 'pitchClass':
       case 'chordTone':
-        return response.pc != null && item.expect.pc != null && mod12(response.pc) === mod12(item.expect.pc);
+        return response.pitchClass != null && item.expect.pitchClass != null && mod12(response.pitchClass) === mod12(item.expect.pitchClass);
       case 'note':
         return response.midi != null && response.midi === item.expect.midi;
       case 'octaves': {
-        // response.pcs: set di pitch-class suonate (o cellIds); successo se tutte le ottave coperte
+        // response.cellIds: posizioni suonate; successo se tutte le ottave sono coperte.
         const set = new Set((response.cellIds || []));
         return (item.expect.octaveCells || []).every((c) => set.has(c));
       }
@@ -468,16 +472,16 @@
     }
   }
 
-  // ─── Costruzione DrillEvent + aggiornamento stato (immutabile) ─────────────
+  // ─── Costruzione Attempt + aggiornamento stato (immutabile) ────────────────
   function buildEvent(item, response, correct, rtMs, now) {
     const cellIds = (response && response.cellIds) || item.cellIds || [];
     return {
-      drill: item.drill, keyPc: item.keyPc, mode: item.mode, target: item.target,
+      drill: item.drill, keyPitchClass: item.keyPitchClass, mode: item.mode, target: item.target,
       response: {
         method: item.responseType === 'tap' ? 'choice' : 'pitch',
         value: response ? response.value : undefined,
         detectedMidi: response ? response.midi : undefined,
-        detectedPc: response ? response.pc : undefined,
+        detectedPitchClass: response ? response.pitchClass : undefined,
         cents: response ? response.cents : undefined,
       },
       correct: !!correct, rtMs: rtMs, at: now,
@@ -485,17 +489,17 @@
     };
   }
 
-  // Applica un evento allo stato: storico + SR + drill stats + sblocchi + indice.
+  // Applica un Attempt allo stato: storico + SR + drill stats + sblocchi + indice.
   // Puro: non muta `state`. L'indice risultante è = computeIndexFromHistory(history).
-  function applyResult(state, event, opts) {
+  function applyResult(state, attempt, opts) {
     opts = opts || {};
-    const history = (state.history || []).concat([event]).slice(-HISTORY_CAP);
+    const history = (state.history || []).concat([attempt]).slice(-HISTORY_CAP);
     const derived = replay(history, opts);
     const drills = recomputeDrillState(state.drills || {}, derived.drills);
-    const index = computeIndexFromHistory(history, Object.assign({ now: event.at }, opts));
+    const index = computeIndexFromHistory(history, Object.assign({ now: attempt.at }, opts));
     return Object.assign({}, state, {
       version: 1, history, cells: derived.cells, pairs: derived.pairs,
-      drills, index, lastTargetId: (event.cellIds && event.cellIds[0]) || event.pairId || state.lastTargetId,
+      drills, index, lastTargetId: (attempt.cellIds && attempt.cellIds[0]) || attempt.pairId || state.lastTargetId,
     });
   }
 
@@ -521,7 +525,7 @@
     let cursor = state;
     for (let i = 0; i < plan.itemCount; i++) {
       const wantNew = (i % plan.itemCount) >= plan.reviewCount ? 1 : 0; // coda = nuovo materiale
-      const item = nextItem(cursor, { rng, now, newRatio: wantNew, chordRootPc: opts.chordRootPc });
+      const item = nextItem(cursor, { rng, now, newRatio: wantNew, chordRootPitchClass: opts.chordRootPitchClass });
       items.push(item);
       // marca l'ultimo target per evitare ripetizioni consecutive nella build
       cursor = Object.assign({}, cursor, { lastTargetId: (item.cellIds && item.cellIds[0]) || item.pairId });
@@ -534,7 +538,7 @@
       version: 1, cells: {}, pairs: {}, history: [],
       drills: { 1: { id: 1, seen: 0, correct: 0, ewmaRt: 0, accuracy: 0, unlocked: true } },
       index: { index: 0, coverage: 0, accuracy: 0, speed: 0, application: 0, hasApplication: false, updatedAt: 0 },
-      settings: Object.assign({ keyPc: 9, mode: 'aeolian', zone: 'all', stringConstraint: null }, settings || {}),
+      settings: Object.assign({ keyPitchClass: 9, mode: 'aeolian', zone: 'all', stringConstraint: null }, settings || {}),
       lastTargetId: null,
     };
   }
@@ -542,9 +546,9 @@
   return {
     // costanti/spec
     DRILLS, PREREQ, WEIGHTS, BOX_INTERVALS, SCALES, NOTES, INTERVAL_LABELS, ZONES,
-    // teoria/NoteRef
+    // teoria/Note
     cellToNote, midiToCells, dualLabels, octaveShapesOf, intervalFrom, cellId, pairId,
-    // SR / indice
+    // MasteryCell / indice
     newRec, updateRec, replay, computeIndexFromHistory,
     // progressione
     drillMastered, unlockedDrills, recomputeDrillState,
