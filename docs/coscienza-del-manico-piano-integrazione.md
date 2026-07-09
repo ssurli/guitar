@@ -122,6 +122,24 @@ Tutti gli oggetti sono JSON-serializzabili (persistenza `localStorage`). Namespa
 `window.FC`. Convenzioni: `pc` = pitch-class 0–11 (0=C); `string` 0–5 (0=e cantino, 5=E basso);
 `midi` = nota MIDI assoluta.
 
+> ### ⚠ Nota di riconciliazione contratti (aggiornata in corso d'opera)
+> Il brief dell'**Agente B** ha introdotto un set di contratti canonico più esplicito, da
+> considerare **la fonte di verità** per l'integrazione finale (gli altri agenti vi si adeguano
+> tramite un adapter sottile al momento del merge):
+> - `Note = { string, fret, name, pitchClass, octave, midi, freq }` — usa **`pitchClass`** (non
+>   `pc`) e aggiunge **`freq`**.
+> - `DrillItem = { id, drillId, prompt, expected, responseType, verify, params }`.
+> - `Attempt = { itemId, drillId, ok, latencyMs, playedPitchClass, cents, ts }` (era `DrillEvent`).
+> - `MasteryCell = { string, fret, level(0-4), lastSeen, box }` (era `LeitnerRec`).
+> - Etichette di grado in **ASCII** (`'b3'`, `'#4'`) — non unicode.
+>
+> **Impatto sui moduli già consegnati:** `PedagogyEngine` (Agente A) usa i nomi interni del
+> piano (`pc`, `DrillEvent`, `LeitnerRec`, gradi unicode); resta valido e testato, ma al merge
+> passa attraverso un mapper `Attempt ⇄ DrillEvent` e `pitchClass ⇄ pc`. `FretboardTheory`
+> (Agente B) espone già i contratti canonici. Gli agenti C/D/E adottano i nomi dell'Agente B.
+
+Segue lo schema `NoteRef` originale del piano (mantenuto per storicità; al merge → `Note`).
+
 ### 2.1 `NoteRef` — oggetto-nota atomico (doppia etichettatura incorporata)
 
 ```js
