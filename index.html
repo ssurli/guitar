@@ -2875,6 +2875,7 @@
     <button class="nav-btn" onclick="showPage('jam')">🎸 Basi</button>
     <button class="nav-btn" onclick="showPage('audio')">🎛 Audio</button>
     <button class="nav-btn" onclick="showPage('technique');showTechSubpage('pratica')">⚡ Tecnica</button>
+    <button class="nav-btn" onclick="showPage('coscienza');FCUI&&FCUI.init()">🧠 Coscienza</button>
   </nav>
 </header>
 
@@ -8424,7 +8425,7 @@ function showPage(name, keepReturn) {
 // I link "Vedi sul manico" / "Apri nel Fretboard" / "Studia" saltano ad un'altra
 // pagina; qui memorizziamo la pagina di partenza e mostriamo un pulsante per
 // tornarci esattamente dove si era (le sotto-pagine restano intatte).
-const NAV_PAGE_LABELS = { fretboard:'Fretboard', scales:'Scale & Accordi', caged:'CAGED', penta5:'5 Box Penta', circle:'Circolo', jam:'Basi', audio:'Audio', technique:'Tecnica' };
+const NAV_PAGE_LABELS = { fretboard:'Fretboard', scales:'Scale & Accordi', caged:'CAGED', penta5:'5 Box Penta', circle:'Circolo', jam:'Basi', audio:'Audio', technique:'Tecnica', coscienza:'Coscienza' };
 let _navReturn = null;
 function navCurrentPage() { const p = document.querySelector('.page.active'); return p ? p.id.replace('page-', '') : null; }
 function navArm() {
@@ -12055,6 +12056,122 @@ function showChordScaleSubpage(tab) {
 }
 
 </script>
+
+<!-- ═══════════════════════ COSCIENZA DEL MANICO (Training Mode) ═══════════════ -->
+<style>
+  #page-coscienza { --fc-cw: 44px; }
+  #page-coscienza .fc-subnav { display:flex; gap:6px; margin-bottom:14px; }
+  #page-coscienza .fc-subbtn { flex:1; min-height:44px; background:var(--bg3); color:var(--text-dim);
+    border:1px solid var(--border); border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; }
+  #page-coscienza .fc-subbtn.active { background:var(--amber); color:#111; border-color:var(--amber); }
+  #page-coscienza .fc-card { background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    padding:16px; margin-bottom:14px; }
+  #page-coscienza .fc-h { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:1px; color:var(--amber); }
+  #page-coscienza .fc-h2 { font-size:16px; font-weight:700; margin-bottom:10px; color:var(--text); }
+  #page-coscienza .fc-h3 { font-size:13px; font-weight:700; margin:14px 0 8px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
+  #page-coscienza .fc-sub, #page-coscienza .fc-hint { font-size:12px; color:var(--text-dim); margin:4px 0 12px; line-height:1.5; }
+  #page-coscienza .fc-minirow { display:flex; align-items:center; gap:16px; margin:8px 0 16px; }
+  #page-coscienza .fc-ministats { display:flex; gap:18px; flex:1; }
+  #page-coscienza .fc-ministats div { display:flex; flex-direction:column; }
+  #page-coscienza .fc-ministats b { font-size:20px; color:var(--text); font-family:'Space Mono',monospace; }
+  #page-coscienza .fc-ministats span { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
+  #page-coscienza .fc-ctrls { display:flex; gap:8px; margin-bottom:12px; }
+  #page-coscienza .fc-selw { flex:1; }
+  #page-coscienza .fc-sellbl { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  #page-coscienza .fc-sel { width:100%; min-height:44px; background:var(--bg3); color:var(--text);
+    border:1px solid var(--border); border-radius:10px; font-size:14px; padding:0 8px; }
+  #page-coscienza .fc-toggle { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text);
+    min-height:44px; cursor:pointer; }
+  #page-coscienza .fc-toggle input { width:20px; height:20px; accent-color:var(--amber); }
+  #page-coscienza .fc-cta { width:100%; min-height:50px; background:var(--amber); color:#111; border:none;
+    border-radius:12px; font-size:16px; font-weight:800; cursor:pointer; margin-top:8px; }
+  #page-coscienza .fc-cta:active { transform:scale(0.98); }
+  #page-coscienza .fc-ghost { width:100%; min-height:44px; background:transparent; color:var(--text-dim);
+    border:1px solid var(--border); border-radius:10px; font-size:13px; cursor:pointer; margin-top:8px; }
+  #page-coscienza .fc-drill { display:flex; align-items:center; gap:10px; padding:10px; border-radius:10px;
+    background:var(--bg2); margin-bottom:6px; }
+  #page-coscienza .fc-drill.locked { opacity:0.5; }
+  #page-coscienza .fc-dn { width:26px; height:26px; border-radius:50%; background:var(--amber-glow);
+    color:var(--amber); display:grid; place-items:center; font-weight:700; font-size:13px; }
+  #page-coscienza .fc-dt { flex:1; font-size:14px; }
+  #page-coscienza .fc-dmeta { font-size:11px; color:var(--text-dim); font-family:'Space Mono',monospace; }
+  /* fretboard */
+  #page-coscienza .fc-neckwrap { overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:8px; margin:8px -4px; }
+  #page-coscienza .fc-neck { display:grid; gap:3px; min-width:min-content; align-items:center; }
+  #page-coscienza .fc-fnum, #page-coscienza .fc-nlabel { font-size:10px; color:var(--text-dim); text-align:center;
+    font-family:'Space Mono',monospace; }
+  #page-coscienza .fc-nlabel { font-weight:700; }
+  #page-coscienza .fc-cell { width:var(--fc-cw); height:40px; border-radius:8px; background:var(--bg3);
+    border:1px solid var(--border); color:var(--text-dim); font-size:12px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; cursor:pointer; padding:0; line-height:1.1; }
+  #page-coscienza .fc-cell.lit { border-color:transparent; font-weight:700; }
+  #page-coscienza .fc-cell b { font-size:12px; }
+  #page-coscienza .fc-cell i { font-size:9px; font-style:normal; opacity:0.85; }
+  #page-coscienza .fc-cell.target { outline:3px solid var(--amber); outline-offset:-1px; box-shadow:0 0 12px rgba(245,158,11,0.6); z-index:1; }
+  #page-coscienza .fc-legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  #page-coscienza .fc-legitem { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text-dim); }
+  #page-coscienza .fc-legitem i { width:14px; height:14px; border-radius:3px; display:inline-block; }
+  #page-coscienza .fc-segrow, #page-coscienza .fc-choices { display:flex; gap:8px; }
+  #page-coscienza .fc-seg { flex:1; min-height:40px; background:var(--bg3); color:var(--text-dim);
+    border:1px solid var(--border); border-radius:8px; font-size:12px; cursor:pointer; }
+  #page-coscienza .fc-seg.active { background:var(--amber-glow); color:var(--amber); border-color:var(--amber-dim); }
+  /* sessione */
+  #page-coscienza .fc-sesstop { display:flex; align-items:center; gap:10px; font-size:14px; color:var(--text-dim); margin-bottom:8px; }
+  #page-coscienza .fc-sesstop span { font-family:'Space Mono',monospace; }
+  #page-coscienza .fc-streak { color:var(--amber); }
+  #page-coscienza .fc-x { margin-left:auto; width:36px; height:36px; border-radius:50%; background:var(--bg3);
+    border:1px solid var(--border); color:var(--text-dim); font-size:16px; cursor:pointer; }
+  #page-coscienza .fc-bar { height:8px; background:var(--bg3); border-radius:4px; overflow:hidden; margin-bottom:12px; }
+  #page-coscienza .fc-bar i { display:block; height:100%; background:linear-gradient(90deg,var(--amber-dim),var(--amber)); border-radius:4px; transition:width .3s; }
+  #page-coscienza .fc-barlbl { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  #page-coscienza .fc-prompt { font-size:19px; font-weight:600; text-align:center; margin:6px 0 14px; color:var(--text); line-height:1.4; }
+  #page-coscienza .fc-answer { margin-top:14px; }
+  #page-coscienza .fc-choices { flex-wrap:wrap; }
+  #page-coscienza .fc-choice { flex:1 1 40%; min-height:56px; background:var(--bg3); color:var(--text);
+    border:1px solid var(--border); border-radius:12px; font-size:20px; font-weight:700; cursor:pointer; }
+  #page-coscienza .fc-choice:active { background:var(--amber-glow); border-color:var(--amber); }
+  #page-coscienza .fc-mic { width:100%; min-height:64px; background:var(--amber); color:#111; border:none;
+    border-radius:14px; font-size:18px; font-weight:800; cursor:pointer; }
+  #page-coscienza .fc-mic:disabled { opacity:0.7; }
+  #page-coscienza .fc-fb { margin-top:14px; padding:14px; border-radius:12px; text-align:center; }
+  #page-coscienza .fc-fb.ok { background:rgba(34,197,94,0.14); border:1px solid var(--green); }
+  #page-coscienza .fc-fb.no { background:rgba(239,68,68,0.12); border:1px solid var(--red); }
+  #page-coscienza .fc-fbmain { font-size:18px; font-weight:800; }
+  #page-coscienza .fc-fb.ok .fc-fbmain { color:var(--green); }
+  #page-coscienza .fc-fb.no .fc-fbmain { color:var(--red); }
+  #page-coscienza .fc-fbsub { font-size:13px; color:var(--text-dim); margin:6px 0 10px; }
+  /* dashboard */
+  #page-coscienza .fc-ringbox { display:flex; flex-direction:column; align-items:center; }
+  #page-coscienza .fc-ringbox.big { margin:6px auto 14px; }
+  #page-coscienza .fc-ringcap { font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-top:4px; }
+  #page-coscienza .fc-ring-bg { fill:none; stroke:var(--bg3); stroke-width:8; }
+  #page-coscienza .fc-ring-fg { fill:none; stroke:var(--amber); stroke-width:8; stroke-linecap:round;
+    transform:rotate(-90deg); transform-origin:50% 50%; transition:stroke-dashoffset .5s; }
+  #page-coscienza .fc-ring-txt { fill:var(--text); font-size:26px; font-weight:800; text-anchor:middle; dominant-baseline:central; font-family:'Space Mono',monospace; }
+  #page-coscienza .fc-dashgrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0; }
+  #page-coscienza .fc-stat { background:var(--bg2); border-radius:10px; padding:12px; }
+  #page-coscienza .fc-statv { font-size:22px; font-weight:800; color:var(--amber); font-family:'Space Mono',monospace; }
+  #page-coscienza .fc-statl { font-size:12px; color:var(--text); margin-top:2px; }
+  #page-coscienza .fc-stats { font-size:10px; color:var(--text-dim); }
+  #page-coscienza .fc-drow { display:flex; align-items:center; gap:10px; font-size:12px; margin-bottom:6px; }
+  #page-coscienza .fc-drow > span:first-child { flex:1; color:var(--text-dim); }
+  #page-coscienza .fc-dbar { width:80px; height:6px; background:var(--bg3); border-radius:3px; overflow:hidden; }
+  #page-coscienza .fc-dbar i, #page-coscienza .fc-drow .fc-dbar i { display:block; height:100%; background:var(--amber); }
+  #page-coscienza .fc-delta { text-align:center; font-size:16px; font-weight:700; margin:8px 0; }
+  #page-coscienza .fc-delta.up { color:var(--green); }
+  #page-coscienza .fc-delta.down { color:var(--text-dim); }
+  #page-coscienza .fc-goal { background:var(--amber-glow); border:1px solid var(--amber-dim); border-radius:10px;
+    padding:12px; font-size:13px; color:var(--text); margin:10px 0; line-height:1.5; }
+</style>
+<div id="page-coscienza" class="page">
+  <div id="fc-root"></div>
+</div>
+
+<script src="js/pedagogy-engine.js" defer></script>
+<script src="js/fretboard-theory.js" defer></script>
+<script src="js/pitch-loop.js" defer></script>
+<script src="js/srs-analytics.js" defer></script>
+<script src="js/fc-ui.js" defer></script>
 
 <footer class="site-footer">
   <div>🎸 <strong>GUITAR IMPROV LAB</strong></div>
