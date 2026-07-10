@@ -12162,6 +12162,19 @@ function showChordScaleSubpage(tab) {
   #page-coscienza .fc-delta.down { color:var(--text-dim); }
   #page-coscienza .fc-goal { background:var(--amber-glow); border:1px solid var(--amber-dim); border-radius:10px;
     padding:12px; font-size:13px; color:var(--text); margin:10px 0; line-height:1.5; }
+  #page-coscienza .fc-drill { cursor:pointer; }
+  #page-coscienza .fc-drill:active { background:var(--bg3); }
+  /* Target-tone (drill 7) */
+  #page-coscienza .fc-ttcard { text-align:center; }
+  #page-coscienza .fc-ttchord { font-size:13px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+  #page-coscienza .fc-ttprompt { font-family:'Bebas Neue',sans-serif; font-size:40px; letter-spacing:1px; color:var(--amber); line-height:1.1; margin:6px 0; }
+  #page-coscienza .fc-ttprompt.pulse { animation:fcpulse .5s ease-out; }
+  @keyframes fcpulse { 0%{ transform:scale(1.18); text-shadow:0 0 18px rgba(245,158,11,.8);} 100%{ transform:scale(1);} }
+  #page-coscienza .fc-ttbeat { height:6px; }
+  #page-coscienza .fc-ttresult { min-height:24px; font-size:15px; font-weight:700; margin:8px 0; }
+  #page-coscienza .fc-ttresult.ok { color:var(--green); }
+  #page-coscienza .fc-ttresult.no { color:var(--red); }
+  #page-coscienza .fc-ttstats { font-family:'Space Mono',monospace; font-size:12px; color:var(--text-dim); }
 </style>
 <div id="page-coscienza" class="page">
   <div id="fc-root"></div>

@@ -77,6 +77,7 @@
   // ═══ RENDER (router) ═════════════════════════════════════════════════════════
   function render() {
     clear(root);
+    if (S.tt && S.tt.active) { renderTargetTone(); return; }
     if (S.session) { renderSession(); return; }
     root.appendChild(buildSubnav());
     if (S.sub === 'train') renderTrain();
@@ -140,7 +141,8 @@
       const acc = st.seen ? Math.round((st.correct / st.seen) * 100) : 0;
       const row = el('div', 'fc-drill' + (on ? '' : ' locked'));
       row.innerHTML = `<span class="fc-dn">${id}</span><span class="fc-dt">${spec.title}</span>` +
-        `<span class="fc-dmeta">${on ? (st.seen ? acc + '% · ' + st.seen : 'nuovo') : '🔒'}</span>`;
+        `<span class="fc-dmeta">${id === 7 ? '🎯' : (on ? (st.seen ? acc + '% · ' + st.seen : 'nuovo') : '🔒')}</span>`;
+      row.onclick = () => startDrill(id);
       ladder.appendChild(row);
     }
     root.appendChild(ladder);
@@ -222,8 +224,15 @@
       startIndex: indexNow(), rng: PE.makeRng((Date.now() & 0xffffffff) >>> 0), current: null, feedback: null };
     nextItem();
   }
+  function startDrill(id) {
+    if (id === 7) { startTargetTone(); return; }
+    S.session = { plan: {}, total: (id === 1 || id === 4) ? 12 : 8, done: 0, correct: 0, streak: 0, best: 0,
+      startIndex: indexNow(), rng: PE.makeRng((Date.now() & 0xffffffff) >>> 0), forceDrill: id, current: null, feedback: null };
+    nextItem();
+  }
   function pickItem() {
     const rng = S.session.rng, now = Date.now();
+    if (S.session.forceDrill) return PE.generateItem(S.session.forceDrill, S.engine, { rng, now, chordRootPitchClass: S.settings.keyPitchClass });
     let pool = PE.unlockedDrills(S.engine);
     if (S.tapOnly) pool = pool.filter((d) => d === 1 || d === 4);
     else pool = pool.filter((d) => d !== 3 && d !== 7); // 3/7 richiedono handling dedicato
@@ -384,6 +393,156 @@
     render();
   }
 
+  // ── DRILL 7: Target-tone improv (sincronizzato col backing track) ───────────
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  // BT/CHORD_LIB/CHORD_QUAL_LABEL sono `const` top-level in index.html: NON stanno su
+  // window, ma sono identificatori globali (lexical env condiviso tra gli script).
+  const gBT = () => (typeof BT !== 'undefined' ? BT : null);
+  const gLIB = () => (typeof CHORD_LIB !== 'undefined' ? CHORD_LIB : {});
+  const gQUAL = () => (typeof CHORD_QUAL_LABEL !== 'undefined' ? CHORD_QUAL_LABEL : {});
+  const QUAL = (t) => gQUAL()[t] || '';
+  function chordNameOf(rootPc, t) { return NOTES[rootPc] + QUAL(t); }
+
+  // Avvia/garantisce il backing track sul contesto audio CONDIVISO (stesso clock del mic).
+  function ensureBacking() {
+    if (typeof getAudioCtx !== 'function' || typeof btInit !== 'function' || gBT() == null) return false;
+    try {
+      btInit();
+      const BTx = gBT();
+      if (BTx.ctx.state === 'suspended') BTx.ctx.resume();
+      BTx.rootIdx = S.settings.keyPitchClass;
+      if (!BTx.playing) {
+        btBuildProg();
+        BTx.playing = true; BTx.absoluteStep = 0;
+        BTx.nextNoteTime = BTx.ctx.currentTime + 0.06; BTx.notesInQueue = [];
+        btSchedulerLoop();
+        requestAnimationFrame(btVisualLoop);
+      }
+      return true;
+    } catch (e) { return false; }
+  }
+  function stopBacking() {
+    const BTx = gBT();
+    if (BTx && BTx.playing) { BTx.playing = false; try { clearTimeout(BTx.timerID); } catch (e) {} BTx.notesInQueue = []; }
+  }
+
+  // Prossimo downbeat "forte" (mezza battuta: abs%8) con almeno `leadSec` di anticipo.
+  function nextDownbeat(leadSec) {
+    const BTx = gBT(), stepDur = (60 / BTx.bpm) / 4;
+    let abs = BTx.absoluteStep, time = BTx.nextNoteTime;
+    const deadline = BTx.ctx.currentTime + (leadSec || 1.6);
+    let guard = 0;
+    while (!(abs % 8 === 0 && time >= deadline) && guard++ < 4096) { abs++; time += stepDur; }
+    return { absStep: abs, timeSec: time };
+  }
+  // Sceglie il chord-tone target (priorità guide-tone 3ª/7ª), a rotazione.
+  function chooseTone(ivs) {
+    const byFn = {}; ivs.forEach((p) => { byFn[p[1]] = p[0]; });
+    const order = ['3', '♭3', '7', '♭7', '5', 'R', '1'];
+    const label = { '3': '3ª', '♭3': '3ª', '7': '7ª', '♭7': '7ª', '5': '5ª', 'R': 'fondamentale', '1': 'fondamentale' };
+    const avail = [];
+    for (const fn of order) if (byFn[fn] != null) avail.push({ st: byFn[fn], fn, label: label[fn] || fn });
+    if (!avail.length) { const p = ivs[0]; return { st: p[0], fn: p[1], label: p[1] }; }
+    const i = (S.tt.ti = ((S.tt.ti || 0) + 1)) % avail.length;
+    return avail[i];
+  }
+  // Target chord-tone per un dato step (legge l'accordo corrente dal backing).
+  function chordToneTarget(absStep) {
+    const BT = gBT(), chord = btChordAt(absStep);
+    const rootPc = mod12(BT.rootIdx + chord.s);
+    const lib = gLIB()[chord.t];
+    const ivs = (lib && lib.ivs) || [[0, 'R'], [4, '3'], [7, '5'], [10, '♭7']];
+    const pick = chooseTone(ivs);
+    const pc = mod12(rootPc + pick.st);
+    return { pitchClass: pc, toneLabel: pick.label, fn: pick.fn, chordName: chordNameOf(rootPc, chord.t), degreeInKey: mod12(pc - S.settings.keyPitchClass) };
+  }
+
+  function startTargetTone() {
+    S.session = null;
+    S.tt = { active: true, running: true, targets: 0, hits: 0, streak: 0, best: 0, startIndex: indexNow(), ti: 0, els: {} };
+    renderTargetTone();
+    runTargetTone();
+  }
+  async function runTargetTone() {
+    if (!ensureBacking()) { ttMsg('⚠ Backing track non disponibile su questo browser.'); S.tt.running = false; return; }
+    if (window.FC && FC.pitch && FC.pitch.stopMic) FC.pitch.stopMic(); // forza il mic sul contesto condiviso
+    ttSet('els', 'chord', 'Ascolto il backing…');
+    while (S.tt && S.tt.running) {
+      let t;
+      try { t = await armTarget(); } catch (e) { ttMsg('Errore: ' + e.message); break; }
+      if (!S.tt || !S.tt.running) break;
+      if (t.noMic) { ttMsg('🎤 Serve il microfono per il drill 7. Concedi il permesso e riprova.'); S.tt.running = false; break; }
+      S.tt.targets++;
+      if (t.ok) { S.tt.hits++; S.tt.streak++; if (S.tt.streak > S.tt.best) S.tt.best = S.tt.streak; } else S.tt.streak = 0;
+      recordTarget(t);
+      showTargetResult(t);
+      updateTTStats();
+      await sleep(750);
+    }
+  }
+  async function armTarget() {
+    const db = nextDownbeat(1.6);
+    const tgt = chordToneTarget(db.absStep);
+    showTargetPrompt(tgt);
+    const res = await FC.pitch.listenForAnswer({
+      expected: { pitchClass: tgt.pitchClass }, mode: 'downbeat',
+      window: 240, downbeatAt: db.timeSec * 1000,
+      audioContext: window.getAudioCtx(), centsTol: 45, stableFrames: 2,
+    });
+    return Object.assign({}, tgt, res);
+  }
+  function recordTarget(t) {
+    const now = Date.now();
+    const item = { drill: 7, cellIds: [], pairId: S.settings.keyPitchClass + ':' + t.degreeInKey, expect: { pitchClass: t.pitchClass } };
+    const att = attemptFor(item, t.ok, t.latencyMs, t.playedPitchClass, t.cents, now);
+    if (att.itemId) { S.store = FC.srs.record(S.store, att); FC.store.save(S.store); S.engine = PE.applyResult(S.engine, attemptToEngineEvent(att), { now }); }
+  }
+
+  function renderTargetTone() {
+    clear(root);
+    const top = el('div', 'fc-sesstop');
+    top.appendChild(el('span', null, '🎯 Target-tone'));
+    const st = el('span', 'fc-streak'); S.tt.els.streak = st; top.appendChild(st);
+    const x = el('button', 'fc-x', '✕'); x.onclick = stopTargetTone; top.appendChild(x);
+    root.appendChild(top);
+
+    const card = el('div', 'fc-card fc-ttcard');
+    const chord = el('div', 'fc-ttchord', '—'); S.tt.els.chord = chord; card.appendChild(chord);
+    const prompt = el('div', 'fc-ttprompt', 'Preparati…'); S.tt.els.prompt = prompt; card.appendChild(prompt);
+    const beat = el('div', 'fc-ttbeat'); S.tt.els.beat = beat; card.appendChild(beat);
+    const result = el('div', 'fc-ttresult', ''); S.tt.els.result = result; card.appendChild(result);
+    const stats = el('div', 'fc-ttstats', ''); S.tt.els.stats = stats; card.appendChild(stats);
+    card.appendChild(el('div', 'fc-hint', '🎧 Usa le cuffie: evita che il microfono catturi il backing. Suona il chord-tone sul beat.'));
+    root.appendChild(card);
+    updateTTStats();
+  }
+  function ttSet(_ns, key, val) { if (S.tt && S.tt.els && S.tt.els[key]) S.tt.els[key].textContent = val; }
+  function showTargetPrompt(t) {
+    ttSet('els', 'chord', 'Accordo: ' + t.chordName);
+    ttSet('els', 'prompt', 'Atterra sulla ' + t.toneLabel);
+    if (S.tt.els.prompt) { S.tt.els.prompt.classList.remove('pulse'); void S.tt.els.prompt.offsetWidth; S.tt.els.prompt.classList.add('pulse'); }
+    ttSet('els', 'result', '');
+    if (S.tt.els.result) S.tt.els.result.className = 'fc-ttresult';
+  }
+  function showTargetResult(t) {
+    const played = t.playedPitchClass != null ? NOTES[t.playedPitchClass] : '—';
+    const txt = t.ok ? `✓ Centrato — ${NOTES[t.pitchClass]}${t.cents != null ? ' (' + (t.cents >= 0 ? '+' : '') + t.cents + ' cent)' : ''}`
+      : `✗ Atteso ${NOTES[t.pitchClass]} — suonato ${played}`;
+    if (S.tt.els.result) { S.tt.els.result.textContent = txt; S.tt.els.result.className = 'fc-ttresult ' + (t.ok ? 'ok' : 'no'); }
+  }
+  function updateTTStats() {
+    if (S.tt.els.streak) S.tt.els.streak.textContent = '🔥 ' + S.tt.streak;
+    const acc = S.tt.targets ? Math.round((S.tt.hits / S.tt.targets) * 100) : 0;
+    ttSet('els', 'stats', `${S.tt.hits}/${S.tt.targets} centrati · ${acc}% · best ${S.tt.best}`);
+  }
+  function ttMsg(m) { if (S.tt && S.tt.els.result) { S.tt.els.result.textContent = m; S.tt.els.result.className = 'fc-ttresult no'; } }
+  function stopTargetTone() {
+    if (S.tt) S.tt.running = false;
+    stopBacking();
+    if (window.FC && FC.pitch && FC.pitch.stopMic) FC.pitch.stopMic();
+    S.tt = null; S.sub = 'train'; render();
+  }
+
   // ── fretboard builder ───────────────────────────────────────────────────────
   function buildNeck(opts) {
     opts = opts || {};
@@ -461,7 +620,7 @@
   }
 
   // esponi init per l'attivazione da showPage
-  window.FCUI = { init, _S: S };
+  window.FCUI = { init, _S: S, _tt: { nextDownbeat, chordToneTarget, chooseTone, ensureBacking, stopTargetTone } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
