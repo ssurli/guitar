@@ -1,8 +1,8 @@
 # Piano di integrazione — Setlist-as-Launchpad (lead)
 
-> Stato: **bozza v0.2** — sarà finalizzato con gli esiti di B (HEURISTICS.md) e C
-> (redesign IA) **prima** che l'Agente D scriva codice. Contratti: `00-contratti-dati.md`
-> (congelati). Baseline verificata: `IA_AUDIT.md` (GATE A superato).
+> Stato: **FINALE v1.0** (2026-07-11) — gate A, B e C superati. Questo piano autorizza
+> l'Agente D a scrivere codice nei limiti qui definiti. Contratti: `00-contratti-dati.md`
+> (congelati). Baseline: `IA_AUDIT.md` · Attriti: `HEURISTICS.md` · Target IA: `IA_REDESIGN.md`.
 
 ## Sequenza e gate
 
@@ -59,8 +59,23 @@
 - Test FC.*: 50/50 verdi prima e dopo.
 - Canzoni salvate: 100% sopravvissute alla migrazione (campi esistenti invariati).
 
-## Da completare prima del via a D
+## Esiti B e C recepiti (vincolanti per D ed E)
 
-- [ ] Esiti B: top-10 FrictionPt → vincoli di design per C.
-- [ ] Esiti C: MenuNode target + mappa transizioni → specifica UI per D.
-- [ ] Firma del lead su questo piano (versione finale) → **solo allora** D scrive codice.
+- [x] **B**: 23 FrictionPt (5 di severità 4). Top-10 = B-01..B-09, B-12. A D competono
+      in particolare B-04 (Song senza tonalità/BPM → campi `launch`) e B-13 (play via
+      `#jam-custom-chords`: il launchpad ci passa attraverso, bonifica solo se a rischio zero).
+      B-10/B-11 (leggibilità) delegati a E.
+- [x] **C**: menu base a 4 voci in **bottom-nav** (🎼 Setlist · ▶ Suona · 🎸 Manico · 🧠 Allena)
+      + header con tonalità globale e accordatore 1-tap. Setlist = vista d'avvio alla prima
+      esecuzione, poi ripristino ultimo contesto. Mapping 47/47 nodi senza orfani.
+      Meccanismi nuovi ammessi (6, minimi): bottom-nav su `showPage` esistente; `page-setlist`
+      con scheda canzone; store tonalità globale two-way; chiave `gil_ctx_v1` versionata
+      (pattern srs-analytics); return-stack; hash-view opzionale.
+- [x] Time-to-play autorizzato come criterio di accettazione: backing in tonalità ≤3 tap
+      (1-2 dalla setlist); canzone in play = 1 tap; contesto completo ≤3 tap.
+
+## Autorizzazione
+
+Piano firmato dal lead (v1.0). L'Agente D è autorizzato a implementare **solo** quanto
+sopra; l'Agente E interviene dopo D, solo su presentazione. Ogni deviazione dai contratti
+congelati o dai meccanismi ammessi va riportata al lead prima di procedere.
