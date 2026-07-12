@@ -36,15 +36,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
 <style>
   :root {
+    /* ═══ DESIGN TOKEN (blocco unico — Agente E) ═══
+       Contrasti calcolati (WCAG 2.x) sul dark di base:
+       --amber su --bg 9.05:1 · su --bg3 7.94:1 | --text su --bg2 14.6:1
+       --text-mid su --bg3 6.52:1 | --text-dim su --bg3 4.94:1 (AA ovunque)
+       #111 su --amber 8.79:1 | --green su --bg2 8.08:1 | --red su --bg2 4.90:1 */
+
+    /* ── Colori ── */
     --bg: #0d0d0d;
     --bg2: #141414;
     --bg3: #1c1c1c;
     --panel: #1a1a1a;
     --border: #2a2a2a;
     --amber: #f59e0b;
-    --amber-dim: #92600a;
+    --amber-dim: #92600a;         /* SOLO bordi/decorazioni: mai come colore di testo */
     --amber-glow: rgba(245,158,11,0.15);
-    --red: #ef4444;
+    --red: #ef4444;               /* testo ok su --bg/--bg2 (4.9:1); testo piccolo → --red-hi */
+    --red-hi: #f87171;            /* 6.7:1 su --bg2 — testo d'errore piccolo */
     --blue: #3b82f6;
     --green: #22c55e;
     --purple: #a855f7;
@@ -52,9 +60,37 @@
     --text: #e5e5e5;
     --text-dim: #8a8a8a; /* 5.6:1 su --bg, WCAG AA (era #6b6b6b, 3.65:1, sotto soglia) */
     --text-mid: #a0a0a0;
+    --on-accent: #111;            /* testo su fondo ambra (8.79:1) */
     --fret-color: #3d3020;
     --string-color: #c8a84b;
     --nut: #d4af6a;
+
+    /* ── Semantica stati ── */
+    --ok: var(--green);
+    --err: var(--red);
+
+    /* ── Tipografia (scala "distanza leggìo": operativo ≥ --fs-read) ── */
+    --fs-meta: 11px;      /* metadati/etichette — mai per info da consultare suonando */
+    --fs-ui: 13px;        /* controlli, tab, bottoni */
+    --fs-read: 16px;      /* minimo per testo operativo (accordi chart, stato) */
+    --fs-title: 17px;     /* titoli riga/canzone */
+    --fs-stage-sm: 28px;  /* accordo corrente compatto (pattern .chord-root) */
+    --fs-stage: 40px;     /* prompt drill */
+    --fs-stage-lg: 56px;  /* accordo corrente vista performance */
+
+    /* ── Spaziatura ── */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px;
+
+    /* ── Raggi ── */
+    --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-round: 999px;
+
+    /* ── Ombre ── */
+    --shadow-card: 0 12px 30px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.025);
+    --shadow-glow-amber: 0 0 20px rgba(245,158,11,.4);
+    --shadow-pop: 0 20px 60px -20px rgba(0,0,0,.85);
+
+    /* ── Target touch (contratti: ≥44px) ── */
+    --tap: 44px; --tap-lg: 56px; --tap-xl: 64px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1663,8 +1699,11 @@
   }
   .ccp-chip:hover { border-color: var(--amber); color: var(--amber); background: var(--amber-glow); }
   .jam-custom-status { font-size: 12px; margin-top: 8px; min-height: 16px; font-family: 'Space Mono', monospace; }
-  .jam-custom-status.ok { color: #22c55e; }
-  .jam-custom-status.err { color: #ef4444; }
+  .jam-custom-status.ok { color: var(--ok); }
+  .jam-custom-status.err { color: var(--red-hi); }
+  /* canale non cromatico oltre al colore (vincolo E) */
+  .jam-custom-status.ok::before { content: '✓ '; font-weight: 700; }
+  .jam-custom-status.err::before { content: '✗ '; font-weight: 700; }
   .scale-seq { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .scale-seq-item {
     display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -2937,6 +2976,188 @@
     color: var(--text); padding: 8px; font-family: 'Space Mono', monospace; font-size: 12px;
     min-height: 64px; resize: vertical; margin-bottom: 10px;
   }
+
+  /* ═══════════════ VISUAL POLISH (Agente E — solo CSS, additivo) ═══════════════
+     Regole in coda al foglio: a parità di specificità vincono sulle precedenti.
+     Nessun id/classe nuova richiesta dal JS; nessuna regola tocca il rendering
+     interno del fretboard (.fret-cell/.note-dot/.strings-container invariati). */
+
+  /* ── 1. FAMIGLIA TAB UNIFICATA (B-06/B-19): target ≥44px su tutte le barre ── */
+  .cpage-tab-btn, .tech-tab, .triad-tab, .inv-tab, .strset-tab, .cs-mode-tab,
+  .jam-fb-toggle button, .jam-live-btn {
+    min-height: var(--tap);
+  }
+  .cpage-tab-btn, .tech-tab { font-size: var(--fs-ui); }
+  .triad-tab { font-size: 12px; padding: 8px 18px; }
+  .inv-tab, .strset-tab { font-size: var(--fs-meta); padding: 8px 12px; }
+  .cs-mode-tab { font-size: var(--fs-ui); }
+  select { min-height: var(--tap); }  /* i select nativi salgono da 40px (B-15, solo dimensione) */
+
+  /* ── 2. HEADER: tonalità globale leggibile a colpo d'occhio (B-05/B-10) ── */
+  .global-key-wrap select {
+    color: var(--amber);               /* 7.94:1 su --bg3 */
+    font-weight: 700;
+    font-size: 14px;
+    min-height: 40px;                  /* header alto 52px: 40px è il max che ci sta */
+  }
+  /* nav storica = livello secondario: scrollbar sottile come affordance dello scroll
+     (prima era soppressa: zero indizi delle voci fuori schermo) */
+  nav { scrollbar-width: thin; scrollbar-color: #3a3a3a transparent; }
+  nav::-webkit-scrollbar { display: block; height: 4px; }
+  nav::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 2px; }
+
+  /* ── 3. BOTTOM-NAV: gerarchia + feedback al tap (B-01/B-02) ── */
+  .bnav-btn {
+    font-size: var(--fs-meta);         /* 10 → 11px */
+    position: relative;
+    transition: color .18s;
+  }
+  .bnav-btn::before {                  /* indicatore attivo: barra superiore (canale non cromatico) */
+    content: '';
+    position: absolute; top: 0; left: 26%; right: 26%; height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: transparent;
+    transition: background .18s;
+  }
+  .bnav-btn.active::before { background: var(--amber); }
+  .bnav-btn.active { font-weight: 700; }
+  .bnav-btn .bnav-ico { transition: transform .12s; }
+  .bnav-btn:active .bnav-ico { transform: scale(.85); }
+
+  /* ── 4. SETLIST: gerarchia riga (primario = ▶, secondario = riga, terziario = meta) ── */
+  .setlist-title { font-size: var(--fs-title); }
+  .setlist-meta { font-size: 12px; color: var(--text-mid); }        /* 6.5:1 su --bg3 */
+  .setlist-keybadge { font-size: var(--fs-ui); padding: 1px 7px; }
+  .setlist-play {
+    font-size: 22px;
+    border-radius: var(--r-lg);
+    transition: transform .12s, background .15s, box-shadow .15s;
+  }
+  .setlist-play:active { transform: scale(.92); }
+  .setlist-play.playing { box-shadow: var(--shadow-glow-amber); }
+  .setlist-move button { width: var(--tap); }                        /* hit-area orizzontale ≥44px */
+  .setlist-row { transition: border-color .15s; }
+  .setlist-row:focus-within { border-color: var(--amber-dim); }
+  .setlist-group-lbl { font-size: var(--fs-meta); }
+
+  /* Badge stato: colore + FORMA (canale non cromatico) + etichetta testuale già presente
+     rodata = tondo pieno · da_rivedere = rombo · nuova = anello vuoto */
+  .status-dot.da_rivedere { border-radius: 2px; transform: rotate(45deg) scale(.9); }
+  .status-dot.nuova { background: transparent; border: 2.5px solid var(--blue); }
+
+  /* ── 5. SCHEDA CANZONE (launchpad): primario/secondario/disabilitato ── */
+  .scard-back { font-size: var(--fs-ui); }
+  .scard-play {
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-glow-amber), inset 0 2px 3px rgba(255,255,255,.35);
+    transition: transform .12s, filter .15s, box-shadow .15s;
+  }
+  .scard-play:active { transform: scale(.98); filter: brightness(1.08); }
+  .scard-play.playing { box-shadow: 0 0 20px rgba(239,68,68,.5), inset 0 2px 3px rgba(255,255,255,.25); }
+  .scard-chip { transition: border-color .15s, color .15s, transform .12s; }
+  .scard-chip:not(:disabled):hover { border-color: var(--amber-dim); color: var(--amber); }
+  .scard-chip:not(:disabled):active { transform: scale(.96); border-color: var(--amber); }
+  .scard-chip:disabled { border-style: dashed; }   /* disabled riconoscibile anche senza colore */
+  .scard-hint { font-size: var(--fs-meta); }
+
+  /* ── 6. CHART CANZONE: leggibilità a distanza-leggìo (B-10/B-11) ── */
+  .sc-name { font-size: var(--fs-meta); }
+  .sc-chord {
+    font-size: var(--fs-read);                      /* 14 → 16px */
+    min-height: var(--tap);
+    justify-content: center;
+    transition: font-size .15s, border-color .15s, background .15s;
+  }
+  .sc-chord small { font-size: 10px; }
+  .sc-chord.now {                                   /* accordo corrente: peso + dimensione, non solo colore */
+    font-size: 19px;
+    border-width: 2px;
+    padding: 7px 12px;
+  }
+  .sc-chord.bad { border-style: dashed; text-decoration: line-through; }  /* errore non solo rosso */
+  .snp-next { font-size: var(--fs-read); }
+  .setlist-nowplaying { box-shadow: var(--shadow-card); }
+
+  /* ── 7. AZIONI SONGLAB / REPERTORIO: target ≥44px (B-07) ── */
+  .songlab-action {
+    min-height: var(--tap);
+    font-size: 12px;
+    padding: 10px 14px;
+    display: inline-flex; align-items: center;
+    transition: border-color .15s, color .15s, transform .12s;
+  }
+  .songlab-action:active { transform: scale(.96); }
+  .song-pill { min-height: var(--tap); display: inline-flex; align-items: center; }
+  .rep-song { min-height: var(--tap); display: inline-flex; align-items: center; }
+  .rep-song.added { color: var(--green); }          /* + bordo dashed già presente: doppio canale */
+
+  /* ── 8. TRANSPORT JAM: gerarchia e target (B-09 residuo dimensioni) ── */
+  .btn-play-big { transition: transform .12s, box-shadow .2s, background .2s; }
+  .btn-play-big:active { transform: scale(.93); }
+  .bpm-btn { width: var(--tap); height: var(--tap); font-size: 16px; border-radius: var(--r-sm); }
+  .tap-btn { min-height: var(--tap); font-size: var(--fs-meta); }
+  .tap-btn:active { transform: scale(.96); }
+  .ccp-btn { min-height: var(--tap); border-radius: var(--r-sm); }
+  .ccp-btn:active { transform: scale(.97); }
+  .ccp-chip {
+    min-height: var(--tap);
+    display: inline-flex; align-items: center;
+    padding: 4px 12px;
+    border-radius: var(--r-sm);
+  }
+  .ccp-chip:active { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
+  .ccp-input { min-height: var(--tap); border-radius: var(--r-sm); }
+  .jam-song-banner { font-size: var(--fs-ui); }
+  .jam-now-chord { font-size: var(--fs-stage-sm); }
+
+  /* ── 9. FEEDBACK DRILL COSCIENZA: canale non cromatico (già ✓/✗ nel testo via JS) ── */
+  #page-coscienza .fc-fb.ok { border-left: 6px solid var(--green); }               /* barra piena */
+  #page-coscienza .fc-fb.no { border-style: dashed; border-left: 6px solid var(--red); border-left-style: solid; }
+  #page-coscienza .fc-choice { transition: transform .1s, background .1s, border-color .1s; }
+  #page-coscienza .fc-choice:active { transform: scale(.97); }
+  #page-coscienza .fc-cta { transition: transform .12s, filter .15s; }
+  #page-coscienza .fc-mic:active { transform: scale(.98); }
+  /* heat-map: il livello 0-4 è già stampato come cifra nella cella (canale non cromatico) */
+
+  /* ── 10. EDITOR ESTESO: etichette leggibili ── */
+  .sed-field-lbl { font-size: var(--fs-meta); }
+  .sed-hint { font-size: var(--fs-meta); }
+  .scard-notes { font-size: 14px; }
+
+  /* ── 11. COMPONENTI RIUSABILI (gerarchia azioni; allineati ai pattern D) ──
+     primario   = riempimento ambra, testo scuro (come .scard-play / .fc-cta)
+     secondario = bordo, fondo bg3 (come .scard-chip / .songlab-action)
+     ghost      = solo testo (come .scard-back) */
+  .btn-primary {
+    min-height: var(--tap); padding: 10px 18px; border: none; border-radius: var(--r-md);
+    background: var(--amber); color: var(--on-accent); font-weight: 800; font-size: var(--fs-read);
+    cursor: pointer; transition: transform .12s, filter .15s;
+  }
+  .btn-primary:active { transform: scale(.97); filter: brightness(1.08); }
+  .btn-secondary {
+    min-height: var(--tap); padding: 10px 14px; border-radius: var(--r-md);
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+    font-size: var(--fs-ui); cursor: pointer; transition: border-color .15s, color .15s, transform .12s;
+  }
+  .btn-secondary:hover { border-color: var(--amber-dim); color: var(--amber); }
+  .btn-secondary:active { transform: scale(.96); }
+  .btn-ghost {
+    min-height: var(--tap); padding: 8px 10px; background: none; border: none;
+    color: var(--text-dim); font-size: var(--fs-ui); cursor: pointer;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: 'Space Mono', monospace; font-size: var(--fs-meta); font-weight: 700;
+    border: 1px solid var(--border); border-radius: var(--r-sm); padding: 1px 7px;
+  }
+  .badge--key { color: var(--amber); border-color: var(--amber-dim); }
+
+  /* ── 12. STATO DI CARICAMENTO (solo CSS: si attiva con aria-busy dal JS, se/quando serve) ── */
+  [aria-busy="true"] { animation: eBusyPulse 1.1s ease-in-out infinite; pointer-events: none; }
+  @keyframes eBusyPulse { 50% { opacity: .55; } }
+
+  /* Nota: il blocco prefers-reduced-motion esistente usa !important su
+     animation/transition-duration, quindi copre anche tutte le regole qui sopra. */
 </style>
 </head>
 <body>
