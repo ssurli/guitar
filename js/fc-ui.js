@@ -619,8 +619,35 @@
     } catch (e) {}
   }
 
+  // ── Ponte launchpad (Agente D, additivo): avvio drill in una tonalità data.
+  // La tonalità è un PARAMETRO d'avvio: aggiorna solo lo stato runtime, NON
+  // scrive in gil_fc_v1 (persistSettings resta invocata solo dai selettori UI).
+  function activity() { return (S.tt && S.tt.active) ? 'tt' : (S.session ? 'session' : null); }
+  function stopActivity() {
+    if (S.tt && S.tt.active) { stopTargetTone(); return; }
+    if (S.session) { S.session = null; render(); }
+  }
+  // drillId: 7 = target-tone, 1-6 = drill singolo, null/undefined = sessione piena.
+  function launchDrill(drillId, keyPitchClass, opts) {
+    opts = opts || {};
+    if (!root) init();
+    if (!root) return false;
+    if (activity()) {
+      if (!opts.force) return false;   // non distruggere una sessione attiva senza consenso
+      stopActivity();
+    }
+    if (typeof keyPitchClass === 'number' && keyPitchClass >= 0 && keyPitchClass < 12) {
+      S.settings.keyPitchClass = mod12(Math.round(keyPitchClass));
+      if (opts.mode && MODE_OPTS.some((m) => m[0] === opts.mode)) S.settings.mode = opts.mode;
+      S.engine = rebuildEngine();
+    }
+    if (drillId) startDrill(drillId); else startSession();
+    return true;
+  }
+
   // esponi init per l'attivazione da showPage
-  window.FCUI = { init, _S: S, _tt: { nextDownbeat, chordToneTarget, chooseTone, ensureBacking, stopTargetTone } };
+  window.FCUI = { init, _S: S, _tt: { nextDownbeat, chordToneTarget, chooseTone, ensureBacking, stopTargetTone },
+    activity, stopActivity, launchDrill };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
