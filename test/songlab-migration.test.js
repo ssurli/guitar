@@ -92,14 +92,61 @@ test('idempotenza: il secondo load legge v2 e non ricambia nulla', () => {
   assert.strictEqual(st.getItem(Store.KEY_V2), v2raw, 'v2 non riscritta dal load');
 });
 
-test('v2 presente vince su v1 (v1 ignorata dopo la migrazione)', () => {
+test('merge: v2 presente + v1 con canzoni nuove → si AGGIUNGONO senza toccare le esistenti', () => {
+  const st = memStorage();
+  st.setItem(Store.KEY_V1, JSON.stringify(V1_PAYLOAD));           // ponte: 2 canzoni
+  Store.save(st, [{ id: 'x1', title: 'Solo v2', artist: '', sections: [] }]); // v2: canzone in-app, ledger vuoto
+  const res = Store.load(st);
+  assert.strictEqual(res.source, 'v2');
+  assert.strictEqual(res.importedNew, 2, 'le 2 canzoni del ponte vengono importate');
+  assert.strictEqual(res.songs.length, 3);
+  const ids = res.songs.map(s => s.id);
+  assert.ok(ids.indexOf('x1') !== -1, 'la canzone in-app resta');
+  assert.ok(ids.indexOf('demo-blues-a') !== -1 && ids.indexOf('sm3x7abcd') !== -1, 'entrambe dal ponte');
+});
+
+test('merge idempotente: al secondo load il ledger evita i doppioni', () => {
   const st = memStorage();
   st.setItem(Store.KEY_V1, JSON.stringify(V1_PAYLOAD));
   Store.save(st, [{ id: 'x1', title: 'Solo v2', artist: '', sections: [] }]);
-  const res = Store.load(st);
-  assert.strictEqual(res.source, 'v2');
-  assert.strictEqual(res.songs.length, 1);
-  assert.strictEqual(res.songs[0].title, 'Solo v2');
+  Store.load(st);                       // primo: importa 2
+  const second = Store.load(st);        // secondo: niente da aggiungere
+  assert.strictEqual(second.importedNew, 0);
+  assert.strictEqual(second.songs.length, 3);
+});
+
+test('una canzone del ponte cancellata in-app NON resuscita al load successivo', () => {
+  const st = memStorage();
+  st.setItem(Store.KEY_V1, JSON.stringify(V1_PAYLOAD));
+  Store.save(st, []);                                   // v2 vuoto, ledger vuoto
+  const r1 = Store.load(st);
+  assert.strictEqual(r1.songs.length, 2);              // importa entrambe
+  // l'utente cancella demo-blues-a e salva (save in-app SENZA passare il ledger)
+  Store.save(st, r1.songs.filter(s => s.id === 'sm3x7abcd'));
+  const r2 = Store.load(st);                            // v1 ha ancora demo-blues-a, ma è nel ledger
+  assert.strictEqual(r2.importedNew, 0, 'non riporta la canzone cancellata');
+  assert.deepStrictEqual(r2.songs.map(s => s.id), ['sm3x7abcd']);
+});
+
+test('una canzone NUOVA dal ponte (id mai visto) si aggiunge anche a store già popolato', () => {
+  const st = memStorage();
+  st.setItem(Store.KEY_V1, JSON.stringify(V1_PAYLOAD));
+  Store.load(st);                                       // migra le 2 iniziali → ledger
+  const v1b = JSON.parse(JSON.stringify(V1_PAYLOAD));
+  v1b.push({ id: 'new-bridge-1', title: 'Nuova dal ponte', artist: '', sections: [{ name: 'A', chords: 'C G' }] });
+  st.setItem(Store.KEY_V1, JSON.stringify(v1b));       // il ponte aggiorna v1
+  const r = Store.load(st);
+  assert.strictEqual(r.importedNew, 1);
+  assert.ok(r.songs.map(s => s.id).indexOf('new-bridge-1') !== -1);
+});
+
+test('save in-app preserva il ledger (importedV1Ids non azzerato dagli edit)', () => {
+  const st = memStorage();
+  st.setItem(Store.KEY_V1, JSON.stringify(V1_PAYLOAD));
+  const cur = Store.load(st).songs;                    // migra → ledger = i 2 id v1
+  Store.save(st, cur);                                 // salvataggio da mutazione, senza ledger esplicito
+  const env = JSON.parse(st.getItem(Store.KEY_V2));
+  assert.deepStrictEqual(env.importedV1Ids.slice().sort(), ['demo-blues-a', 'sm3x7abcd'].sort());
 });
 
 test('v1 corrotta → nessun crash, nessuna perdita (v1 resta per il rollback)', () => {

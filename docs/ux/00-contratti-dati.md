@@ -54,6 +54,20 @@ aggiungendo i campi mancanti con default (`set: null`, `order: indice`,
 `status: 'nuova'`, `notes: ''`, `launch: null`), scrivere `v2`, **non cancellare `v1`**
 (rollback possibile). Ogni canzone salvata deve sopravvivere invariata nei campi esistenti.
 
+### Addendum (v1.1) — `gil_songs_v1` come canale INBOUND del ponte chordlab/guitarzorn
+
+Il progetto esterno **guitarzorn/chordlab** gira sullo stesso origine `ssurli.github.io`
+(quindi stesso `localStorage`) e consegna la sua playlist scrivendo `gil_songs_v1`.
+La vecchia app leggeva `v1` direttamente; la nuova legge `v2` per primo, perciò `v1` non
+è solo un formato legacy da migrare una volta, ma un **canale di ingresso vivo**.
+
+Regola di riconciliazione (merge **non distruttivo**, deciso dall'utente):
+- a ogni `load`, le canzoni di `v1` il cui `id` non è già in `v2` **né** nel ledger
+  vengono **aggiunte** a `v2` (mai sovrascritte le esistenti: gli edit in-app vincono);
+- `v2` guadagna il campo **`importedV1Ids: [id…]`** (ledger delle canzoni già importate
+  dal ponte): evita i doppioni e impedisce che una canzone cancellata in-app **resusciti**;
+- `save` da mutazione in-app **preserva** il ledger; `v1` non viene mai scritta né cancellata.
+
 ## Regole per gli agenti
 
 - **B (euristica)**: output solo come lista di `FrictionPt`; nessuna proposta di IA.
