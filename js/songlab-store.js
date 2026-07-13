@@ -90,14 +90,32 @@
     return { sets: sets, version: SCHEMA_VERSION };
   }
 
-  function envelope(songs) {
+  // importedV1Ids = "ledger" degli id di canzoni arrivati dal canale v1 (ponte
+  // chordlab/guitarzorn) e GIÀ importati almeno una volta. Serve a due cose:
+  //  1) non duplicare a ogni load una canzone già portata dentro;
+  //  2) non "resuscitare" una canzone che l'utente ha poi cancellato in-app.
+  function envelope(songs, importedV1Ids) {
     const norm = songs.map(normalizeSong);
-    return { schemaVersion: SCHEMA_VERSION, songs: norm, setlist: buildSetlist(norm), updatedAt: Date.now() };
+    return { schemaVersion: SCHEMA_VERSION, songs: norm, setlist: buildSetlist(norm),
+             importedV1Ids: Array.isArray(importedV1Ids) ? importedV1Ids.slice() : [],
+             updatedAt: Date.now() };
+  }
+
+  // Legge il ledger dal v2 salvato (per preservarlo quando save è chiamato senza).
+  function readImportedIds(storage) {
+    try {
+      const raw = storage.getItem(KEY_V2);
+      if (raw) { const d = JSON.parse(raw); if (isPlainObject(d) && Array.isArray(d.importedV1Ids)) return d.importedV1Ids; }
+    } catch (e) {}
+    return [];
   }
 
   // Scrive SOLO gil_songs_v2 — gil_songs_v1 non viene mai toccata né cancellata.
-  function save(storage, songs) {
-    storage.setItem(KEY_V2, JSON.stringify(envelope(songs || [])));
+  // Se importedV1Ids non è passato (salvataggio da mutazione in-app), preserva il
+  // ledger già presente in v2: gli edit in-app non devono azzerarlo.
+  function save(storage, songs, importedV1Ids) {
+    const ids = (importedV1Ids !== undefined) ? importedV1Ids : readImportedIds(storage);
+    storage.setItem(KEY_V2, JSON.stringify(envelope(songs || [], ids)));
   }
 
   function parseSongsPayload(raw) {
@@ -107,28 +125,56 @@
     return null;
   }
 
-  // load: v2 se presente e valido; altrimenti migra v1 (scrivendo v2, v1 intatta);
-  // altrimenti { songs:null } → il chiamante fa il seed. Tollerante al corrotto.
+  // Legge le canzoni dal canale v1 (ponte). v1 è INBOUND: stesso origine di
+  // guitarzorn, che ci scrive la playlist di chordlab. Mai cancellato da noi.
+  function readV1(storage) {
+    let raw = null;
+    try { raw = storage.getItem(KEY_V1); } catch (e) {}
+    if (raw === null) return { present: false, songs: [] };
+    let arr = [];
+    try { arr = JSON.parse(raw); } catch (e) { arr = []; }
+    if (!Array.isArray(arr)) arr = [];
+    return { present: true, songs: arr.map(normalizeSong) };
+  }
+
+  // load:
+  //  • v2 valido → è lo store di lavoro; ci FONDIAMO le canzoni NUOVE di v1 (id
+  //    mai visto e non nel ledger), senza toccare quelle esistenti (merge non
+  //    distruttivo). Scrive v2 solo se ha aggiunto qualcosa.
+  //  • niente v2 → se c'è v1, MIGRA tutta v1 (che diventa il ledger); v1 intatta.
+  //  • niente v2 né v1 → { songs:null } → il chiamante fa il seed.
+  // Tollerante al corrotto: un v2 illeggibile ricade sulla migrazione da v1.
   function load(storage) {
+    const v1 = readV1(storage);
+
     let rawV2 = null;
     try { rawV2 = storage.getItem(KEY_V2); } catch (e) {}
     if (rawV2 !== null) {
       try {
         const arr = parseSongsPayload(rawV2);
-        if (arr) return { songs: arr.map(normalizeSong), source: 'v2', migrated: false };
+        if (arr) {
+          const songs = arr.map(normalizeSong);
+          const data = JSON.parse(rawV2);
+          const imported = (isPlainObject(data) && Array.isArray(data.importedV1Ids)) ? data.importedV1Ids.slice() : [];
+          const known = {};
+          songs.forEach(function (s) { known[s.id] = true; });
+          imported.forEach(function (id) { known[id] = true; });
+          let added = 0;
+          v1.songs.forEach(function (s) {
+            if (!known[s.id]) { songs.push(s); imported.push(s.id); known[s.id] = true; added++; }
+          });
+          if (added) { try { save(storage, songs, imported); } catch (e) {} }
+          return { songs: songs, source: 'v2', migrated: false, importedNew: added };
+        }
       } catch (e) { /* v2 corrotto → si ritenta da v1, senza distruggere nulla */ }
     }
-    let rawV1 = null;
-    try { rawV1 = storage.getItem(KEY_V1); } catch (e) {}
-    if (rawV1 !== null) {
-      let v1 = [];
-      try { v1 = JSON.parse(rawV1); } catch (e) { v1 = []; }
-      if (!Array.isArray(v1)) v1 = [];
-      const songs = v1.map(normalizeSong);
-      try { save(storage, songs); } catch (e) {}   // scrive v2; v1 resta com'è (rollback)
-      return { songs: songs, source: 'v1', migrated: true };
+
+    if (v1.present) {
+      const imported = v1.songs.map(function (s) { return s.id; });
+      try { save(storage, v1.songs, imported); } catch (e) {}   // scrive v2; v1 resta com'è (rollback)
+      return { songs: v1.songs, source: 'v1', migrated: true, importedNew: v1.songs.length };
     }
-    return { songs: null, source: 'none', migrated: false };
+    return { songs: null, source: 'none', migrated: false, importedNew: 0 };
   }
 
   return {
