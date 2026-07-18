@@ -1,0 +1,378 @@
+{
+  "_meta": {
+    "file": "index.html",
+    "totalLines": 13280,
+    "generatedBy": "reverse-engineer (cartografia, nessuna modifica al codice)",
+    "note": "Single-file HTML+CSS+JS inline. Deploy = commit su GitHub Pages. 2 dipendenze a RUNTIME esterne violano il vincolo 'nessuna CDN a runtime': Google Fonts (righe 34-36) e improv_lab_bridge.js remoto (riga 13278). 6 file js/ locali caricati con defer (righe 12728-12733).",
+    "blockMap": {
+      "head+viewportFix": "1-36",
+      "css": "37-3161 (blocco unico ~3125 righe)",
+      "bodyOpen+banner": "3163-3187",
+      "html_pages_part1": "3189-3806 (header/nav, page-setlist, fretboard, scales, caged, penta5, circle)",
+      "js_block1": "3807-9697 (DATA, audio engine, fretboard, jam/BT engine, SONGLAB, triadi/7/9, CAGED, penta5, nav, metronomo, chord-scale, INIT)",
+      "html_pages_part2": "9698-10395 (page-jam, audio, technique)",
+      "js_block2": "10396-12603 (tuner, micfb, looper, tecnica avanzata, equator, MDX modi, circolo quinte, sub-tab switchers)",
+      "css_coscienza": "12606-12723",
+      "html_coscienza+bottomnav": "12724-12742",
+      "js_ext_modules": "12728-12733 (songlab-store, pedagogy-engine, fretboard-theory, pitch-loop, srs-analytics, fc-ui)",
+      "js_block3": "12743-13270 (GCTX/contesto globale, ctxSetKey, bottom-nav, vista Setlist launchpad, boot)",
+      "footer+bridge": "13272-13279"
+    }
+  },
+
+  "modules": [
+    {
+      "name": "DATA (costanti musicali)",
+      "lineRange": "3810-4052",
+      "responsibility": "Tabelle di verita': NOTES, NOTES_FLAT, OPEN_STRINGS (semitoni), OPEN_STRING_MIDI, STRING_NAMES, SCALES (20 scale/modi con intervals/formula/mood/color), MODES_DATA (7 modi), PROGRESSIONS (6 progressioni), NPS_POSITIONS (offset 3NPS verificati).",
+      "publicSymbols": ["NOTES","NOTES_FLAT","OPEN_STRINGS","OPEN_STRING_MIDI","STRING_NAMES","SCALES","MODES_DATA","PROGRESSIONS","getScaleDegree","NPS_POSITIONS"],
+      "deps": []
+    },
+    {
+      "name": "MiniDiagram engine",
+      "lineRange": "3935-4052",
+      "responsibility": "Genera stringhe SVG di diagrammi verticali compatti (drawMiniDiagram) + helper offsetsToFrets/computeAnchor.",
+      "publicSymbols": ["drawMiniDiagram","offsetsToFrets","computeAnchor"],
+      "deps": ["DATA"]
+    },
+    {
+      "name": "AudioEngine (master chain + synth)",
+      "lineRange": "4054-4565",
+      "responsibility": "AudioContext singleton (getAudioCtx) + master chain (_masterOut->comp->dest, reverb convolver). Sintesi: playNote (Karplus-Strong), drumKick/Snare/Hihat, playChordSynth (sawtooth+EQ+waveshaper), playBassSynth (KS). Parametri _audioParams (reverb/distorsione) con setter che scrivono nel DOM. _autoDisconnect per cleanup nodi.",
+      "publicSymbols": ["getAudioCtx","_masterOut","_masterComp","_reverbNode","_audioParams","setReverbWet","setReverbDuration","setReverbDecay","setDistortion","testAudioSettings","playNote","_makeWaveshaper","_makeReverb","_autoDisconnect","noteToFreq","midiToFreq","playScale","drumKick","drumSnare","drumHihat","playChordSynth","playBassSynth","_techGain","_ensureTechGain","_stopTechPlayback"],
+      "deps": ["DATA","CHORD_LIB"]
+    },
+    {
+      "name": "Fretboard (visualizzatore principale)",
+      "lineRange": "4569-5051",
+      "responsibility": "renderFretboard costruisce il manico via DOM imperativo (innerHTML='' + creazione di ~6x22 celle ad ogni chiamata). FB_STATE, computeNpsPositions (algoritmo finestre 3NPS), playNpsPattern, drawPatternLines (SVG overlay via getBoundingClientRect per ogni dot), toggleTech.",
+      "publicSymbols": ["FB_STATE","toggleTech","setFbMode","computeNpsPositions","playNpsPattern","getIntervalRole","INTERVAL_NAMES","DEGREE_NAMES","renderFretboard","drawPatternLines"],
+      "deps": ["DATA","AudioEngine","MiniDiagram engine"]
+    },
+    {
+      "name": "Scales / Modes / Progressions / Practice pages",
+      "lineRange": "5053-5285",
+      "responsibility": "Render statico delle pagine teoriche: renderScalesPage, buildScaleMiniDiagrams, renderModesPage, renderProgressions, renderPracticePage, loadScaleOnFretboard (ponte al fretboard + navArm).",
+      "publicSymbols": ["renderScalesPage","buildScaleMiniDiagrams","renderModesPage","loadScaleOnFretboard","renderProgressions","PRACTICE_DATA","renderPracticePage"],
+      "deps": ["DATA","MiniDiagram engine","Fretboard","Nav"]
+    },
+    {
+      "name": "CHORD_LIB (dizionario accordi centrale)",
+      "lineRange": "5436-5601",
+      "responsibility": "Fonte unica accordi (ivs/scales/grips). Deriva CHORD_IV e CHORD_QUAL_LABEL. FN_COLORS, chordFnColor, isGuideTone, chordFnGroup, chordGripAbs (posiziona grip mobile).",
+      "publicSymbols": ["FN_COLORS","chordFnColor","isGuideTone","chordFnGroup","CHORD_LIB","CHORD_IV","CHORD_QUAL_LABEL","chordGripAbs"],
+      "deps": ["DATA"]
+    },
+    {
+      "name": "BT engine (backing track / jam)",
+      "lineRange": "5292-5940",
+      "responsibility": "Sequencer look-ahead (btSchedulerLoop setTimeout 25ms + btVisualLoop RAF). Stato BT globale. Genera drum/bass/chords da BACKING_TRACKS+DRUM_PATTERNS o da customProgression. Transport (jamTogglePlay/Settings/BPM/Tap), mixer (jamSet*Vol), UI builders (jamInitLEDs/RebuildChordUI/RenderModeInfo). Aggiornamento UI dentro il visual loop (LED, chord blocks, highlight manico).",
+      "publicSymbols": ["BACKING_TRACKS","DRUM_PATTERNS","BT","btInit","btBuildProg","btChordAt","btScheduleNote","btSchedulerLoop","btVisualLoop","jamUpdateLEDs","jamUpdateChordBlocks","jamTogglePlay","jamUpdateSettings","jamSetBPM","jamChangeBPM","jamTap","jamSetVolume","jamSetDrumVol","jamSetBassVol","jamSetChordVol","jamInitLEDs","jamRebuildChordUI","jamRenderModeInfo","jamInit"],
+      "deps": ["AudioEngine","CHORD_LIB","DATA","GCTX","SONGLAB","JamFretboard"]
+    },
+    {
+      "name": "Custom progression parser",
+      "lineRange": "5962-6184",
+      "responsibility": "Parsing accordi digitati: noteNameToPc, CHORD_SUFFIX_MAP, parseChordSymbol (fallback per famiglia), parseProgressionInput, detectSongKey (scoring tonalita'/modo), chordScaleSuggestion. jamLoadCustomProgression/Reset/AppendChord, jamRenderScaleSequence, _jamRestartPlayback.",
+      "publicSymbols": ["noteNameToPc","CHORD_SUFFIX_MAP","parseChordSymbol","parseProgressionInput","detectSongKey","chordScaleSuggestion","jamLoadCustomProgression","jamResetCustomProgression","jamAppendChord","_jamRestartPlayback","jamRenderScaleSequence"],
+      "deps": ["CHORD_LIB","DATA","BT engine","SONGLAB"]
+    },
+    {
+      "name": "JamFretboard + JLIVE (manico jam + mic live)",
+      "lineRange": "5942-6580",
+      "responsibility": "renderJamFretboard (ricostruisce 21 tasti x 6 corde via DOM ad ogni cambio). jamHighlightChord (colora toni accordo per funzione, chiamata al cambio accordo). JLIVE: AudioContext dedicato per il microfono, jamLiveTick (RAF ~20fps, autocorrelate condiviso), stabilizePitch, livePickDots, jamLiveHighlight/trail. LIVE_ANCHOR/LIVE_SINGLE.",
+      "publicSymbols": ["JAM_SCALE_MAP","jamScaleKey","jamSetFbMode","makeJamDot","renderJamFretboard","jamHighlightChord","jamClearChordHighlight","JLIVE","LIVE_SINGLE","LIVE_ANCHOR","liveComputeAnchor","liveUpdateAnchorFromKey","liveSetAnchor","stabilizePitch","livePickDots","liveToggleSingle","jamLiveToggle","jamLiveTick","jamLiveHighlight","jamLiveClear","jamBuildQuickChords"],
+      "deps": ["DATA","CHORD_LIB","BT engine","AudioEngine","Tuner (autocorrelate/aRef)"]
+    },
+    {
+      "name": "SONGLAB (setlist / chord lab canzoni)",
+      "lineRange": "6582-7262",
+      "responsibility": "Modello canzoni + persistenza via SonglabStore (gil_songs_v2, migrazione da v1) con fallback legacy. CRUD (songlabNew/Delete/AddSection/Edit), editor con wiring launch fields (schema v2), songlabAutoLaunch (detectSongKey), chart (songlabRenderChart + songOpenChord chordlab overlay), songTogglePlay (ponte al motore jam scrivendo #jam-custom-chords), songChartFollow, export/import JSON.",
+      "publicSymbols": ["SONGLAB_LS_KEY","SONGLAB","songlabNewId","songlabSeed","songlabLoad","songlabSave","songlabCur","songParseTokens","songlabRenderAll","songlabRenderList","songlabToggleRepertoire","songlabRenderRepertoire","songlabAddFromRepertoire","songlabNew","songlabDelete","songlabToggleEdit","songlabRenderEditor","songlabEnsureLaunch","songlabEnsurePreset","songlabWireLaunchFields","songlabAutoLaunch","songlabAddSection","songlabRenderChart","songTogglePlay","_songChartIdx","songChartFollow","SCL_FB","songOpenChord","sclToggle","sclSetScale","sclDrawFretboard","songlabStudyTarget","songlabGoStudy","songlabCloseChord","songlabExport","songlabImportFile"],
+      "deps": ["Custom progression parser","BT engine","CHORD_LIB","CHORD grips (buildGripCard)","SonglabStore (ext)","MAESTRI"]
+    },
+    {
+      "name": "Triadi engine",
+      "lineRange": "7269-7551",
+      "responsibility": "TRIAD_TYPES, TR_STATE, findTriadShapes (brute force posizioni), drawTriadSVG, renderTriads (card cliccabili -> arpeggio playNote), init/set tabs. NB: definisce OPEN_MIDI duplicato di OPEN_STRING_MIDI.",
+      "publicSymbols": ["TRIAD_TYPES","OPEN_MIDI","STRING_SETS","TR_STATE","triadNotes","findTriadShapes","drawTriadSVG","renderTriads","initTriadTypeTabs","setInversion","setStringSet","initTriads"],
+      "deps": ["DATA","AudioEngine"]
+    },
+    {
+      "name": "Accordi 7a engine",
+      "lineRange": "7558-7820",
+      "responsibility": "SEVENTH_CHORD_TYPES, S7_STATE, findSeventhShapes (backtracking 4 note), drawSeventhSVG, renderSeventh, init/set tabs.",
+      "publicSymbols": ["SEVENTH_CHORD_TYPES","STRING_SETS_4","S7_STATE","seventhNotes","findSeventhShapes","drawSeventhSVG","renderSeventh","initSeventh","setS7Inversion","setS7StringSet"],
+      "deps": ["DATA","AudioEngine"]
+    },
+    {
+      "name": "Accordi 9a engine + grip cards",
+      "lineRange": "7822-7973",
+      "responsibility": "NINTH_TYPES, N9_STATE. drawGripSVG, playGripNotes, buildGripCard (riusata da Chord Lab e popup), renderNinth, initNinth.",
+      "publicSymbols": ["NINTH_TYPES","N9_UI_COLORS","N9_INFO","N9_STATE","drawGripSVG","playGripNotes","buildGripCard","renderNinth","initNinth"],
+      "deps": ["CHORD_LIB","AudioEngine","DATA"]
+    },
+    {
+      "name": "CAGED engine + Sistema Connesso",
+      "lineRange": "7975-8500",
+      "responsibility": "CAGED_DEFS (5 forme major/minor), CAGED_STATE. cagedCapo/cagedFrets. Sistema connesso (drawCsysCell/csysPlayCell/renderCagedSystem). drawChordDiagram (SVG verticale), drawCagedNeck (SVG orizzontale). renderCaged (card cliccabili -> arpeggio + selezione), setCagedQuality, playCagedArpeggio.",
+      "publicSymbols": ["CAGED_DEFS","CAGED_ORDER","CAGED_STATE","cagedCapo","cagedFrets","IV_COLORS","IV_LABELS","CSYS_MAJORISH","csysWindow","csysTargetIvs","csysDotColor","drawCsysCell","csysCellMidis","csysPlayCell","renderCagedSystem","drawChordDiagram","drawCagedNeck","renderCaged","setCagedQuality","playCagedArpeggio","initCaged"],
+      "deps": ["DATA","AudioEngine","SCALES"]
+    },
+    {
+      "name": "Penta 5 Box engine",
+      "lineRange": "8503-8937",
+      "responsibility": "P5_MINOR_BOXES/P5_MAJOR_BOXES, P5_STATE. p5AnchorFret/p5BoxFrets. drawP5Fretboard (SVG con id per-nota), drawP5Overview. renderPenta5, setP5Quality, playP5Box (setTimeout per highlight), highlightP5Note/clearP5Highlights.",
+      "publicSymbols": ["P5_MINOR_BOXES","P5_MAJOR_BOXES","P5_STATE","p5AnchorFret","p5BoxFrets","drawP5Fretboard","drawP5Overview","renderPenta5","setP5Quality","playP5Box","highlightP5Note","clearP5Highlights","initPenta5"],
+      "deps": ["DATA","AudioEngine"]
+    },
+    {
+      "name": "Nav (pagine + return stack)",
+      "lineRange": "8939-9005",
+      "responsibility": "showPage (toggle .page/.nav-btn leggendo l'attributo onclick; chiama navUpdateBottomNav). Return-stack (navArm/navReturn/navDisarm) con barra #nav-return-bar creata dinamicamente, max 3 livelli.",
+      "publicSymbols": ["showPage","NAV_PAGE_LABELS","navCurrentPage","navArm","navReturn","navDisarm"],
+      "deps": ["GCTX (navUpdateBottomNav)","SONGLAB","SETLIST_UI"]
+    },
+    {
+      "name": "Metronomo standalone",
+      "lineRange": "9007-9058",
+      "responsibility": "METRO, metroStart/Stop/Toggle, metroTick (osc square), metroLoop (setTimeout 25ms). Condivide BT.bpm e legge #metro-sub dal DOM nel loop.",
+      "publicSymbols": ["METRO","metroStart","metroStop","metroToggle","metroTick","metroLoop"],
+      "deps": ["AudioEngine","BT engine (bpm)"]
+    },
+    {
+      "name": "setGlobalKey (legacy)",
+      "lineRange": "9062-9076",
+      "responsibility": "Vecchio propagatore tonalita' (sincronizza fb-key/jam-key/prog-key + CAGED/P5, rerender). Sostituito di fatto da ctxSetKey (blocco 3); presente ma probabilmente non piu' cablato da UI.",
+      "publicSymbols": ["setGlobalKey"],
+      "deps": ["Fretboard","BT engine","CAGED engine","Penta 5 Box engine"]
+    },
+    {
+      "name": "Chord/Scale relationship engine",
+      "lineRange": "9078-9676",
+      "responsibility": "CS_SCALES (15) + CS_CHORDS (12). renderChordScale, setCsMode, buildCsScaleList/ChordTabs, getCsPositions, compute3NPSPattern, drawScale3NPS, drawScalePos, openChordPopup/closeChordPopup (modal dinamico + listener Escape), renderCsDetail, renderCsChordDetail.",
+      "publicSymbols": ["CS_SCALES","CS_CHORDS","CS_STATE","renderChordScale","setCsMode","buildCsScaleList","buildCsChordTabs","getCsPositions","compute3NPSPattern","drawScale3NPS","drawScalePos","openChordPopup","closeChordPopup","renderCsDetail","renderCsChordDetail"],
+      "deps": ["DATA","CHORD_LIB","AudioEngine (via buildGripCard)"]
+    },
+    {
+      "name": "INIT (blocco 1)",
+      "lineRange": "9680-9696",
+      "responsibility": "DOMContentLoaded: render EAGER di TUTTE le pagine (fretboard, scales, modes, progressions, practice, triadi, caged, penta5, jam, 7a, 9a) + songlabLoad + tuner LED + chord-scale lists. Nessun audio.",
+      "publicSymbols": [],
+      "deps": ["quasi tutti i moduli sopra"]
+    },
+    {
+      "name": "Tuner (accordatore + pitch detection YIN)",
+      "lineRange": "10398-10687",
+      "responsibility": "TUNER_PRESETS (8 accordature), TUNER (AudioContext dedicato). autocorrelate() = rilevatore YIN condiviso (usato anche da JLIVE/MICFB). freqToNote, LED meter, tunerTick (RAF ~15fps), tunerToggle (getUserMedia), tunerPlayRef (tono di riferimento via playNote).",
+      "publicSymbols": ["TUNER_PRESETS","TUNER","NOTE_STRINGS","tunerSetPreset","tunerSetRef","tunerPlayRef","freqToNote","autocorrelate","initTunerLedMeter","updateTunerLeds","tunerTick","tunerToggle"],
+      "deps": ["AudioEngine (playNote)","DATA"]
+    },
+    {
+      "name": "MicFb (manico live dal microfono)",
+      "lineRange": "10689-10872",
+      "responsibility": "MICFB (AudioContext dedicato, stato separato da TUNER e JLIVE). micFbInit (costruisce manico DOM 21 tasti), micFbHighlight (livePickDots condiviso), micFbTick (RAF ~20fps autocorrelate), micFbToggle.",
+      "publicSymbols": ["MICFB","micFbInit","micFbHighlight","micFbClear","micFbTick","micFbToggle"],
+      "deps": ["Tuner (autocorrelate/aRef)","JamFretboard (livePickDots/stabilizePitch)","DATA"]
+    },
+    {
+      "name": "Looper (registra->loop->overdub)",
+      "lineRange": "10874-11079",
+      "responsibility": "LOOPER via MediaRecorder + decodeAudioData. Loop AudioBufferSourceNode (dry su ctx.destination, bypassa master chain). Overdub somma su AudioBuffer con wrap sulla fase. looperRec/TogglePlay/Overdub/Clear/SetVol, fade edges, trim silenzio.",
+      "publicSymbols": ["LOOPER","looperGain","looperMic","looperUI","looperRec","looperTogglePlay","looperOverdub","looperClear","looperSetVol"],
+      "deps": ["AudioEngine (getAudioCtx)"]
+    },
+    {
+      "name": "Tecnica avanzata (esercizi + maestri + equator)",
+      "lineRange": "11081-12302",
+      "responsibility": "SWEEP_SHAPES, TECH_EXERCISES (per tecnica), MAESTRI. initTechPage (render tabs/griglie/maestri lazy). Equatore pentatonico (EQ_STATE, buildEquatorView, drawEquatorSvg) + Major/Minor blending (EQ_BLEND_BOXES). computeArpFrets, renderSweepPanel, playSweepArp, playTechExercise (parser tab), player equator/blend. Usa _techGain bus per interrompere il playback al cambio tab.",
+      "publicSymbols": ["NOTES_TECH","TECH_OPEN_MIDI","SWEEP_SHAPES","TECH_EXERCISES","MAESTRI","initTechPage","EQ_STATE","buildEquatorView","drawEquatorSvg","setEqQuality","setEqPair","renderEquatorView","playEqBox","playEqEquator","EQ_BLEND_BOXES","buildEqBlendSvg","renderEqBlendDiagrams","playEqBlendHemi","playEqBlendCross","showTechTab","selectSweepShape","computeArpFrets","renderSweepPanel","playSweepArp","playTechExercise"],
+      "deps": ["AudioEngine","DATA","Penta 5 Box engine (p5BoxFrets)"]
+    },
+    {
+      "name": "MDX (triadi & modi, sub-tab CAGED)",
+      "lineRange": "11781-12060",
+      "responsibility": "MDX_SETS/MDX_DEGREES/MDX_QUALITIES. mdxFretsOnSet, mdxDrawVoicing, renderModi (griglia set x inversioni + sezione modo), playMdxVoicing/Chord/Mode. Legge #caged-key dal DOM.",
+      "publicSymbols": ["MDX_OPEN_MIDI","MDX_SETS","MDX_SETS_4","MDX_QUALITIES_TRIAD","MDX_QUALITIES_7TH","MDX_DEGREES","MDX_STATE","mdxVoicingIntervals","mdxFretsOnSet","mdxDrawVoicing","setMdxVoicing","setMdxDegree","renderModi","playMdxVoicing","playMdxChord","playMdxMode"],
+      "deps": ["AudioEngine","DATA"]
+    },
+    {
+      "name": "Circolo delle quinte + Circle Modes",
+      "lineRange": "12304-12570",
+      "responsibility": "CIRCLE_FIFTHS, renderCircleOfFifths (SVG a 3 anelli, hit-test unico su svg via getBoundingClientRect), selectCircleKey, loadCircleKey (ponte al fretboard). CM_MODES + renderCircleModes/_drawCmCircle/_drawCmFretboard (createElementNS).",
+      "publicSymbols": ["CIRCLE_FIFTHS","renderCircleOfFifths","selectCircleKey","loadCircleKey","CM_MODES","initTransition","renderCircleModes"],
+      "deps": ["DATA","Fretboard","Nav"]
+    },
+    {
+      "name": "Sub-tab switchers",
+      "lineRange": "12062-12601",
+      "responsibility": "showCagedSubpage, showTechTab, showTechSubpage, showScalesSubpage, showChordScaleSubpage, showCircleSubpage, showBasiSubpage. Puro toggle di classi CSS.",
+      "publicSymbols": ["showCagedSubpage","showTechTab","showTechSubpage","showScalesSubpage","showChordScaleSubpage","showCircleSubpage","showBasiSubpage"],
+      "deps": []
+    },
+    {
+      "name": "GCTX (contesto globale + tonalita' unica) — blocco 3",
+      "lineRange": "12753-12851",
+      "responsibility": "gil_ctx_v1: stato musicale globale persistito (key/mode/style/bpm/lastPage/lastSubtab/lastSongId). ctxLoad/Save (debounced), ctxTrackJam/BPM, ctxSetKey (SORGENTE UNICA tonalita', propaga a tutti i select + rerender), bottom-nav (navUpdateBottomNav/navGo).",
+      "publicSymbols": ["GCTX_KEY","GCTX","ctxLoad","ctxSave","ctxTrackJam","ctxTrackBPM","ctxKeyBadgeUpdate","ctxSetKey","NAV_HUB_OF","NAV_HUB_DEFAULT","navUpdateBottomNav","navGo"],
+      "deps": ["BT engine","Fretboard","tutti i render teoria","Nav"]
+    },
+    {
+      "name": "Setlist launchpad UI — blocco 3",
+      "lineRange": "12853-13232",
+      "responsibility": "SETLIST_UI. Vista home per set (setlistRenderHome, songlabMove riordino) + scheda canzone (setlistOpenCard/Head/Chips/NowPlaying). songlabLaunch = un tap applica launch (tonalita'/scala/BPM/stile/CAGED) e avvia il backing via songTogglePlay. jamSyncSongBanner. Ponti songlabGoFretboard/Caged/Drill.",
+      "publicSymbols": ["SETLIST_UI","SETLIST_GROUPS","showSetlistPage","setlistSongsInSet","setlistRenderAll","setlistRenderHome","songlabMove","setlistOpenCard","setlistShowHome","setlistRenderCardHead","setlistRenderCardChips","setlistRenderNowPlaying","jamSyncSongBanner","songlabApplyLaunch","songlabPostLoad","songlabLaunch","FC_MODE_MAP","songlabGoFretboard","songlabGoCaged","songlabGoDrill"],
+      "deps": ["SONGLAB","BT engine","GCTX","Nav","FCUI (ext)"]
+    },
+    {
+      "name": "BOOT (blocco 3)",
+      "lineRange": "13237-13269",
+      "responsibility": "Secondo DOMContentLoaded: ctxLoad, cablaggio two-way dei select di tonalita' -> ctxSetKey(silent), ripristino ultimo contesto sul motore jam, apertura ultima pagina (default setlist).",
+      "publicSymbols": [],
+      "deps": ["GCTX","BT engine","SONGLAB","Setlist launchpad"]
+    },
+    {
+      "name": "SonglabStore (ext: js/songlab-store.js)",
+      "lineRange": "external",
+      "responsibility": "Persistenza versionata setlist. window.SonglabStore. gil_songs_v2 (envelope {schemaVersion:2, songs, setlist}), migrazione non distruttiva da gil_songs_v1. normalizeSong/load/save.",
+      "publicSymbols": ["SonglabStore.load","SonglabStore.save","SonglabStore.normalizeSong","SonglabStore.buildSetlist"],
+      "deps": []
+    },
+    {
+      "name": "PedagogyEngine (ext: js/pedagogy-engine.js)",
+      "lineRange": "external",
+      "responsibility": "Motore didattico Coscienza del Manico: modello SRS (box/due), pool celle+coppie, generazione drill/plan. window.PedagogyEngine.",
+      "publicSymbols": ["PedagogyEngine.*"],
+      "deps": []
+    },
+    {
+      "name": "FretboardTheory (ext: js/fretboard-theory.js)",
+      "lineRange": "external",
+      "responsibility": "Teoria manico riusabile per i drill: parsing note, grado/ruolo (chord tone), ricerca posizione ottimale. window.FretboardTheory.",
+      "publicSymbols": ["FretboardTheory.*"],
+      "deps": []
+    },
+    {
+      "name": "PitchLoop / FC.pitch (ext: js/pitch-loop.js)",
+      "lineRange": "external",
+      "responsibility": "Loop microfono per i drill: gestione stream, frame pitch (riusa window.autocorrelate se presente), matching nota/ottava/cents, stabilita'. window.PitchLoop + window.FC.pitch.",
+      "publicSymbols": ["PitchLoop.*","FC.pitch"],
+      "deps": ["autocorrelate (dal Tuner, se esposto su window)"]
+    },
+    {
+      "name": "SRSAnalytics / FC.store+srs (ext: js/srs-analytics.js)",
+      "lineRange": "external",
+      "responsibility": "Persistenza + analytics dei drill in gil_fc_v1 (versionato, migrazione). Heatmap copertura, latenze, box SRS. window.SRSAnalytics + FC.store/FC.srs.",
+      "publicSymbols": ["SRSAnalytics.store","SRSAnalytics.srs"],
+      "deps": ["PedagogyEngine (require in Node)"]
+    },
+    {
+      "name": "FCUI (ext: js/fc-ui.js)",
+      "lineRange": "external",
+      "responsibility": "UI Coscienza del Manico dentro #fc-root. Drill note/target-tone (tt riusa il backing jam via getAudioCtx/btInit), heatmap, subnav. window.FCUI = { init, activity, stopActivity, launchDrill, ... }. Ponte col launchpad (songlabGoDrill).",
+      "publicSymbols": ["FCUI.init","FCUI.activity","FCUI.stopActivity","FCUI.launchDrill"],
+      "deps": ["PedagogyEngine","FretboardTheory","PitchLoop","SRSAnalytics","AudioEngine (getAudioCtx/btInit da index)"]
+    }
+  ],
+
+  "globalState": [
+    { "name": "audioCtx / _masterOut / _masterComp / _reverbNode", "type": "AudioContext + AudioNodes (singleton condiviso)", "writtenBy": ["getAudioCtx","_buildMasterChain","renderCaged.onclick","playCagedArpeggio","playP5Box"], "readBy": ["playNote","drum*","playChordSynth","playBassSynth","BT engine","metronomo","tunerPlayRef","looper"], "persisted": false },
+    { "name": "_audioParams", "type": "{reverbWet,reverbDuration,reverbDecay,distortion}", "writtenBy": ["setReverbWet","setReverbDuration","setReverbDecay","setDistortion"], "readBy": ["playNote","playChordSynth","_rebuildReverbChain"], "persisted": false },
+    { "name": "FB_STATE", "type": "{mode:'all'|'nps', npsPosition, keyIndex?}", "writtenBy": ["setFbMode","renderFretboard","loadScaleOnFretboard","loadCircleKey"], "readBy": ["renderFretboard","playNpsPattern"], "persisted": false },
+    { "name": "BT", "type": "oggetto engine backing (playing,bpm,rootIdx,modeKey,styleKey,progression,useCustom,customProgression,...)", "writtenBy": ["btInit","btBuildProg","jamTogglePlay","jamUpdateSettings","jamSetBPM","jamLoadCustomProgression","jamResetCustomProgression","songlabApplyLaunch","songlabPostLoad","BOOT"], "readBy": ["btScheduleNote","btVisualLoop","renderJamFretboard","jamRenderModeInfo","metronomo","setlistRenderNowPlaying","jamSyncSongBanner","ctxSetKey"], "persisted": "indiretto via GCTX (key/mode/style/bpm)" },
+    { "name": "_jamChordIdx / _jamFbMode / _songChartIdx", "type": "indici correnti UI jam/chart", "writtenBy": ["jamUpdateChordBlocks","jamHighlightChord","jamSetFbMode","songChartFollow","jamClearChordHighlight"], "readBy": ["jamUpdateChordBlocks","songlabRenderChart","setlistRenderNowPlaying"], "persisted": false },
+    { "name": "JLIVE", "type": "stato mic manico jam (running,ctx dedicato,analyser,lastMidi,hist,trail,lastPos)", "writtenBy": ["jamLiveToggle","jamLiveTick","jamLiveClear","liveSetAnchor","liveToggleSingle","renderJamFretboard"], "readBy": ["jamLiveTick","jamLiveHighlight","jamLiveRenderTrail"], "persisted": false },
+    { "name": "LIVE_SINGLE / LIVE_ANCHOR", "type": "bool / int (modalita' e ancora del manico live)", "writtenBy": ["liveToggleSingle","liveComputeAnchor","liveUpdateAnchorFromKey","liveSetAnchor"], "readBy": ["livePickDots"], "persisted": false },
+    { "name": "SONGLAB", "type": "{songs[],curId,playingId,editing,selChord}", "writtenBy": ["songlabLoad","songlabNew/Delete/Add*","songlab editor callbacks","setlistOpenCard","songlabLaunch","BOOT"], "readBy": ["songlabRender*","setlistRender*","songTogglePlay","songChartFollow","jamSyncSongBanner"], "persisted": "localStorage gil_songs_v2 (via SonglabStore.save ad ogni mutazione)" },
+    { "name": "SCL_FB", "type": "stato overlay chord lab (showScale/Arp/Grip,gripIdx,scaleKey)", "writtenBy": ["songOpenChord","sclToggle","sclSetScale"], "readBy": ["sclDrawFretboard"], "persisted": false },
+    { "name": "TR_STATE / S7_STATE / N9_STATE", "type": "stato pagine triadi/7a/9a (type,keyIdx,inversion,stringSet)", "writtenBy": ["setInversion","setStringSet","initTriadTypeTabs","renderTriads","setS7*","initSeventh","initNinth","songlabGoStudy"], "readBy": ["renderTriads","renderSeventh","renderNinth"], "persisted": false },
+    { "name": "CAGED_STATE", "type": "{quality,keyIdx,selected}", "writtenBy": ["renderCaged","setCagedQuality","songlabApplyLaunch","songlabGoCaged","setGlobalKey","ctxSetKey"], "readBy": ["renderCaged","playCagedArpeggio","renderCagedSystem"], "persisted": "indiretto via GCTX.key" },
+    { "name": "P5_STATE", "type": "{quality,keyIdx,box}", "writtenBy": ["renderPenta5","setP5Quality","p5 nav btns","setGlobalKey","ctxSetKey"], "readBy": ["renderPenta5","playP5Box","EQ (usa p5BoxFrets)"], "persisted": "indiretto via GCTX.key" },
+    { "name": "TUNER", "type": "stato accordatore (running,ctx dedicato,analyser,aRef,activeTuning)", "writtenBy": ["tunerSetPreset","tunerSetRef","tunerToggle"], "readBy": ["tunerTick","tunerPlayRef","jamLiveTick (aRef)","micFbTick (aRef)"], "persisted": false },
+    { "name": "MICFB", "type": "stato manico live mic (running,ctx dedicato,analyser,built,lastMidi,hist,lastPos)", "writtenBy": ["micFbInit","micFbToggle","micFbTick","micFbClear","liveSetAnchor","liveToggleSingle"], "readBy": ["micFbTick","micFbHighlight"], "persisted": false },
+    { "name": "LOOPER", "type": "stato looper (stream,recorder,buffer,source,playing,recording,overdubbing,layers,startedAt,dubPhase)", "writtenBy": ["looperRec","looperOverdub","looperTogglePlay","looperClear","_looperStartSource"], "readBy": ["looperUI","_looperPhase","looperOverdub"], "persisted": false },
+    { "name": "MDX_STATE", "type": "{voicing,degreeIdx}", "writtenBy": ["setMdxVoicing","setMdxDegree"], "readBy": ["renderModi","playMdxVoicing","playMdxChord","playMdxMode"], "persisted": false },
+    { "name": "EQ_STATE", "type": "{keyIdx,quality,pairIdx}", "writtenBy": ["setEqQuality","setEqPair","renderEquatorView"], "readBy": ["buildEquatorView","playEqBox"], "persisted": false },
+    { "name": "CS_STATE", "type": "{mode,scaleKey,chordIdx}", "writtenBy": ["renderChordScale","setCsMode","buildCs* callbacks"], "readBy": ["renderCsDetail","renderCsChordDetail"], "persisted": false },
+    { "name": "_circleSelected / _cmMode", "type": "int (selezione circolo/circle modes)", "writtenBy": ["selectCircleKey","renderCircleModes"], "readBy": ["renderCircleOfFifths","_drawCm*"], "persisted": false },
+    { "name": "_navReturn / SETLIST_UI", "type": "stack navigazione + vista setlist (home|card)", "writtenBy": ["navArm","navReturn","navDisarm","setlistRenderAll","setlistOpenCard","setlistShowHome","songlabLaunch"], "readBy": ["_navShowBar","navReturn","setlistRenderAll"], "persisted": false },
+    { "name": "GCTX", "type": "contesto globale {key,mode,style,bpm,lastPage,lastSubtab,lastSongId}", "writtenBy": ["ctxLoad","ctxTrackJam","ctxTrackBPM","ctxSetKey","navUpdateBottomNav","setlistOpenCard","songlabLaunch"], "readBy": ["ctxSave","navGo","BOOT"], "persisted": "localStorage gil_ctx_v1 (schemaVersion 1, debounced 250ms)" },
+    { "name": "FC state (esterno)", "type": "stato drill/SRS + settings Coscienza", "writtenBy": ["FCUI","SRSAnalytics.store"], "readBy": ["FCUI","PedagogyEngine"], "persisted": "localStorage gil_fc_v1 (via SRSAnalytics, versionato + migrazione)" }
+  ],
+
+  "audioGraph": "AudioContext principale singleton (audioCtx) creato pigramente da getAudioCtx() al primo gesto utente. Master chain (_buildMasterChain): [sorgenti] -> _masterOut (Gain 0.82) -> _masterComp (DynamicsCompressor thr -14, ratio 4) -> ctx.destination. Ramo reverb parallelo: _masterOut -> _reverbNode (ConvolverNode, IR sintetica di rumore da _makeReverb) -> reverbGain (Gain 0.18, LOCALE a _buildMasterChain) -> ctx.destination. NOTA: _audioParams.reverbWet e' scritto dagli slider ma reverbGain non e' referenziato altrove, quindi lo slider 'Reverb Wet' aggiorna solo l'etichetta DOM, non il gain effettivo (solo durata/decay ricostruiscono il buffer IR). \n\nOgni nota (playNote, Karplus-Strong): genera un AudioBuffer NUOVO + Float32Array di eccitazione ad ogni chiamata; catena src(BufferSource) -> lpf(lowpass, con ramp temporale) -> body(peaking) -> amp(gain, scala con velocity) -> [se distorsione>0: waveshaper ->] dest. In parallelo un transiente 'click del plettro' (BufferSource -> bandpass -> gain) -> body. Cleanup via _autoDisconnect (un setTimeout per nodo: ~6 timer/nota). dest = destOverride || _masterOut. \n\nBT engine (btInit): BT.masterGain(0.7) -> _masterOut; sotto BT.masterGain tre bus BT.drumGain(0.75)/BT.bassGain(0.65)/BT.chordGain(0.45). drumKick/Snare/Hihat costruiscono osc/noise+biquad+gain -> drumGain. playChordSynth: 2 osc sawtooth/nota (+detune) -> hp->lp->mid(peaking)->waveshaper->masterG -> chordGain. playBassSynth: KS buffer -> lpf->boost(peaking)->masterG(-> bassGain) + bite noise. \n\nMetronomo: osc square -> gain -> _masterOut (condivide la master chain). \n\nBus tecnica: _techGain (Gain 1.0) -> _masterOut, usato da sweep/equator/esercizi cosi' _stopTechPlayback() puo' tagliare tutto scollegandolo al cambio tab. \n\nContesti audio SEPARATI (non passano per la master chain): TUNER.ctx, JLIVE.ctx, MICFB.ctx (ognuno: MediaStreamSource -> AnalyserNode fftSize 2048, solo analisi, nessun output) e LOOPER (usa il ctx principale ma LOOPER.gain -> ctx.destination DIRETTO, dry, bypassando compressore/reverb). Quindi in teoria fino a 4 AudioContext coesistono (principale + 3 mic) — potenziale spreco/limite su alcuni browser.",
+
+  "eventFlow": "DOM events (inline onclick/onchange/oninput negli attributi HTML): nav principale -> showPage; select di tonalita' (#fb-key,#tr-key,#s7-key,#n9-key,#caged-key,#p5-key) -> change -> ctxSetKey(silent) via listener in BOOT; #global-key -> ctxSetKey; select scala/frets/label -> renderFretboard; controlli jam (#jam-key/mode/style) -> jamUpdateSettings; slider mix -> jamSet*Vol; slider audio -> setReverb*/setDistortion; bottom-nav -> navGo; setlist rows -> setlistOpenCard/songlabLaunch; note-dot onclick -> playNote. \n\nRAF loops (requestAnimationFrame): (1) btVisualLoop — attivo quando BT.playing, consuma BT.notesInQueue e aggiorna LED/chord-blocks/highlight manico/chart; (2) tunerTick (~15fps, analisi 1/4 frame); (3) jamLiveTick (~20fps, 1/3 frame); (4) micFbTick (~20fps, 1/3 frame); (5) drawPatternLines schedulato via RAF dopo renderFretboard. \n\nTimers (setTimeout): (a) btSchedulerLoop — loop di scheduling audio look-ahead ogni 25ms (BT.lookahead), il cuore del sequencer; (b) metroLoop — 25ms; (c) _autoDisconnect — un timer per ogni nodo audio di ogni nota (alto churn di timer); (d) animazioni .playing dei dot (setTimeout ~450-650ms); (e) ctxSave debounce 250ms; (f) fade/restart jam (setTimeout 100ms in jamUpdateSettings/_jamRestartPlayback); (g) highlight penta5 durante playP5Box. \n\nAudio callbacks: NON usa ScriptProcessor/AudioWorklet — tutta la sintesi e' pre-renderizzata in AudioBuffer + scheduling via start()/stop() con timestamp. L'unico 'callback' e' MediaRecorder.ondataavailable/onstop (looper). \n\nDue DOMContentLoaded distinti: INIT (blocco 1, render eager di tutte le pagine) e BOOT (blocco 3, contesto + apertura pagina). Listener globale document keydown solo per Escape del chord popup.",
+
+  "uiInventory": [
+    { "control": "Nav principale (9 voci)", "selector": "header nav .nav-btn", "section": "globale", "mobileBehaviour": "riga scrollabile orizzontale (overflow-x auto), target min-height 44px; @media<=900 compattata" },
+    { "control": "Bottom-nav (4 hub: Setlist/Suona/Manico/Allena)", "selector": ".bottom-nav .bnav-btn", "section": "globale", "mobileBehaviour": "fissa in basso, zona pollice, safe-area-inset, min-height 56px, indicatore attivo barra+colore" },
+    { "control": "Selettore tonalita' globale", "selector": "#global-key", "section": "header", "mobileBehaviour": "larghezza fissa 72px, etichetta nascosta <900px, colore ambra" },
+    { "control": "Barra torna-indietro contestuale", "selector": "#nav-return-bar", "section": "globale (creata da JS)", "mobileBehaviour": "fissa bottom-left sopra la bottom-nav, min-height 44px" },
+    { "control": "Fretboard controls (key/scale/frets/label + play + modalita' all/nps + tecnica + linee)", "selector": "#page-fretboard .controls, #fretboard, #pattern-lines-svg", "section": "fretboard", "mobileBehaviour": "manico min-width 700px in wrap con overflow-x scroll; select min-height 40px" },
+    { "control": "Sub-tab Scale (7)", "selector": "#page-scales .cpage-tabs .cpage-tab-btn", "section": "scales", "mobileBehaviour": "scrollabile orizzontale, min-height 44px" },
+    { "control": "CAGED cards + qualita' + sistema connesso", "selector": "#caged-cards .caged-card, #csys-grid", "section": "caged", "mobileBehaviour": "csys-grid min-width 620px in wrap scrollabile" },
+    { "control": "Penta 5 box tabs + fretboard + overview", "selector": "#p5-box-tabs .p5-tab, #p5-fretboard, #p5-overview-svg", "section": "penta5", "mobileBehaviour": "layout 1 colonna <860px, SVG scroll orizzontale" },
+    { "control": "Circolo delle quinte (SVG interattivo)", "selector": "#circle-svg", "section": "circle", "mobileBehaviour": "max-width 100%, hit-test via getBoundingClientRect (click+touchend)" },
+    { "control": "Transport jam (play/BPM/slider/tap)", "selector": "#jam-play-btn,#bpm-display,#bpm-slider,#tap-btn", "section": "jam/basi", "mobileBehaviour": "btn play 64px, bpm-btn 44px, wrap flessibile" },
+    { "control": "Mixer jam (master/drums/bass/chords)", "selector": "#vol-master,#vol-drums,#vol-bass,#vol-chords", "section": "jam/basi", "mobileBehaviour": "mix-row 1 colonna <900px" },
+    { "control": "Progressione custom + chip rapidi", "selector": "#jam-custom-chords,#jam-quick-chords,#jam-scale-seq", "section": "jam/basi", "mobileBehaviour": "input flex, chip min-height 44px" },
+    { "control": "Manico jam + toggle scala/arp + mic live", "selector": "#jam-fretboard,#jam-fb-toggle,#jam-live-btn,#jam-single-btn,#jam-pos-fret", "section": "jam/basi", "mobileBehaviour": "manico in fretboard-wrap scroll orizzontale" },
+    { "control": "Metronomo standalone", "selector": "#metro-btn,#metro-sub", "section": "jam/basi", "mobileBehaviour": "pannello compatto flex-wrap" },
+    { "control": "Accordatore (display + LED meter + corde)", "selector": "#tuner-toggle,#tuner-note,#tuner-led-meter,.tuner-str", "section": "jam/accordatore", "mobileBehaviour": "grid 6 corde, display max-width 480px centrato" },
+    { "control": "Manico live dal microfono", "selector": "#micfb-btn,#micfb-note,#micfb-fretboard", "section": "jam/micfb", "mobileBehaviour": "manico scroll orizzontale, note dim tranne mic-hit" },
+    { "control": "Looper (rec/play/overdub/clear + vol)", "selector": "#loop-rec-btn,#loop-play-btn,#loop-dub-btn,#loop-clear-btn,#loop-vol", "section": "jam/looper", "mobileBehaviour": "bottoni min-height 64px, deck max-width 640px" },
+    { "control": "Audio enhancement (reverb/distorsione)", "selector": "#reverb-wet,#reverb-dur,#reverb-decay,#distort", "section": "audio", "mobileBehaviour": "slider full-width" },
+    { "control": "Tecnica: tabs + esercizi + maestri + equator", "selector": "#tech-tabs .tech-tab, .ex-grid, #masters-grid, #eq-fretboard-wrap", "section": "technique", "mobileBehaviour": "tabs scroll orizzontale, diagrammi SVG scroll, sweep-layout 1 colonna <650px" },
+    { "control": "Setlist launchpad (righe per set + scheda canzone)", "selector": "#setlist-groups .setlist-row, #setlist-card, .scard-play, .scard-chip", "section": "setlist", "mobileBehaviour": "righe min-height 56px, play 56px, ▲▼ riordino 44px, scard-play 64px, vista performance snp-now 56px" },
+    { "control": "Editor canzone (launch fields v2)", "selector": "#song-editor .sed-launch-grid, #sed-key,#sed-scale,#sed-bpm,#sed-style,#sed-mode,#sed-caged,#sed-set,#sed-status,#sed-notes", "section": "setlist", "mobileBehaviour": "grid auto-fit minmax 140px, campi min-height 44px" },
+    { "control": "Chord Lab overlay + popup accordo", "selector": "#song-chordlab #scl-fb-svg, .chord-modal", "section": "setlist/scales", "mobileBehaviour": "SVG manico scroll orizzontale, modal max-width 440px max-height 88vh" },
+    { "control": "Coscienza del manico (montata da fc-ui.js)", "selector": "#page-coscienza #fc-root", "section": "coscienza", "mobileBehaviour": "subnav min-height 44px, celle heatmap --fc-cw 44px" }
+  ],
+
+  "deadCode": [
+    "#inapp-banner (righe 3166-3178): dichiarato con display:none !important e poi RIMOSSO dal DOM dallo script 3179-3187. La funzione openInExternalBrowser (riferita da onclick del bottone) non e' definita nel file: gestore orfano su elemento che non esiste piu'.",
+    "getScaleDegree (3923): in PROGRESSIONS[0].getChords e chordNames le variabili roots/idx sono calcolate ma inutilizzate; getChords non e' mai invocata (le pagine usano chordDisplay). Ramo morto.",
+    "setGlobalKey (9062): vecchio propagatore tonalita', superato da ctxSetKey; scrive prog-key con valore numerico che non matcha le option a lettere. Non piu' cablato da alcun onclick/onchange nell'HTML corrente.",
+    "songlabRenderList / #songlab-list (6667): il markup #songlab-list e la toolbar sono stati spostati nella pagina setlist; songlabRenderList e' ancora chiamata da songlabRenderAll ma con getElementById che restituisce null (early return) — lavoro a vuoto, nessun effetto visibile.",
+    "bpage-canzoni (9903): sotto-tab 'Canzoni' ridotta a semplice rimando alla Setlist (il contenuto reale e' migrato in page-setlist). Residuo di transizione IA.",
+    "Legenda hardcoded 'build v8 · 05-07 17:20' (9897): stringa di build statica lasciata nel markup della legenda jam.",
+    "NOTES_FLAT (3811), NOTE_STRINGS (10417), NOTES_TECH (11083), MDX_NOTE_NAMES (11823), CM_NOTES (12474), OPEN_MIDI (7297), MDX_OPEN_MIDI (11783), TECH_OPEN_MIDI (11086): array di note/open-string DUPLICATI in piu' moduli invece di riusare le costanti DATA (NOTES/OPEN_STRING_MIDI). Non 'morto' ma ridondanza da consolidare.",
+    "reverbGain (dentro _buildMasterChain): non esposto ne' riletto; _audioParams.reverbWet scritto ma mai applicato al gain → slider Reverb Wet inefficace (solo aggiorna label)."
+  ],
+
+  "hotPaths": [
+    "playNote (4195): chiamata a raffica durante il jam (drum non la usa, ma basso+accordi+arpeggi si') e in ogni play* — ALLOCA un AudioBuffer + Float32Array + ~6 nodi + ~6 setTimeout OGNI invocazione. Chiamata potenzialmente >30/s in passaggi densi.",
+    "btScheduleNote (5674): invocata dallo scheduler per ogni 16esimo dentro la finestra look-ahead; a 95 BPM ~25 step/s ma con burst per scheduleAhead. Genera drum+bass+chord (piu' playNote/drum*).",
+    "btSchedulerLoop (5713): setTimeout ogni 25ms = 40 volte/s (cuore del sequencer).",
+    "btVisualLoop (5726): RAF ~60fps quando il jam suona; svuota notesInQueue e per ogni step chiama jamUpdateLEDs (16 getElementById!) + jamUpdateChordBlocks.",
+    "jamUpdateLEDs (5740): 16 document.getElementById per step (fino a ~25 step/s) — query DOM ripetute invece di cache.",
+    "jamUpdateChordBlocks (5747): querySelector .chord-progress per accordo + al cambio accordo chiama jamHighlightChord (querySelectorAll di TUTTI i note-dot del manico jam) + songChartFollow (querySelectorAll #song-chart .sc-chord).",
+    "jamLiveTick / micFbTick / tunerTick (RAF): analisi YIN (autocorrelate) su 2048 campioni — O(n·maxLag) per frame; throttlati a 1/3–1/4 dei frame. autocorrelate e' il kernel piu' costoso in CPU.",
+    "drawPatternLines (4994): getBoundingClientRect per OGNI note-dot visibile (fino a ~90) = layout thrash; eseguita ad ogni renderFretboard (via RAF) e al toggle."
+  ],
+
+  "debtTop10": [
+    { "issue": "Allocazione in hot path audio: playNote crea buffer+Float32Array+6 nodi+6 timer per nota; viola il budget 'nessuna allocazione in hot path'. GC pressure durante jam densi/arpeggi veloci.", "severity": "alta", "location": "playNote 4195-4300; _autoDisconnect 4185", "whyItBlocksRedesign": "Qualsiasi redesign che aumenti la densita' di note (piu' strumenti, pattern piu' fitti) peggiora il churn di GC e timer; serve un pool di voci/nodi o AudioWorklet prima di scalare l'engine." },
+    { "issue": "Molteplici AudioContext: principale + TUNER + JLIVE + MICFB (fino a 4). Alcuni browser limitano il numero di context; ogni mic-context e' aperto/chiuso indipendentemente e non condivide analyser.", "severity": "alta", "location": "getAudioCtx 4061; TUNER 10409; JLIVE 6347; MICFB 10692", "whyItBlocksRedesign": "Una UI che voglia 'sentire il mic mentre suona la base' (target-tone gia' lo fa via FCUI) deve coordinare piu' context; unificare su un solo AudioContext e' prerequisito per feature mic+backing simultanee affidabili." },
+    { "issue": "Stato UI e stato audio accoppiati e sincronizzati via DOM: il motore audio legge/scrive direttamente i select e i nodi. songTogglePlay avvia l'audio SCRIVENDO la stringa in #jam-custom-chords e richiamando jamLoadCustomProgression (dato passato attraverso il DOM, non via API).", "severity": "alta", "location": "songTogglePlay 6982-7001; jamUpdateSettings 5802; jamLoadCustomProgression 6090", "whyItBlocksRedesign": "Non esiste un livello 'stato' separato dalla vista: cambiare il layout/markup rompe l'audio. Un redesign dell'UI DEVE prima estrarre un modello (progressione, tonalita', transport) indipendente dal DOM." },
+    { "issue": "Rendering DOM imperativo full-rebuild: renderFretboard/renderJamFretboard/micFbInit ricostruiscono centinaia di nodi con innerHTML='' + createElement ad ogni cambio; onclick riassegnati per ogni dot.", "severity": "alta", "location": "renderFretboard 4725; renderJamFretboard 6215; micFbInit 10701", "whyItBlocksRedesign": "Il budget 60fps sul fretboard e' a rischio ad ogni interazione; il manico live (JLIVE) poi cerca i dot con querySelectorAll O(n) per nota. Serve un manico stabile (celle create una volta) con aggiornamento per-classe, prerequisito per animazioni fluide del redesign." },
+    { "issue": "Accoppiamento audio->UI nel loop visivo: btVisualLoop chiama jamUpdateLEDs (16 getElementById/step), jamUpdateChordBlocks e al cambio accordo jamHighlightChord (querySelectorAll di tutti i dot) + songChartFollow (querySelectorAll del chart) + setlistRenderNowPlaying.", "severity": "media", "location": "btVisualLoop 5726; jamUpdateChordBlocks 5747; jamHighlightChord 6303", "whyItBlocksRedesign": "L'evidenziazione del manico dipende dal timing audio ma passa da query DOM ripetute: separare 'evento musicale' (cambio accordo/step) da 'aggiornamento vista' con id cache/observer e' necessario per non far degradare gli fps quando il redesign aggiunge superfici da aggiornare." },
+    { "issue": "Reverb Wet non funzionante: _audioParams.reverbWet aggiorna solo l'etichetta; reverbGain e' locale a _buildMasterChain e mai riletto.", "severity": "media", "location": "_buildMasterChain 4088-4095; setReverbWet 4134; _rebuildReverbChain 4164", "whyItBlocksRedesign": "Bug funzionale silenzioso: qualsiasi redesign della pagina Audio deve prima rendere reverbGain uno stato referenziabile, altrimenti si ridisegna un controllo che non fa nulla." },
+    { "issue": "Costanti duplicate (note/open-string/colori) sparse in 8+ moduli invece di un'unica sorgente DATA; OPEN_MIDI/MDX_OPEN_MIDI/TECH_OPEN_MIDI == OPEN_STRING_MIDI.", "severity": "media", "location": "3811, 7297, 10417, 11083, 11086, 11783, 11823, 12474", "whyItBlocksRedesign": "Cambiare accordatura/temperamento o aggiungere note enarmoniche richiede modifiche in molti punti; un redesign 'accordature alternative' e' fragile finche' le costanti non sono centralizzate." },
+    { "issue": "Init eager di TUTTE le pagine al load (renderFretboard, tutte le pagine teoria, jamInit, ecc.) anche se nascoste; poi ctxSetKey rerende TUTTO ad ogni cambio tonalita' (7 render nel try/catch).", "severity": "media", "location": "INIT 9680; ctxSetKey 12798-12827", "whyItBlocksRedesign": "Costo di avvio e di ogni cambio tonalita' cresce linearmente con le pagine; un redesign che aggiunge viste rallenta boot e propagazione. Serve rendering lazy/on-demand per pagina." },
+    { "issue": "Dipendenze a RUNTIME esterne che violano il vincolo 'nessuna CDN': Google Fonts (34-36) e improv_lab_bridge.js remoto (13278). Offline / con blocco esterno l'app degrada (font di fallback) o carica script terzo.", "severity": "media", "location": "34-36; 13277-13278", "whyItBlocksRedesign": "Il vincolo architetturale dichiara 'nessuna CDN a runtime': un redesign tipografico deve inlinare i font (o accettarne l'assenza) e il bridge esterno va reso opzionale/inlined per rispettare il single-file offline-first." },
+    { "issue": "Persistenza frammentata su 3 chiavi (gil_songs_v2, gil_ctx_v1, gil_fc_v1) con logiche di versioning/migrazione separate, piu' fallback legacy inline. Nessun wrapper unico ne' guardia globale su localStorage indisponibile.", "severity": "bassa", "location": "SonglabStore (ext); GCTX 12753; SRSAnalytics gil_fc_v1 (ext)", "whyItBlocksRedesign": "Il vincolo 'zero stato perso' e' soddisfatto ma disperso: un redesign che sposti/rinomini le preferenze deve toccare 3 sistemi indipendenti; conviene un layer storage unificato prima di estendere lo stato persistito." }
+  ],
+
+  "uiAudioCoupling": [
+    { "where": "songTogglePlay / songlabLaunch", "line": "6982-7001, 13163-13183", "detail": "L'avvio dell'audio passa SCRIVENDO la progressione come stringa nell'input DOM #jam-custom-chords e richiamando jamLoadCustomProgression: il dato musicale transita per il DOM. Se il markup dell'input cambia, l'audio si rompe.", "risk": "Il redesign non puo' toccare #jam-custom-chords senza rompere il play della setlist." },
+    { "where": "jamUpdateSettings / _jamRestartPlayback", "line": "5802-5830, 6151-6167", "detail": "Il motore legge lo stato dai select (#jam-key/#jam-mode/#jam-style) e riavvia lo scheduler con fade via setTimeout. Lo stato del sequencer e' definito dai valori dei select, non da un modello.", "risk": "Spostare/rinominare i select o cambiarli in componenti custom richiede riscrivere l'accoppiamento." },
+    { "where": "jamHighlightChord / jamUpdateChordBlocks (dentro btVisualLoop)", "line": "6303-6328, 5747-5770", "detail": "Ad ogni cambio accordo dello scheduler audio si fa querySelectorAll di TUTTI i .note-dot del manico jam per applicare classi funzione; l'evidenziazione visiva e' guidata direttamente dal timing audio via DOM.", "risk": "Il manico e' ricostruito da renderJamFretboard: highlight e struttura DOM sono strettamente accoppiati. Un manico ridisegnato deve reimplementare l'aggancio audio->classi." },
+    { "where": "songChartFollow / setlistRenderNowPlaying (dentro il visual loop)", "line": "7006-7013, 13072-13086", "detail": "Il chart canzone e la vista performance seguono l'indice accordo (_songChartIdx) aggiornato dal loop audio, con querySelectorAll del chart ad ogni cambio.", "risk": "La vista performance (leggio) e' pilotata dall'audio via DOM query: separare 'evento accordo' da 'render' e' necessario per il redesign della vista live." },
+    { "where": "renderJamFretboard resetta JLIVE.lastMidi", "line": "6288-6298", "detail": "Il rendering del manico (UI) forza il re-highlight del mic al prossimo tick toccando lo stato di JLIVE: ricostruire la UI ha effetti collaterali sullo stato audio/mic.", "risk": "UI e stato mic non sono separabili: un ridisegno del manico deve preservare/ripristinare lo stato live." },
+    { "where": "ctxSetKey propaga a select + rerender + jamUpdateSettings", "line": "12798-12827", "detail": "Il cambio di tonalita' (stato) scrive 7 select DOM, muta CAGED_STATE/P5_STATE, rerende 8 viste e riavvia il motore jam (a meno di canzone in play). Stato musicale e viste sono fusi in una sola funzione imperativa.", "risk": "Non c'e' un 'model.setKey' osservabile: ogni nuova vista va aggiunta manualmente qui; il redesign deve introdurre un bus di stato/eventi." },
+    { "where": "playCagedArpeggio / renderCaged.onclick / playP5Box creano audioCtx senza master chain", "line": "8420-8425, 8487, 8886", "detail": "Questi handler fanno `audioCtx = new AudioContext()` direttamente se assente, senza chiamare _buildMasterChain: se il PRIMO gesto audio dell'utente avviene qui, _masterOut resta null e playNote fa connect(null).", "risk": "Fragilita' d'inizializzazione dipendente dall'ordine di interazione UI; un redesign che cambi il primo punto di contatto audio puo' esporre il crash. Meglio forzare getAudioCtx() ovunque." },
+    { "where": "setter audio scrivono direttamente il DOM (#reverb-*-val, #bpm-display, #loop-*)", "line": "4134-4162, 5832-5836, looperUI 10904", "detail": "I setter dei parametri audio aggiornano l'etichetta DOM come effetto collaterale: parametro audio e widget non sono separati.", "risk": "Ridisegnare i controlli (slider->knob custom) richiede riscrivere ogni setter; nessun binding dichiarativo." }
+  ]
+}
