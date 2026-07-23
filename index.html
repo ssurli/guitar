@@ -178,6 +178,14 @@
     background: var(--amber-glow);
     border-bottom: 2px solid var(--amber);
   }
+  /* Link esterno al progetto companion ChordLab: anchor stilizzata come nav-btn */
+  .nav-btn-ext {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: var(--purple);
+  }
+  .nav-btn-ext:hover { color: var(--text); background: var(--bg3); }
 
   /* ── GLOBAL KEY SELECTOR ── */
   .global-key-wrap {
@@ -3218,6 +3226,7 @@
     <button class="nav-btn" onclick="showPage('audio')">🎛 Audio</button>
     <button class="nav-btn" onclick="showPage('technique');showTechSubpage('pratica')">⚡ Tecnica</button>
     <button class="nav-btn" onclick="showPage('coscienza');FCUI&&FCUI.init()">🧠 Coscienza</button>
+    <a class="nav-btn nav-btn-ext" href="https://ssurli.github.io/chordlab/" target="_blank" rel="noopener" title="Apri ChordLab (progetto companion)">🎵 ChordLab ↗</a>
   </nav>
 </header>
 
