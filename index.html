@@ -65,6 +65,14 @@
     --string-color: #c8a84b;
     --nut: #d4af6a;
 
+    /* Colori RUOLO nota (tonica/3ª/5ª/7ª) usati da manico e legende: -l = stop
+       chiaro del gradiente, base = colore pieno, -d = stop scuro. Le palette
+       alternative (sotto) sovrascrivono solo queste variabili → tutta l'app
+       resta cromaticamente coerente. */
+    --role-root-l:#fde68a;    --role-root:#f59e0b;    --role-root-d:#b45309;
+    --role-third-l:#bfdbfe;   --role-third:#3b82f6;   --role-third-d:#1e3a8a;
+    --role-fifth-l:#bbf7d0;   --role-fifth:#22c55e;   --role-fifth-d:#14532d;
+    --role-seventh-l:#e9d5ff; --role-seventh:#a855f7; --role-seventh-d:#4a1d96;
     /* ── Semantica stati ── */
     --ok: var(--green);
     --err: var(--red);
@@ -92,6 +100,25 @@
     /* ── Target touch (contratti: ≥44px) ── */
     --tap: 44px; --tap-lg: 56px; --tap-xl: 64px;
   }
+
+  /* Palette per daltonici (Okabe–Ito: distinguibile con deuteranopia/protanopia) */
+  body.palette-cb {
+    --role-root-l:#ffd76b;    --role-root:#e69f00;    --role-root-d:#9a6a00;
+    --role-third-l:#b3e0f7;   --role-third:#56b4e9;   --role-third-d:#1d6fa3;
+    --role-fifth-l:#7fe3c4;   --role-fifth:#009e73;   --role-fifth-d:#00563f;
+    --role-seventh-l:#f0c1d9; --role-seventh:#cc79a7; --role-seventh-d:#8c4470;
+  }
+  /* Palette ad alto contrasto: tinte più accese + bordo bianco sui pallini */
+  body.palette-hc {
+    --role-root-l:#ffe680;    --role-root:#ffcc00;    --role-root-d:#b38f00;
+    --role-third-l:#99e2ff;   --role-third:#00aaff;   --role-third-d:#005c8a;
+    --role-fifth-l:#a2ffcb;   --role-fifth:#00e676;   --role-fifth-d:#007a3e;
+    --role-seventh-l:#ffb3ff; --role-seventh:#ff4dff; --role-seventh-d:#8a008a;
+  }
+  body.palette-hc .note-dot.root,
+  body.palette-hc .note-dot.third,
+  body.palette-hc .note-dot.fifth,
+  body.palette-hc .note-dot.seventh { border-color: rgba(255,255,255,0.75); }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -357,6 +384,21 @@
     width: 26px;
     text-align: center;
     flex-shrink: 0;
+    /* Sempre visibile durante lo scroll orizzontale del manico (mobile!):
+       resta incollato al bordo del riquadro scrollabile, sopra i dot. */
+    position: sticky;
+    left: 0;
+    z-index: 12;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(90deg, var(--panel) 72%, transparent);
+  }
+  .fretboard.lefty .string-name {
+    left: auto;
+    right: 0;
+    background: linear-gradient(270deg, var(--panel) 72%, transparent);
   }
 
   .nut-col {
@@ -481,25 +523,25 @@
      saturated fills, each with a matching shadow so labels stay legible across
      the whole radial gradient (edge → core). Root is the brightest/largest cue. */
   .note-dot.root {
-    background: radial-gradient(circle at 35% 30%, #fde68a 0%, var(--amber) 45%, #b45309 100%);
+    background: radial-gradient(circle at 35% 30%, var(--role-root-l) 0%, var(--role-root) 45%, var(--role-root-d) 100%);
     color: #1a1200;
     text-shadow: 0 1px 0 rgba(255,240,200,0.45);
     box-shadow: 0 0 14px rgba(245,158,11,0.7), inset 0 2px 4px rgba(255,255,200,0.4), inset 0 -2px 3px rgba(0,0,0,0.3);
   }
   .note-dot.third {
-    background: radial-gradient(circle at 35% 30%, #bfdbfe 0%, var(--blue) 45%, #1e3a8a 100%);
+    background: radial-gradient(circle at 35% 30%, var(--role-third-l) 0%, var(--role-third) 45%, var(--role-third-d) 100%);
     color: #fff;
     text-shadow: 0 1px 2px rgba(0,0,0,0.55);
     box-shadow: 0 0 10px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 3px rgba(0,0,0,0.3);
   }
   .note-dot.fifth {
-    background: radial-gradient(circle at 35% 30%, #bbf7d0 0%, var(--green) 45%, #14532d 100%);
+    background: radial-gradient(circle at 35% 30%, var(--role-fifth-l) 0%, var(--role-fifth) 45%, var(--role-fifth-d) 100%);
     color: #05230f;
     text-shadow: 0 1px 0 rgba(220,255,230,0.4);
     box-shadow: 0 0 10px rgba(34,197,94,0.5), inset 0 2px 4px rgba(255,255,255,0.35), inset 0 -2px 3px rgba(0,0,0,0.3);
   }
   .note-dot.seventh {
-    background: radial-gradient(circle at 35% 30%, #e9d5ff 0%, var(--purple) 45%, #4a1d96 100%);
+    background: radial-gradient(circle at 35% 30%, var(--role-seventh-l) 0%, var(--role-seventh) 45%, var(--role-seventh-d) 100%);
     color: #fff;
     text-shadow: 0 1px 2px rgba(0,0,0,0.55);
     box-shadow: 0 0 10px rgba(168,85,247,0.5), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 3px rgba(0,0,0,0.3);
@@ -511,6 +553,31 @@
     box-shadow: inset 0 1px 2px rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.4);
   }
   .note-dot.hidden { display: none; }
+
+  /* Note fuori scala (toggle): presenti ma tenui e desaturate, per contesto */
+  .note-dot.outside {
+    opacity: 0.30; filter: saturate(0.25);
+    transform: scale(0.82);
+  }
+  .note-dot.outside:hover { opacity: 0.75; transform: scale(1.05); }
+
+  /* ── MANCINO: manico specchiato (headstock a destra) ──
+     row-reverse inverte l'ordine visivo di celle/numeri/marker; il testo delle
+     etichette resta normale e leggibile. */
+  .fretboard.lefty .fret-numbers,
+  .fretboard.lefty .string-row,
+  .fretboard.lefty .fret-markers { flex-direction: row-reverse; }
+  .fretboard.lefty .fret-numbers,
+  .fretboard.lefty .fret-markers { margin-left: 0; margin-right: 26px; }
+
+  /* ── CAPOTASTO: barra sopra il tasto scelto ── */
+  .capo-bar {
+    position: absolute; top: -5px; bottom: -5px; width: 11px;
+    border-radius: 6px; z-index: 3; pointer-events: none;
+    background: linear-gradient(90deg, #2b2b2b, #6e6e6e 40%, #1f1f1f);
+    border: 1px solid #8a8a8a;
+    box-shadow: 0 0 10px rgba(0,0,0,0.65), inset 0 1px 2px rgba(255,255,255,0.25);
+  }
 
   /* ── JAM: MANICO LIVE (scala + accordo in tempo reale) ── */
   .jam-fb-header {
@@ -541,10 +608,10 @@
     display: inline-block; width: 12px; height: 12px; border-radius: 50%;
     margin-right: 5px; vertical-align: -1px;
   }
-  .jam-fb-legend .lg-root { background: var(--amber); }
-  .jam-fb-legend .lg-third { background: var(--blue); }
-  .jam-fb-legend .lg-fifth { background: var(--green); }
-  .jam-fb-legend .lg-seventh { background: var(--purple); }
+  .jam-fb-legend .lg-root { background: var(--role-root); }
+  .jam-fb-legend .lg-third { background: var(--role-third); }
+  .jam-fb-legend .lg-fifth { background: var(--role-fifth); }
+  .jam-fb-legend .lg-seventh { background: var(--role-seventh); }
   .jam-fb-legend .lg-live { background: transparent; box-shadow: 0 0 0 2px #fff, 0 0 8px #fff; }
   .jam-fb-legend .lg-hint { color: var(--text-dim); }
 
@@ -648,16 +715,20 @@
      Restano visibili anche se attenuate/nascoste da arp-mode/chord-dim. */
   /* Quando il mic è attivo, le note SUGGERITE passano in secondo piano così la
      nota che stai suonando domina visivamente. */
-  #jam-fretboard.live-active .note-dot { opacity: 0.4; filter: saturate(0.7); }
+  #jam-fretboard.live-active .note-dot,
+  #fretboard.live-active .note-dot { opacity: 0.4; filter: saturate(0.7); }
   #jam-fretboard.live-active .note-dot.chord-tone { opacity: 0.62; }
 
   #jam-fretboard .note-dot.live-exact,
-  #jam-fretboard .note-dot.live-trail {
+  #jam-fretboard .note-dot.live-trail,
+  #fretboard .note-dot.live-exact,
+  #fretboard .note-dot.live-trail {
     display: flex !important; filter: none !important;
     z-index: 8;
   }
   /* LA NOTA CHE SUONI — la più prominente in assoluto: grande, cerchio bianco
      spesso, alone luminoso pulsante, testo nitido sopra ogni suggerimento. */
+  #fretboard .note-dot.live-exact,
   #jam-fretboard .note-dot.live-exact {
     opacity: 1 !important;
     color: #fff !important;
@@ -671,6 +742,7 @@
     50%     { box-shadow: 0 0 0 4px #fff, 0 0 30px 7px rgba(255,255,255,1);   transform: scale(1.46); }
   }
   /* scia: cerchio sottile che sfuma via — traccia il movimento di slide/passaggio */
+  #fretboard .note-dot.live-trail,
   #jam-fretboard .note-dot.live-trail {
     box-shadow: 0 0 0 2px rgba(255,255,255,0.55);
     transform: scale(1.02);
@@ -683,6 +755,47 @@
   }
   /* readout "Stai suonando" durante un bend */
   .jam-live-note.bending { color: #67e8f9; border-color: #22d3ee; background: rgba(34,211,238,0.12); }
+
+  /* ── LIVE SUL VISUALIZZATORE: HUD con nota, needle dei cents e confidenza ── */
+  .fblive-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin: 0 0 10px;
+  }
+  .fblive-hud { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .fblive-note {
+    font-family: 'Bebas Neue', sans-serif; font-size: 24px; line-height: 1;
+    color: #fff; min-width: 52px; text-align: center;
+    padding: 5px 10px; border: 1px solid rgba(255,255,255,0.35); border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+  }
+  .fblive-note.bending { color: #67e8f9; border-color: #22d3ee; background: rgba(34,211,238,0.12); }
+  .cents-meter {
+    position: relative; width: 150px; height: 12px; border-radius: 6px;
+    background: linear-gradient(90deg,
+      rgba(29,78,216,0.55) 0%, var(--bg3) 34%,
+      rgba(22,163,74,0.75) 45%, rgba(22,163,74,0.75) 55%,
+      var(--bg3) 66%, rgba(220,38,38,0.55) 100%);
+    border: 1px solid var(--border);
+  }
+  .cents-needle {
+    position: absolute; top: -3px; bottom: -3px; left: 50%; width: 2px;
+    background: #fff; box-shadow: 0 0 6px rgba(255,255,255,0.9); border-radius: 1px;
+    transition: left .08s linear;
+  }
+  .cents-meter .cm-zero {
+    position: absolute; top: 0; bottom: 0; left: 50%; width: 1px;
+    background: rgba(255,255,255,0.35);
+  }
+  .fblive-cents { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-mid); min-width: 44px; }
+  .conf-bar {
+    width: 64px; height: 8px; border-radius: 4px;
+    background: var(--bg3); border: 1px solid var(--border); overflow: hidden;
+  }
+  .conf-bar i {
+    display: block; height: 100%; width: 0;
+    background: linear-gradient(90deg, #f59e0b, #4ade80);
+    transition: width .12s;
+  }
 
   /* ── SISTEMA CONNESSO CAGED ── */
   .csys-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -917,6 +1030,43 @@
   .tuner-btn {
     display: flex; gap: 12px; justify-content: center; margin-bottom: 24px;
   }
+
+  /* ── PANNELLO INPUT AUDIO (profilo strumento + sorgente) ── */
+  .pitch-panel {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 16px;
+    display: flex; flex-direction: column; gap: 10px; max-width: 760px;
+  }
+  .pp-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pp-lbl {
+    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text-dim); min-width: 76px;
+  }
+  .pp-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pp-chip {
+    background: transparent; border: 1px solid var(--border); border-radius: 20px;
+    color: var(--text-mid); font-family: 'Space Mono', monospace; font-size: 12px;
+    padding: 7px 14px; cursor: pointer; min-height: 34px;
+    transition: color .12s, border-color .12s, background .12s;
+  }
+  .pp-chip:hover { color: var(--amber); border-color: var(--amber-dim); }
+  .pp-chip.active {
+    background: var(--amber-glow); border-color: var(--amber); color: var(--amber); font-weight: 700;
+  }
+  .pp-device {
+    flex: 1; min-width: 160px; max-width: 340px;
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 8px; font-family: 'Space Mono', monospace; font-size: 12px;
+  }
+  .pp-refresh {
+    background: transparent; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text-mid); cursor: pointer; padding: 6px 10px; font-size: 13px;
+    min-width: 34px; min-height: 34px;
+  }
+  .pp-refresh:hover { color: var(--amber); border-color: var(--amber-dim); }
+  .pp-desc { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+  .pp-desc strong { color: var(--text-mid); }
+  .pp-warn { color: #fca5a5; font-family: 'Space Mono', monospace; font-size: 11px; }
 
   /* ══════════════════════════════ TECNICA AVANZATA ══════════════════════════════ */
   /* Stile allineato a .cpage-tab-btn (usato da tutte le altre sezioni) per coerenza visiva */
@@ -3328,6 +3478,33 @@
         <option value="15" selected>15 tasti</option>
         <option value="21">21 tasti</option>
         <option value="22">22 tasti</option>
+        <option value="24">24 tasti</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Accordatura</div>
+      <select id="fb-tuning" onchange="fbSetTuning(this.value)">
+        <option value="standard">Standard (E A D G B E)</option>
+        <option value="drop_d">Drop D</option>
+        <option value="dadgad">DADGAD</option>
+        <option value="open_g">Open G</option>
+        <option value="open_d">Open D</option>
+        <option value="open_e">Open E</option>
+        <option value="open_a">Open A</option>
+        <option value="drop_c">Drop C</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Capotasto</div>
+      <select id="fb-capo" onchange="fbSetCapo(this.value)">
+        <option value="0">Nessuno</option>
+        <option value="1">1° tasto</option>
+        <option value="2">2° tasto</option>
+        <option value="3">3° tasto</option>
+        <option value="4">4° tasto</option>
+        <option value="5">5° tasto</option>
+        <option value="6">6° tasto</option>
+        <option value="7">7° tasto</option>
       </select>
     </div>
     <div class="ctrl-group">
@@ -3338,6 +3515,14 @@
         <option value="degree">Grado</option>
       </select>
     </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Colori</div>
+      <select id="fb-palette" onchange="setPalette(this.value)">
+        <option value="default">Classici</option>
+        <option value="cb">Daltonici</option>
+        <option value="hc">Alto contrasto</option>
+      </select>
+    </div>
     <div class="ctrl-group" style="flex:0 0 auto;margin-top:18px;">
       <button class="play-btn" onclick="playScale()">▶ Play scala</button>
     </div>
@@ -3346,6 +3531,7 @@
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
         <button class="pos-btn active" id="mode-all-btn" onclick="setFbMode('all')">Tutte le note</button>
         <button class="pos-btn" id="mode-nps-btn" onclick="setFbMode('nps')">3 note per corda</button>
+        <button class="pos-btn" id="mode-caged-btn" onclick="setFbMode('caged')">Box CAGED</button>
         <button class="pos-btn" id="tech-btn" onclick="toggleTech()" style="margin-left:8px">Tecnica off</button>
         <span id="nps-position-wrap" style="display:none;margin-left:8px;display:none;gap:4px;align-items:center">
           <span class="ctrl-label">Posizione:</span>
@@ -3366,11 +3552,32 @@
     </div>
   </div>
 
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;flex-wrap:wrap">
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">
       <input type="checkbox" id="toggle-pattern-lines" onchange="drawPatternLines()" style="accent-color:var(--amber);width:16px;height:16px">
       Mostra linee pattern
     </label>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">
+      <input type="checkbox" id="fb-lefty" onchange="fbSetLefty(this.checked)" style="accent-color:var(--amber);width:16px;height:16px">
+      Mancino
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">
+      <input type="checkbox" id="fb-outside" onchange="fbSetOutside(this.checked)" style="accent-color:var(--amber);width:16px;height:16px">
+      Note fuori scala
+    </label>
+  </div>
+  <div class="fblive-row">
+    <button class="jam-live-btn" id="fblive-btn" onclick="fbLiveToggle()">🎤 Suona live</button>
+    <button class="jam-live-btn" id="fblive-trail-btn" onclick="fbLiveToggleTrail()" style="display:none">Scia: on</button>
+    <div class="fblive-hud" id="fblive-hud" style="display:none">
+      <span class="fblive-note" id="fblive-note">—</span>
+      <div class="cents-meter" title="scostamento in cents (−50 … +50)">
+        <div class="cm-zero"></div>
+        <div class="cents-needle" id="fblive-needle"></div>
+      </div>
+      <span class="fblive-cents" id="fblive-cents">—</span>
+      <div class="conf-bar" title="confidenza del rilevamento"><i id="fblive-conf"></i></div>
+    </div>
   </div>
   <div class="fretboard-wrap">
     <div class="fretboard-rel">
@@ -3383,10 +3590,10 @@
   <div id="nps-mini-diagrams" class="mini-diag-wrap" style="margin-top:14px"></div>
 
   <div class="legend">
-    <div class="legend-item"><div class="legend-dot" style="background:var(--amber);box-shadow:0 0 8px rgba(245,158,11,0.5)"></div> Tonica (1)</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--blue);box-shadow:0 0 8px rgba(59,130,246,0.4)"></div> Terza (3)</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--green);box-shadow:0 0 8px rgba(34,197,94,0.4)"></div> Quinta (5)</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--purple);box-shadow:0 0 8px rgba(168,85,247,0.4)"></div> Settima (7)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--role-root);box-shadow:0 0 8px rgba(245,158,11,0.5)"></div> Tonica (1)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--role-third);box-shadow:0 0 8px rgba(59,130,246,0.4)"></div> Terza (3)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--role-fifth);box-shadow:0 0 8px rgba(34,197,94,0.4)"></div> Quinta (5)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--role-seventh);box-shadow:0 0 8px rgba(168,85,247,0.4)"></div> Settima (7)</div>
     <div class="legend-item"><div class="legend-dot" style="background:var(--bg3);border:1px solid #333"></div> Altre note</div>
     <div class="legend-item" id="legend-tech" style="display:none;margin-left:8px;border-left:1px solid var(--border);padding-left:12px;gap:10px">
       <span style="color:#f87171;font-size:13px;font-family:monospace">↑</span> Bend &nbsp;
@@ -4580,7 +4787,52 @@ function playBassSynth(ctx, dest, rootMidi, time, duration) {
 const FRET_WIDTHS = []; // will be computed
 
 // NPS state
-const FB_STATE = { mode: 'all', npsPosition: 0 };
+const FB_STATE = { mode: 'all', npsPosition: 0, cagedPosition: 0 };
+
+// Configurazione del manico (solo pagina Fretboard: le altre pagine — CAGED,
+// triadi, jam — ragionano in accordatura standard e non vengono toccate).
+// tuning: MIDI delle corde a vuoto, indice 0 = cantino (come OPEN_STRING_MIDI).
+const FB_CONFIG = {
+  tuning: OPEN_STRING_MIDI.slice(),
+  lefty: false,
+  capo: 0,
+  showOutside: false,
+};
+
+function fbSetTuning(key) {
+  if (key === 'standard' || typeof TUNER_PRESETS === 'undefined' || !TUNER_PRESETS[key]) {
+    FB_CONFIG.tuning = OPEN_STRING_MIDI.slice();
+  } else {
+    // I preset dell'accordatore sono ordinati 6ª→1ª (grave→acuto): convertiamo
+    // le frequenze in MIDI e invertiamo per avere il cantino all'indice 0.
+    FB_CONFIG.tuning = TUNER_PRESETS[key].freqs
+      .map(f => Math.round(69 + 12 * Math.log2(f / 440)))
+      .reverse();
+  }
+  FB_STATE.npsPosition = 0;
+  renderFretboard();
+}
+function fbSetCapo(v) { FB_CONFIG.capo = parseInt(v) || 0; FB_STATE.npsPosition = 0; renderFretboard(); }
+function fbSetLefty(on) { FB_CONFIG.lefty = !!on; renderFretboard(); }
+function fbSetOutside(on) { FB_CONFIG.showOutside = !!on; renderFretboard(); }
+
+// Palette colori dei ruoli nota (tonica/3ª/5ª/7ª): applicata a livello di body
+// così manico, legende e jam restano coerenti in tutta l'app. Persistita.
+function setPalette(key) {
+  document.body.classList.remove('palette-cb', 'palette-hc');
+  if (key === 'cb') document.body.classList.add('palette-cb');
+  if (key === 'hc') document.body.classList.add('palette-hc');
+  try { localStorage.setItem('fb-palette', key); } catch (e) {}
+}
+document.addEventListener('DOMContentLoaded', () => {
+  let p = 'default';
+  try { p = localStorage.getItem('fb-palette') || 'default'; } catch (e) {}
+  if (p !== 'default') {
+    setPalette(p);
+    const sel = document.getElementById('fb-palette');
+    if (sel) sel.value = p;
+  }
+});
 
 function toggleTech() {
   const active = document.body.classList.toggle('show-tech');
@@ -4597,25 +4849,51 @@ function setFbMode(mode) {
   FB_STATE.mode = mode;
   document.getElementById('mode-all-btn').classList.toggle('active', mode === 'all');
   document.getElementById('mode-nps-btn').classList.toggle('active', mode === 'nps');
+  const cagedBtn = document.getElementById('mode-caged-btn');
+  if (cagedBtn) cagedBtn.classList.toggle('active', mode === 'caged');
   const wrap = document.getElementById('nps-position-wrap');
-  wrap.style.display = mode === 'nps' ? 'flex' : 'none';
+  wrap.style.display = (mode === 'nps' || mode === 'caged') ? 'flex' : 'none';
   document.getElementById('nps-info-row').style.display = mode === 'nps' ? 'block' : 'none';
   renderFretboard();
+}
+
+// Finestre delle 5 posizioni CAGED per la tonalità corrente: ogni forma ancora
+// una zona di ~5 tasti in cui suonare la scala "in posizione". Riusa cagedCapo()
+// (pagina CAGED). Le forme assumono accordatura standard: con accordature custom
+// la finestra resta una zona di tasti coerente ma il nome della forma è indicativo.
+function computeCagedWindows(keyIndex, fretCount, capo) {
+  return CAGED_ORDER.map(shape => {
+    let start = cagedCapo(shape, keyIndex);
+    if (start + 4 < capo) start += 12;           // dietro il capotasto → ottava sopra
+    if (start > fretCount - 2 && start >= 12) start -= 12; // oltre il manico → ottava sotto
+    return { shape, start, end: start + 4, color: CAGED_DEFS[shape].color };
+  }).filter(w => w.end >= capo && w.start <= fretCount);
 }
 
 // Compute all NPS positions for current scale.
 // Returns array of positions, each = array of 6 elements (one per string),
 // each element = array of fret numbers to highlight on that string.
-function computeNpsPositions(keyIndex, scaleIntervals, fretMax) {
-  // OPEN_STRINGS: semitone of open string (high e first)
+function computeNpsPositions(keyIndex, scaleIntervals, fretMax, tuningMidi, minFret) {
+  // tuningMidi (opzionale): MIDI corde a vuoto, cantino all'indice 0 — default standard.
+  // minFret (opzionale): primo tasto utilizzabile (capotasto).
+  const midis = tuningMidi || OPEN_STRING_MIDI;
+  const fret0 = minFret || 0;
+  const isStdTuning = midis.every((m, i) => m === OPEN_STRING_MIDI[i]);
+  // Compensazione del salto d'accordatura tra corde adiacenti (5 semitoni = nessun
+  // aggiustamento): la finestra si ALLARGA verso il basso della deviazione cumulata
+  // — le note buone restano dentro e i doppioni più bassi vengono comunque scartati
+  // da usedMidi. In standard riproduce l'aggiustamento storico della sola corda B.
+  const winOff = [0, 0, 0, 0, 0, 0];
+  if (isStdTuning) winOff[1] = 1;
+  else for (let s = 4; s >= 0; s--) winOff[s] = winOff[s + 1] + Math.abs(midis[s] - midis[s + 1] - 5);
   // Build sorted list of all scale notes on the fretboard per string (with MIDI)
   const scaleSet = new Set(scaleIntervals.map(i => (keyIndex + i) % 12));
   const notesPerString = [];
   for (let s = 0; s < 6; s++) {
-    const open = OPEN_STRINGS[s];
-    const openMidi = OPEN_STRING_MIDI[s];
+    const open = midis[s] % 12;
+    const openMidi = midis[s];
     const notes = [];
-    for (let f = 0; f <= fretMax; f++) {
+    for (let f = fret0; f <= fretMax; f++) {
       if (scaleSet.has((open + f) % 12)) notes.push({ fret: f, midi: openMidi + f });
     }
     notesPerString.push(notes);
@@ -4636,8 +4914,8 @@ function computeNpsPositions(keyIndex, scaleIntervals, fretMax) {
     const usedMidi = new Set();
 
     for (let s = 5; s >= 0; s--) { // low E → high e
-      // B string (s=1): shift window 1 fret lower — compensates G→B tuning gap (4 semitones not 5)
-      const wStart = (s === 1) ? Math.max(0, windowStart - 1) : windowStart;
+      // Finestra spostata di winOff[s] per compensare i salti d'accordatura ≠ 5 semitoni
+      const wStart = Math.max(fret0, windowStart - winOff[s]);
       // Filter by fret window AND exclude MIDI pitches already used on previous strings
       const available = notesPerString[s].filter(n =>
         n.fret >= wStart && n.fret <= windowStart + 6 && !usedMidi.has(n.midi)
@@ -4668,12 +4946,12 @@ function computeNpsPositions(keyIndex, scaleIntervals, fretMax) {
   if (positions.length > 1) {
     const rootNote = keyIndex % 12;
     let rotIdx = positions.findIndex(p =>
-      (OPEN_STRINGS[5] + p.fretsByString[5][0]) % 12 === rootNote
+      (midis[5] + p.fretsByString[5][0]) % 12 === rootNote
     );
     if (rotIdx < 0) {
       // Fallback: first window that contains root anywhere on low E
       rotIdx = positions.findIndex(p =>
-        p.fretsByString[5].some(f => (OPEN_STRINGS[5] + f) % 12 === rootNote)
+        p.fretsByString[5].some(f => (midis[5] + f) % 12 === rootNote)
       );
     }
     if (rotIdx > 0) {
@@ -4690,7 +4968,7 @@ function playNpsPattern() {
   const keyIndex = parseInt(document.getElementById('fb-key').value);
   const scaleKey = document.getElementById('fb-scale').value;
   const scale = SCALES[scaleKey];
-  const positions = computeNpsPositions(keyIndex, scale.intervals, 22);
+  const positions = computeNpsPositions(keyIndex, scale.intervals, 22, FB_CONFIG.tuning, FB_CONFIG.capo);
   if (!positions.length) return;
   const pos = positions[FB_STATE.npsPosition] || positions[0];
   const ctx = getAudioCtx();
@@ -4700,7 +4978,7 @@ function playNpsPattern() {
   for (let s = 5; s >= 0; s--) {
     const fretsOnStr = pos.fretsByString[s] || [];
     fretsOnStr.forEach(f => {
-      playNote(midiToFreq(OPEN_STRING_MIDI[s] + f), t, 0.35);
+      playNote(midiToFreq(FB_CONFIG.tuning[s] + f), t, 0.35);
       const delay = (t - ctx.currentTime) * 1000;
       setTimeout(() => {
         const dot = document.querySelector(
@@ -4738,13 +5016,15 @@ function renderFretboard() {
   const labelMode = document.getElementById('fb-label').value;
   const scale = SCALES[scaleKey];
   const scaleSet = new Set(scale.intervals.map(i => (keyIndex + i) % 12));
+  const tuning = FB_CONFIG.tuning;                       // MIDI corde a vuoto (cantino = indice 0)
+  const capo = Math.min(FB_CONFIG.capo, fretCount - 1);  // il capo non può superare il manico
 
   // ── NPS mode ──
   let npsPositions = [];
   let npsActiveSet = null;
 
   if (FB_STATE.mode === 'nps') {
-    npsPositions = computeNpsPositions(keyIndex, scale.intervals, fretCount);
+    npsPositions = computeNpsPositions(keyIndex, scale.intervals, fretCount, tuning, capo);
     if (FB_STATE.npsPosition >= npsPositions.length) FB_STATE.npsPosition = 0;
 
     const tabsWrap = document.getElementById('nps-pos-tabs');
@@ -4765,6 +5045,25 @@ function renderFretboard() {
       document.getElementById('nps-start-fret-label').textContent =
         pos.startFret === 0 ? 'aperta' : pos.startFret;
     }
+  }
+
+  // ── CAGED mode: una finestra di ~5 tasti ancorata alla forma selezionata ──
+  let cagedWin = null;
+  if (FB_STATE.mode === 'caged') {
+    const wins = computeCagedWindows(keyIndex, fretCount, capo);
+    if (FB_STATE.cagedPosition >= wins.length) FB_STATE.cagedPosition = 0;
+    const tabsWrap = document.getElementById('nps-pos-tabs');
+    tabsWrap.innerHTML = '';
+    wins.forEach((w, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'pos-btn' + (i === FB_STATE.cagedPosition ? ' active' : '');
+      btn.textContent = `Forma ${w.shape} · ${w.start === 0 ? '0' : w.start}–${w.end}`;
+      btn.style.borderColor = i === FB_STATE.cagedPosition ? w.color : '';
+      btn.style.color = i === FB_STATE.cagedPosition ? w.color : '';
+      btn.onclick = () => { FB_STATE.cagedPosition = i; renderFretboard(); };
+      tabsWrap.appendChild(btn);
+    });
+    cagedWin = wins[FB_STATE.cagedPosition] || null;
   }
 
   // Fret widths: index = guitar fret number (1-based); 0 unused
@@ -4788,6 +5087,9 @@ function renderFretboard() {
 
   const fb = document.getElementById('fretboard');
   fb.innerHTML = '';
+  // Mancino: specchia il manico via row-reverse (headstock a destra); le
+  // etichette restano leggibili perché il testo non viene trasformato.
+  fb.classList.toggle('lefty', FB_CONFIG.lefty);
 
   // ── Fret numbers row ──
   // Layout: [open 40px]["0"] [nut 14px][""] [fret1 label] [fret2 label] ...
@@ -4831,39 +5133,48 @@ function renderFretboard() {
     row.className = 'string-row';
     row.style.setProperty('--str-h', STRING_HEIGHTS[s]);
 
-    // String name
+    // String name (derivato dall'accordatura; cantino in minuscolo)
     const nameDiv = document.createElement('div');
     nameDiv.className = 'string-name';
-    nameDiv.textContent = STRING_NAMES[s];
+    const strNoteName = NOTES[tuning[s] % 12];
+    nameDiv.textContent = s === 0 ? strNoteName.toLowerCase() : strNoteName;
     row.appendChild(nameDiv);
 
-    const openNote = OPEN_STRINGS[s]; // semitone of open string
+    const openNote = tuning[s] % 12; // semitone of open string
 
     // ── Open string column (before nut) ──
+    // Col capotasto le corde a vuoto non esistono: la colonna resta vuota e la
+    // nota "a vuoto" diventa quella al tasto del capo (gestita nel loop tasti).
     const openCell = document.createElement('div');
     openCell.className = 'open-col';
     const openNoteIndex = openNote % 12;
     const openInterval = (openNoteIndex - keyIndex + 12) % 12;
     const openInScale = scaleSet.has(openNoteIndex);
     const openInNps = npsActiveSet ? npsActiveSet.has(s + ',0') : false;
-    const openShouldShow = FB_STATE.mode === 'all' ? openInScale : openInNps;
-    const openIsDimmed = FB_STATE.mode === 'nps' && openInScale && !openInNps;
+    const openInCaged = cagedWin ? cagedWin.start === 0 && openInScale : false;
+    const openShouldShow = capo === 0 && (
+      FB_STATE.mode === 'all' ? openInScale :
+      FB_STATE.mode === 'caged' ? openInCaged : openInNps);
+    const openIsDimmed = capo === 0 && openInScale && !openShouldShow && FB_STATE.mode !== 'all';
+    const openIsOutside = capo === 0 && !openShouldShow && !openIsDimmed &&
+                          FB_STATE.mode === 'all' && FB_CONFIG.showOutside;
 
-    if (openShouldShow) {
+    if (openShouldShow || openIsOutside) {
       const dot = document.createElement('div');
       const role = getIntervalRole(openInterval, scale.intervals);
-      dot.className = `note-dot ${role}`;
+      dot.className = openIsOutside ? 'note-dot other outside' : `note-dot ${role}`;
       dot.style.width = '28px'; dot.style.height = '28px'; dot.style.fontSize = '9px';
       dot.title = '○ corda a vuoto';
       if (labelMode === 'name') dot.textContent = NOTES[openNoteIndex];
       else if (labelMode === 'interval') dot.textContent = INTERVAL_NAMES[openInterval];
       else dot.textContent = DEGREE_NAMES[openInterval];
       dot.dataset.note = openNoteIndex;
+      dot.dataset.midi = tuning[s];
       dot.dataset.string = s;
       dot.dataset.fret = 'open';
       dot.onclick = () => {
         const ctx = getAudioCtx();
-        playNote(midiToFreq(OPEN_STRING_MIDI[s]), ctx.currentTime, 0.6);
+        playNote(midiToFreq(tuning[s]), ctx.currentTime, 0.6);
         dot.classList.add('playing');
         setTimeout(() => dot.classList.remove('playing'), 550);
       };
@@ -4888,33 +5199,43 @@ function renderFretboard() {
       cell.className = 'fret-cell';
       cell.style.width = fretWidths[f] + 'px';
 
+      // Dietro il capotasto la corda non suona: nessuna nota.
+      if (f < capo) { row.appendChild(cell); continue; }
+
       const noteIndex = (openNote + f) % 12;
       const inScale = scaleSet.has(noteIndex);
       const interval = (noteIndex - keyIndex + 12) % 12;
       const inNps = npsActiveSet ? npsActiveSet.has(s + ',' + f) : false;
-      const shouldShow = FB_STATE.mode === 'all' ? inScale : inNps;
-      const isDimmed = FB_STATE.mode === 'nps' && inScale && !inNps;
+      const inCaged = cagedWin ? (f >= cagedWin.start && f <= cagedWin.end && inScale) : false;
+      const shouldShow = FB_STATE.mode === 'all' ? inScale :
+                         FB_STATE.mode === 'caged' ? inCaged : inNps;
+      const isDimmed = inScale && !shouldShow && FB_STATE.mode !== 'all';
+      const isOutside = !shouldShow && !isDimmed && FB_STATE.mode === 'all' && FB_CONFIG.showOutside;
 
-      if (shouldShow) {
+      if (shouldShow || isOutside) {
         const dot = document.createElement('div');
         const role = getIntervalRole(interval, scale.intervals);
-        dot.className = `note-dot ${role}`;
+        dot.className = isOutside ? 'note-dot other outside' : `note-dot ${role}`;
         if (labelMode === 'name') dot.textContent = NOTES[noteIndex];
         else if (labelMode === 'interval') dot.textContent = INTERVAL_NAMES[interval];
-        else dot.textContent = DEGREE_NAMES[interval];
-        // Tecniche: assegnate per intervallo e posizione
-        if (interval === 3 || interval === 10) dot.dataset.tech = 'bend';
-        else if (interval === 0)               dot.dataset.tech = 'vibrato';
-        else if (interval === 2 || interval === 5) dot.dataset.tech = 'slide';
-        else if ((interval === 4 || interval === 11) && f >= 7) dot.dataset.tech = 'tap';
-        else if (interval === 7 && s <= 2)     dot.dataset.tech = 'whammy';
-        else if (interval === 1 || interval === 6) dot.dataset.tech = 'legato';
+        else dot.textContent = isOutside ? INTERVAL_NAMES[interval] : DEGREE_NAMES[interval];
+        // Tecniche: assegnate per intervallo e posizione (solo note in scala)
+        if (!isOutside) {
+          if (interval === 3 || interval === 10) dot.dataset.tech = 'bend';
+          else if (interval === 0)               dot.dataset.tech = 'vibrato';
+          else if (interval === 2 || interval === 5) dot.dataset.tech = 'slide';
+          else if ((interval === 4 || interval === 11) && f >= 7) dot.dataset.tech = 'tap';
+          else if (interval === 7 && s <= 2)     dot.dataset.tech = 'whammy';
+          else if (interval === 1 || interval === 6) dot.dataset.tech = 'legato';
+        }
         dot.dataset.note = noteIndex;
+        dot.dataset.midi = tuning[s] + f;
         dot.dataset.string = s;
         dot.dataset.fret = f;
+        if (f === capo && capo > 0) dot.title = '○ corda a vuoto (capotasto)';
         dot.onclick = () => {
           const ctx = getAudioCtx();
-          playNote(midiToFreq(OPEN_STRING_MIDI[s] + f), ctx.currentTime, 0.6);
+          playNote(midiToFreq(tuning[s] + f), ctx.currentTime, 0.6);
           dot.classList.add('playing');
           setTimeout(() => dot.classList.remove('playing'), 550);
         };
@@ -4937,16 +5258,27 @@ function renderFretboard() {
   // ── Dashed position lines (every 3 frets) ──
   // Add vertical dashed lines overlaid on the strings-container
   strContainer.style.position = 'relative';
-  const dashFrets = [3,5,7,9,12,15,17,19,21];
-  let xAccum = OPEN_COL_W + NUT_W;
+  const dashFrets = [3,5,7,9,12,15,17,19,21,24];
+  const sideProp = FB_CONFIG.lefty ? 'right' : 'left'; // specchia le linee per i mancini
+  let xAccum = 26 + OPEN_COL_W + NUT_W; // 26 = colonna nomi corda (prima erano fuori asse)
   for (let f = 1; f <= fretCount; f++) {
     xAccum += fretWidths[f];
     if (dashFrets.includes(f)) {
       const dash = document.createElement('div');
-      dash.style.cssText = `position:absolute;top:0;bottom:0;left:${xAccum}px;width:0;
+      dash.style.cssText = `position:absolute;top:0;bottom:0;${sideProp}:${xAccum}px;width:0;
         border-left:2px dashed rgba(245,158,11,0.18);pointer-events:none;z-index:1`;
       strContainer.appendChild(dash);
     }
+  }
+
+  // ── Barra del capotasto (all'inizio della cella del tasto del capo) ──
+  if (capo > 0) {
+    let capoX = 26 + OPEN_COL_W + NUT_W; // 26 = colonna nomi corda
+    for (let f = 1; f < capo; f++) capoX += fretWidths[f];
+    const bar = document.createElement('div');
+    bar.className = 'capo-bar';
+    bar.style[sideProp] = (capoX + 2) + 'px';
+    strContainer.appendChild(bar);
   }
 
   // ── NPS mini diagrams (shown below fretboard when in NPS mode) ──
@@ -4995,6 +5327,13 @@ function renderFretboard() {
     markerRow.appendChild(d);
   }
   fb.appendChild(markerRow);
+
+  // Il rebuild cancella le classi live: se il mic è attivo, ri-evidenzia la nota
+  if (typeof FBLIVE !== 'undefined' && FBLIVE.running) {
+    fb.classList.add('live-active');
+    FBLIVE.lastPos = null;
+    if (FBLIVE.lastMidi !== -1) fbLiveHighlight(FBLIVE.lastMidi);
+  }
 
   // Disegna linee tratteggiate del pattern dopo che il DOM è stato costruito
   requestAnimationFrame(drawPatternLines);
@@ -6354,7 +6693,7 @@ function jamClearChordHighlight() {
 // stai realmente suonando. Riusa autocorrelate() (rilevatore YIN condiviso).
 // ═══════════════════════════════════════════════════════════════════════════════
 const JLIVE = {
-  running: false, stream: null, ctx: null, analyser: null, buf: null,
+  running: false,               // mic/analyser condivisi: vedi PITCH
   rafId: null, frame: 0, lastMidi: -1, lastSignalAt: 0,
   hist: [],  // ultime letture MIDI grezze, per stabilizzare l'ottava (anti-jitter)
   lastPos: null, // {s, f, at} ultima posizione evidenziata (per la modalità 1 posizione)
@@ -6393,39 +6732,42 @@ function liveSetAnchor(v) {
   if (MICFB.running && MICFB.lastMidi !== -1) micFbHighlight(MICFB.lastMidi);
 }
 
-// Anti-jitter d'ottava: il rilevatore su chitarra vera può saltare d'ottava per
-// un frame; restituiamo la nota PIÙ FREQUENTE tra le ultime letture così la
-// posizione evidenziata resta stabile e non "lampeggia" su più ottave.
-function stabilizePitch(hist, rawMidi) {
-  hist.push(rawMidi);
+// Stabilizzazione della nota mostrata: FILTRO MEDIANO sulle ultime 5 letture
+// (elimina i frame outlier, es. salti d'ottava residui) + ISTERESI di ±60 cents:
+// la nota cambia solo quando la mediana si sposta davvero su un'altra nota, così
+// ai confini tra due semitoni (o durante un bend lento) non c'è flicker.
+function stabilizePitch(hist, midiF, prevMidi) {
+  hist.push(midiF);
   if (hist.length > 5) hist.shift();
-  const counts = {};
-  let best = rawMidi, bestN = 0;
-  for (const m of hist) {
-    counts[m] = (counts[m] || 0) + 1;
-    if (counts[m] > bestN) { bestN = counts[m]; best = m; }
-  }
-  return best;
+  const sorted = [...hist].slice().sort((a, b) => a - b);
+  const median = sorted[sorted.length >> 1];
+  if (prevMidi == null || prevMidi === -1) return Math.round(median);
+  return Math.abs(median - prevMidi) > 0.6 ? Math.round(median) : prevMidi;
 }
 
 // Sceglie quali dot accendere per la nota rilevata (per pitch MIDI esatto).
 // In modalità "una posizione": durante una melodia sceglie l'unisono più vicino alla
 // nota precedente (segue la mano); per una nota isolata sceglie la posizione più
 // vicina al tasto d'ancoraggio della scala (LIVE_ANCHOR), evitando le corde a vuoto.
-function livePickDots(fb, midi, state) {
+function livePickDots(fb, midi, state, anchor) {
+  const anchorFret = anchor != null ? anchor : LIVE_ANCHOR;
   const cands = [...fb.querySelectorAll('.note-dot')].filter(d => parseInt(d.dataset.midi) === midi);
   if (!cands.length || !LIVE_SINGLE) return cands;
   const now = performance.now();
   const recent = state.lastPos && (now - state.lastPos.at < 1200);
   let best = cands[0], bestScore = Infinity;
   for (const d of cands) {
-    const s = parseInt(d.dataset.string), f = parseInt(d.dataset.fret);
+    const s = parseInt(d.dataset.string), f = d.dataset.fret === 'open' ? 0 : parseInt(d.dataset.fret);
     const score = recent
       ? Math.abs(f - state.lastPos.f) + Math.abs(s - state.lastPos.s) * 2 // segui la mano
-      : Math.abs(f - LIVE_ANCHOR) + (f === 0 ? 6 : 0);                    // box scala · evita corde a vuoto
+      : Math.abs(f - anchorFret) + (f === 0 ? 6 : 0);                     // box scala · evita corde a vuoto
     if (score < bestScore) { bestScore = score; best = d; }
   }
-  state.lastPos = { s: parseInt(best.dataset.string), f: parseInt(best.dataset.fret), at: now };
+  state.lastPos = {
+    s: parseInt(best.dataset.string),
+    f: best.dataset.fret === 'open' ? 0 : parseInt(best.dataset.fret),
+    at: now,
+  };
   return [best];
 }
 
@@ -6446,9 +6788,7 @@ async function jamLiveToggle() {
   if (JLIVE.running) {
     JLIVE.running = false;
     if (JLIVE.rafId) cancelAnimationFrame(JLIVE.rafId);
-    if (JLIVE.stream) JLIVE.stream.getTracks().forEach(t => t.stop());
-    if (JLIVE.ctx) { try { JLIVE.ctx.close(); } catch (e) {} }
-    JLIVE.stream = JLIVE.ctx = JLIVE.analyser = null;
+    PITCH.release('jlive');
     jamLiveClear();
     document.getElementById('jam-fretboard')?.classList.remove('live-active');
     btn.textContent = '🎤 Suona live';
@@ -6457,23 +6797,10 @@ async function jamLiveToggle() {
     if (noteEl) noteEl.textContent = '—';
     return;
   }
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    btn.textContent = '⚠ mic non supportato';
-    return;
-  }
   btn.textContent = '⏳ …';
   btn.disabled = true;
   try {
-    JLIVE.stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true },
-      video: false
-    });
-    JLIVE.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (JLIVE.ctx.state === 'suspended') await JLIVE.ctx.resume();
-    JLIVE.analyser = JLIVE.ctx.createAnalyser();
-    JLIVE.analyser.fftSize = 2048;
-    JLIVE.buf = new Float32Array(JLIVE.analyser.fftSize);
-    JLIVE.ctx.createMediaStreamSource(JLIVE.stream).connect(JLIVE.analyser);
+    await PITCH.acquire('jlive'); // pipeline condivisa: gain/highpass/gate dal profilo strumento
     JLIVE.running = true;
     JLIVE.lastMidi = -1;
     document.getElementById('jam-fretboard')?.classList.add('live-active');
@@ -6493,16 +6820,15 @@ async function jamLiveToggle() {
 function jamLiveTick() {
   if (!JLIVE.running) return;
   JLIVE.rafId = requestAnimationFrame(jamLiveTick);
-  if (++JLIVE.frame % 3 !== 0) return; // ~20fps di analisi
-  JLIVE.analyser.getFloatTimeDomainData(JLIVE.buf);
-  const freq = autocorrelate(JLIVE.buf, JLIVE.ctx.sampleRate);
+  if (++JLIVE.frame % 2 !== 0) return; // ~30fps di analisi (feedback più reattivo)
+  const freq = PITCH.detect().freq;
   const noteEl = document.getElementById('jam-live-note');
   const now = performance.now();
   if (freq > 0) {
     const midiF = 12 * Math.log2(freq / TUNER.aRef) + 69;
     const rawMidi = Math.round(midiF);
     if (rawMidi >= 38 && rawMidi <= 86) { // range chitarra
-      const midi = stabilizePitch(JLIVE.hist, rawMidi); // nota stabilizzata (anti salto d'ottava)
+      const midi = stabilizePitch(JLIVE.hist, midiF, JLIVE.lastMidi); // mediana + isteresi anti-flicker
       const cents = Math.round((midiF - midi) * 100);
       JLIVE.lastSignalAt = now;
       if (midi !== JLIVE.lastMidi) {
@@ -6567,6 +6893,159 @@ function jamLiveClear() {
   JLIVE.trail = [];
   JLIVE.hist = [];
   JLIVE.lastPos = null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LIVE SUL VISUALIZZATORE MANICO — la nota suonata pulsa sul manico della pagina
+// Fretboard (scala + posizioni), con scia delle ultime note e HUD accordatore:
+// needle dei cents + barra di confidenza. Stessa pipeline PITCH condivisa.
+// ═══════════════════════════════════════════════════════════════════════════════
+const FBLIVE = {
+  running: false, rafId: null, frame: 0,
+  lastMidi: -1, lastSignalAt: 0, hist: [], lastPos: null,
+  trail: [], showTrail: true,
+};
+const FBLIVE_HOLD_MS = 900;   // la nota resta accesa ~0.9s dopo l'ultimo segnale
+const FBLIVE_TRAIL_MS = 700;  // durata della scia
+const FBLIVE_TRAIL_N = 6;     // ultime N note in scia
+
+// Ancoraggio per la scelta della posizione unisona: tonica sulla 6ª corda,
+// mai dietro il capotasto né in zona capotasto-aperto.
+function fbLiveAnchor() {
+  const key = parseInt(document.getElementById('fb-key').value) || 0;
+  let fret = (((key - (FB_CONFIG.tuning[5] % 12)) % 12) + 12) % 12;
+  if (fret < Math.max(3, FB_CONFIG.capo)) fret += 12;
+  return fret;
+}
+
+async function fbLiveToggle() {
+  const btn = document.getElementById('fblive-btn');
+  const hud = document.getElementById('fblive-hud');
+  const trailBtn = document.getElementById('fblive-trail-btn');
+  const fb = document.getElementById('fretboard');
+  if (FBLIVE.running) {
+    FBLIVE.running = false;
+    if (FBLIVE.rafId) cancelAnimationFrame(FBLIVE.rafId);
+    PITCH.release('fblive');
+    fbLiveClear();
+    fb?.classList.remove('live-active');
+    btn.textContent = '🎤 Suona live';
+    btn.classList.remove('live-on');
+    if (hud) hud.style.display = 'none';
+    if (trailBtn) trailBtn.style.display = 'none';
+    return;
+  }
+  btn.textContent = '⏳ …';
+  btn.disabled = true;
+  try {
+    await PITCH.acquire('fblive');
+    FBLIVE.running = true;
+    FBLIVE.lastMidi = -1;
+    fb?.classList.add('live-active');
+    btn.textContent = '⏹ Stop live';
+    btn.classList.add('live-on');
+    btn.disabled = false;
+    if (hud) hud.style.display = 'flex';
+    if (trailBtn) trailBtn.style.display = '';
+    fbLiveTick();
+  } catch (e) {
+    btn.textContent = '🎤 Suona live';
+    btn.disabled = false;
+    const note = document.getElementById('fblive-note');
+    if (hud) hud.style.display = 'flex';
+    if (note) note.textContent = '⚠';
+    const cents = document.getElementById('fblive-cents');
+    if (cents) cents.textContent = pitchErrorMsg(e);
+  }
+}
+
+function fbLiveToggleTrail() {
+  FBLIVE.showTrail = !FBLIVE.showTrail;
+  const b = document.getElementById('fblive-trail-btn');
+  if (b) b.textContent = FBLIVE.showTrail ? 'Scia: on' : 'Scia: off';
+  if (!FBLIVE.showTrail) {
+    FBLIVE.trail = [];
+    document.querySelectorAll('#fretboard .note-dot.live-trail')
+      .forEach(d => d.classList.remove('live-trail'));
+  }
+}
+
+function fbLiveTick() {
+  if (!FBLIVE.running) return;
+  FBLIVE.rafId = requestAnimationFrame(fbLiveTick);
+  if (++FBLIVE.frame % 2 !== 0) return; // ~30fps di analisi
+  const det = PITCH.detect();
+  const now = performance.now();
+  const noteEl = document.getElementById('fblive-note');
+  const centsEl = document.getElementById('fblive-cents');
+  const needle = document.getElementById('fblive-needle');
+  const confEl = document.getElementById('fblive-conf');
+  if (confEl) confEl.style.width = Math.round(det.conf * 100) + '%';
+
+  if (det.freq > 0) {
+    const midiF = 12 * Math.log2(det.freq / TUNER.aRef) + 69;
+    const rawMidi = Math.round(midiF);
+    if (rawMidi >= 36 && rawMidi <= 88) {
+      const midi = stabilizePitch(FBLIVE.hist, midiF, FBLIVE.lastMidi);
+      const cents = Math.round((midiF - midi) * 100);
+      FBLIVE.lastSignalAt = now;
+      if (midi !== FBLIVE.lastMidi) {
+        if (FBLIVE.showTrail && FBLIVE.lastMidi !== -1) {
+          FBLIVE.trail.push({ midi: FBLIVE.lastMidi, at: now });
+          if (FBLIVE.trail.length > FBLIVE_TRAIL_N) FBLIVE.trail.shift();
+        }
+        FBLIVE.lastMidi = midi;
+        fbLiveHighlight(midi);
+      }
+      // HUD: nota, needle dei cents (clamp ±50), scostamento numerico
+      if (noteEl) {
+        const octave = Math.floor(midi / 12) - 1;
+        const name = NOTES[((midi % 12) + 12) % 12] + octave;
+        const bending = Math.abs(cents) >= JLIVE_BEND_CENTS && Math.abs(cents) <= 70;
+        noteEl.textContent = bending ? `${name} ${cents > 0 ? '↗' : '↘'}` : name;
+        noteEl.classList.toggle('bending', bending);
+      }
+      if (needle) needle.style.left = ((Math.max(-50, Math.min(50, cents)) + 50) / 100 * 100) + '%';
+      if (centsEl) centsEl.textContent = (cents >= 0 ? '+' : '') + cents + '¢';
+    }
+  } else if (FBLIVE.lastMidi !== -1 && now - FBLIVE.lastSignalAt > FBLIVE_HOLD_MS) {
+    fbLiveClear();
+    if (noteEl) { noteEl.textContent = '—'; noteEl.classList.remove('bending'); }
+    if (centsEl) centsEl.textContent = '—';
+    if (needle) needle.style.left = '50%';
+  }
+  if (FBLIVE.showTrail) fbLiveRenderTrail(now);
+}
+
+function fbLiveHighlight(midi) {
+  const fb = document.getElementById('fretboard');
+  if (!fb) return;
+  const chosen = new Set(livePickDots(fb, midi, FBLIVE, fbLiveAnchor()));
+  fb.querySelectorAll('.note-dot').forEach(d => {
+    d.classList.toggle('live-exact', chosen.has(d));
+  });
+}
+
+function fbLiveRenderTrail(now) {
+  const fb = document.getElementById('fretboard');
+  if (!fb) return;
+  FBLIVE.trail = FBLIVE.trail.filter(t => now - t.at < FBLIVE_TRAIL_MS);
+  const trailMidis = new Set(FBLIVE.trail.map(t => t.midi));
+  fb.querySelectorAll('.note-dot').forEach(d => {
+    const m = parseInt(d.dataset.midi);
+    const isTrail = trailMidis.has(m) && !d.classList.contains('live-exact');
+    d.classList.toggle('live-trail', isTrail);
+  });
+}
+
+function fbLiveClear() {
+  const fb = document.getElementById('fretboard');
+  if (fb) fb.querySelectorAll('.live-exact, .live-trail')
+    .forEach(d => d.classList.remove('live-exact', 'live-trail'));
+  FBLIVE.lastMidi = -1;
+  FBLIVE.trail = [];
+  FBLIVE.hist = [];
+  FBLIVE.lastPos = null;
 }
 
 function jamInit() {
@@ -9920,6 +10399,8 @@ window.addEventListener('DOMContentLoaded', function() {
     <h2>Accordatore</h2>
     <div class="subtitle">// usa il microfono per accordare la chitarra · A = 440 Hz</div>
 
+    <div class="pitch-panel" data-pitch-panel></div>
+
     <div class="controls" style="margin-bottom:16px">
       <div class="ctrl-group">
         <div class="ctrl-label">Accordatura</div>
@@ -9966,8 +10447,14 @@ window.addEventListener('DOMContentLoaded', function() {
     <h2>Manico Live</h2>
     <div class="subtitle">// suona la tua chitarra: il manico mostra in tempo reale la nota rilevata dal microfono</div>
 
+    <div class="pitch-panel" data-pitch-panel></div>
+
     <div class="controls" style="margin-bottom:16px">
       <button id="micfb-btn" class="tap-btn" onclick="micFbToggle()">🎤 Avvia ascolto</button>
+      <div class="pp-chips" style="align-self:center">
+        <button type="button" class="pp-chip active" id="micfb-mode-mono" onclick="micFbSetChordMode(false)">Note singole</button>
+        <button type="button" class="pp-chip" id="micfb-mode-chord" onclick="micFbSetChordMode(true)">Accordi (beta)</button>
+      </div>
       <div class="micfb-note-display">
         <span class="micfb-note" id="micfb-note">—</span>
         <span class="micfb-meta" id="micfb-meta">in attesa…</span>
@@ -9986,7 +10473,9 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="hint-box" style="font-size:12px;max-width:720px">
       <strong>Come usarlo:</strong> suona una nota alla volta sulla chitarra: si accende in ambra la
       posizione (o le posizioni unisone) della nota che stai suonando — solo quella, non le altre ottave.
-      Con gli accordi la rilevazione cattura solo la nota dominante.
+      In <strong>modalità Accordi (beta)</strong> suona un accordo pieno e lascialo squillare: appare il
+      nome (maggiore/minore/7) e i suoi toni si accendono sul manico — funziona meglio con accordi
+      tenuti, meno bene con arpeggi veloci.
     </div>
   </div><!-- /bpage-micfb -->
   <div id="bpage-looper" class="cpage-view">
@@ -10403,6 +10892,374 @@ window.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// PITCH ENGINE CONDIVISO — un solo stream microfono + AudioContext per accordatore,
+// manico live e jam live. Catena: sorgente → gain (profilo/calibrazione) → highpass
+// (taglia risonanza cassa e rumore di manipolazione) → analyser.
+// Reference-counted: parte col primo consumatore, si spegne con l'ultimo — così
+// accordatore e manico live non aprono più stream duplicati.
+//
+// NOTA LATENZA (AudioWorklet valutato): l'analisi YIN richiede comunque una finestra
+// di 2048 campioni (~46ms @44.1kHz); il polling dell'AnalyserNode a ~30Hz aggiunge
+// al massimo ~33ms. Un AudioWorklet sposterebbe solo il punto di lettura, non la
+// finestra: guadagno reale <20ms a fronte di un percorso di codice separato da
+// mantenere anche su Safari vecchi. Restiamo su AnalyserNode con polling più fitto.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Profili strumento: timbri diversi → parametri di cattura e detection diversi.
+// · Elettrica: fondamentale forte e segnale pulito (specie via interfaccia/line-in):
+//   soglia YIN severa, poco highpass, nessun hold sull'attacco.
+// · Acustica: tante armoniche + risonanza della cassa: highpass più alto per il
+//   rimbombo, soglia YIN più permissiva, breve hold sul transiente della plettrata.
+// · Classica: attacco morbido del nylon ma tanto rumore di dita sui bassi avvolti:
+//   gain maggiore (segnale debole), hold più lungo sui transienti, range più stretto
+//   (le classiche non si suonano oltre il ~12° tasto della cantina).
+const PITCH_PROFILES = {
+  electric: {
+    label: '🎸 Elettrica',
+    desc: 'Fondamentale forte, segnale pulito. <strong>Consiglio:</strong> collega la chitarra a un’interfaccia audio/line-in e selezionala come sorgente — il segnale diretto è molto più affidabile del microfono.',
+    gain: 1.0, gate: 0.008, fMin: 70, fMax: 1320, yinThresh: 0.12,
+    highpass: 50, attackHoldMs: 0, minConf: 0.80,
+  },
+  acoustic: {
+    label: '🪕 Acustica',
+    desc: 'Ricca di armoniche e risonanza della cassa: filtro sul rimbombo e soglia più permissiva. Suona a ~30–50cm dal microfono, evitando di puntarlo sulla buca.',
+    gain: 1.25, gate: 0.006, fMin: 70, fMax: 1100, yinThresh: 0.15,
+    highpass: 72, attackHoldMs: 40, minConf: 0.72,
+  },
+  classical: {
+    label: '🎼 Classica',
+    desc: 'Attacco morbido del nylon e rumore di dita sui bassi avvolti: gain maggiorato e pausa sui transienti per ignorare lo squeak delle dita.',
+    gain: 1.5, gate: 0.006, fMin: 70, fMax: 900, yinThresh: 0.17,
+    highpass: 75, attackHoldMs: 60, minConf: 0.68,
+  },
+};
+
+const PITCH = {
+  ctx: null, stream: null, source: null, gainNode: null, hpNode: null, analyser: null,
+  buf: null,
+  users: new Set(),        // consumatori attivi: 'tuner' | 'micfb' | 'jlive' | ...
+  starting: null,          // promise di avvio in corso (acquire concorrenti)
+  profileKey: 'electric',
+  deviceId: '',            // '' = default di sistema
+  calibGain: 1,            // moltiplicatore dal flusso di calibrazione
+  calibGate: 0,            // gate assoluto dalla calibrazione (0 = usa profilo)
+  _lastRms: 0, _attackHoldUntil: 0,
+
+  get profile() { return PITCH_PROFILES[this.profileKey] || PITCH_PROFILES.electric; },
+
+  loadPrefs() {
+    try {
+      const p = localStorage.getItem('pitch-profile');
+      if (p && PITCH_PROFILES[p]) this.profileKey = p;
+      this.deviceId = localStorage.getItem('pitch-device') || '';
+      const c = JSON.parse(localStorage.getItem('pitch-calib-' + this.profileKey) || 'null');
+      if (c) { this.calibGain = c.gain || 1; this.calibGate = c.gate || 0; }
+    } catch (e) {}
+  },
+
+  // Avvia (o riusa) la pipeline microfono. Ritorna true se attiva.
+  // Lancia Error con .code ∈ {https, unsupported} o l'errore getUserMedia originale.
+  async acquire(user) {
+    this.users.add(user);
+    if (this.analyser) return true;
+    if (this.starting) { await this.starting; return !!this.analyser; }
+    this.starting = this._start();
+    try { await this.starting; }
+    catch (e) { this.users.delete(user); throw e; }
+    finally { this.starting = null; }
+    return !!this.analyser;
+  },
+
+  async _start() {
+    // iOS Safari: getUserMedia esiste solo in contesto sicuro (HTTPS o localhost)
+    if (!window.isSecureContext) {
+      const e = new Error('Serve HTTPS per usare il microfono'); e.code = 'https'; throw e;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      const e = new Error('Microfono non supportato'); e.code = 'unsupported'; throw e;
+    }
+    // AGC/echo/noise OFF: alterano l'inviluppo e sporcano il pitch — il gain lo
+    // gestiamo noi (profilo + calibrazione).
+    const audio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+    if (this.deviceId) audio.deviceId = { exact: this.deviceId };
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio, video: false });
+    } catch (err) {
+      // Device salvato scomparso (interfaccia scollegata) → riprova col default
+      if (this.deviceId && (err.name === 'OverconstrainedError' || err.name === 'NotFoundError')) {
+        this.deviceId = '';
+        try { localStorage.setItem('pitch-device', ''); } catch (e) {}
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, video: false });
+      } else throw err;
+    }
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // iOS Safari: l'AudioContext parte 'suspended' finché non c'è una gesture —
+    // acquire() è sempre chiamato da un click, quindi il resume qui è legittimo.
+    if (this.ctx.state === 'suspended') await this.ctx.resume();
+    this.source = this.ctx.createMediaStreamSource(this.stream);
+    this.gainNode = this.ctx.createGain();
+    this.hpNode = this.ctx.createBiquadFilter();
+    this.hpNode.type = 'highpass';
+    this.analyser = this.ctx.createAnalyser();
+    this.analyser.fftSize = this._fftSize || 2048;
+    this.analyser.smoothingTimeConstant = 0;
+    this.buf = new Float32Array(this.analyser.fftSize);
+    this.source.connect(this.gainNode);
+    this.gainNode.connect(this.hpNode);
+    this.hpNode.connect(this.analyser);
+    this._applyProfile();
+    this._refreshDeviceLists();
+  },
+
+  release(user) {
+    this.users.delete(user);
+    if (this.users.size) return;
+    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+    if (this.ctx) { try { this.ctx.close(); } catch (e) {} }
+    this.stream = this.ctx = this.source = this.gainNode = this.hpNode = this.analyser = null;
+    this._lastRms = 0; this._attackHoldUntil = 0;
+  },
+
+  _applyProfile() {
+    const p = this.profile;
+    if (this.gainNode) this.gainNode.gain.value = p.gain * this.calibGain;
+    if (this.hpNode) { this.hpNode.frequency.value = p.highpass; this.hpNode.Q.value = 0.7; }
+  },
+
+  setProfile(key) {
+    if (!PITCH_PROFILES[key]) return;
+    this.profileKey = key;
+    try {
+      localStorage.setItem('pitch-profile', key);
+      const c = JSON.parse(localStorage.getItem('pitch-calib-' + key) || 'null');
+      this.calibGain = c && c.gain || 1;
+      this.calibGate = c && c.gate || 0;
+    } catch (e) {}
+    this._applyProfile();
+    renderPitchPanels();
+  },
+
+  async setDevice(id) {
+    this.deviceId = id || '';
+    try { localStorage.setItem('pitch-device', this.deviceId); } catch (e) {}
+    if (!this.analyser) return; // non attivo: verrà usato al prossimo acquire
+    // Hot-swap della sorgente senza buttare giù i consumatori
+    const old = this.stream;
+    const audio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+    if (this.deviceId) audio.deviceId = { exact: this.deviceId };
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio, video: false });
+      this.source.disconnect();
+      if (old) old.getTracks().forEach(t => t.stop());
+      this.stream = stream;
+      this.source = this.ctx.createMediaStreamSource(stream);
+      this.source.connect(this.gainNode);
+    } catch (e) { console.warn('setDevice fallito:', e); }
+  },
+
+  gateLevel() { return this.calibGate > 0 ? this.calibGate : this.profile.gate; },
+
+  // Cambia la finestra FFT (la modalità accordi vuole 8192 per risolvere i bassi;
+  // il rilevamento monofonico resta a 2048 per la latenza).
+  setFft(size) {
+    this._fftSize = size;
+    if (this.analyser && this.analyser.fftSize !== size) {
+      this.analyser.fftSize = size;
+      this.buf = new Float32Array(size);
+    }
+  },
+
+  // Legge una finestra e rileva il pitch secondo il profilo attivo.
+  // Ritorna { freq, rms, conf } — freq = -1 se nessun tono affidabile
+  // (silenzio, transiente d'attacco, o confidenza sotto la soglia del profilo).
+  detect() {
+    if (!this.analyser) return { freq: -1, rms: 0, conf: 0 };
+    this.analyser.getFloatTimeDomainData(this.buf);
+    // Con FFT grande (modalità accordi) YIN userebbe una finestra enorme e lenta:
+    // analizza solo gli ultimi 2048 campioni (i più recenti sono in coda).
+    const abuf = this.buf.length > 2048 ? this.buf.subarray(this.buf.length - 2048) : this.buf;
+    const p = this.profile;
+    let sum = 0;
+    for (let i = 0; i < abuf.length; i++) sum += abuf[i] * abuf[i];
+    const rms = Math.sqrt(sum / abuf.length);
+    const now = performance.now();
+    // Gate sui transienti: la plettrata/il tocco produce un salto d'energia con
+    // spettro inarmonico (critico su classica/acustica) → ignora i primi ms.
+    if (p.attackHoldMs > 0) {
+      if (rms > this._lastRms * 3 && rms > this.gateLevel() * 2) this._attackHoldUntil = now + p.attackHoldMs;
+      this._lastRms = rms;
+      if (now < this._attackHoldUntil) return { freq: -1, rms, conf: 0 };
+    } else this._lastRms = rms;
+    if (rms < this.gateLevel()) return { freq: -1, rms, conf: 0 };
+    const freq = autocorrelate(abuf, this.ctx.sampleRate, {
+      gate: this.gateLevel(), fMin: p.fMin, fMax: p.fMax, yinThresh: p.yinThresh,
+    });
+    const conf = autocorrelate.confidence;
+    // Soglia di confidenza: il rumore di dita/percussivo produce dip CMND deboli
+    // → sotto soglia la nota non viene mostrata (meno falsi positivi).
+    if (freq > 0 && conf < p.minConf) return { freq: -1, rms, conf };
+    return { freq, rms, conf };
+  },
+
+  async listInputs() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return [];
+    try {
+      const devs = await navigator.mediaDevices.enumerateDevices();
+      return devs.filter(d => d.kind === 'audioinput');
+    } catch (e) { return []; }
+  },
+
+  _refreshDeviceLists() { renderPitchPanels(); },
+};
+PITCH.loadPrefs();
+
+// Messaggio utente per gli errori del microfono (condiviso dai tre consumatori)
+function pitchErrorMsg(e) {
+  if (e && e.code === 'https') return '⚠ il microfono richiede HTTPS — apri il sito da https://';
+  if (e && e.code === 'unsupported') return '⚠ microfono non supportato in questo browser';
+  if (e && e.name === 'NotAllowedError') return '⚠ permesso microfono negato — abilitalo nelle impostazioni del browser';
+  if (e && e.name === 'NotFoundError') return '⚠ nessun microfono trovato';
+  return '⚠ errore microfono: ' + (e && (e.message || e.name) || e);
+}
+
+// ── Pannelli "input audio": profilo strumento + sorgente. Un solo stato (PITCH),
+//    N istanze del pannello (accordatore, manico live) sempre sincronizzate. ──
+async function renderPitchPanels() {
+  const panels = document.querySelectorAll('[data-pitch-panel]');
+  if (!panels.length) return;
+  const inputs = await PITCH.listInputs();
+  const haveLabels = inputs.some(d => d.label);
+  panels.forEach(panel => {
+    const chips = Object.entries(PITCH_PROFILES).map(([k, p]) =>
+      `<button type="button" class="pp-chip${k === PITCH.profileKey ? ' active' : ''}"
+               onclick="PITCH.setProfile('${k}')">${p.label}</button>`).join('');
+    const opts = ['<option value="">Microfono predefinito</option>'].concat(
+      inputs.filter(d => d.deviceId && d.deviceId !== 'default').map(d =>
+        `<option value="${d.deviceId}"${d.deviceId === PITCH.deviceId ? ' selected' : ''}>${
+          d.label ? d.label.replace(/</g, '&lt;') : 'Ingresso audio'}</option>`)).join('');
+    const secureWarn = window.isSecureContext ? '' :
+      '<div class="pp-warn">⚠ serve HTTPS per accedere al microfono (su iPhone/iPad apri il sito da https://)</div>';
+    const deviceHint = haveLabels ? '' :
+      '<span class="pp-desc">// i nomi delle sorgenti compaiono dopo il primo permesso microfono</span>';
+    panel.innerHTML = `
+      <div class="pp-row"><span class="pp-lbl">Strumento</span><div class="pp-chips">${chips}</div></div>
+      <div class="pp-row"><span class="pp-lbl">Sorgente</span>
+        <select class="pp-device" onchange="PITCH.setDevice(this.value)">${opts}</select>
+        <button type="button" class="pp-refresh" title="Aggiorna elenco sorgenti" onclick="renderPitchPanels()">↻</button>
+        ${deviceHint}
+      </div>
+      <div class="pp-row"><span class="pp-lbl">Taratura</span>
+        <button type="button" class="pp-chip" onclick="calibStart()" ${CALIB.running ? 'disabled' : ''}>🎚 Calibra</button>
+        <span class="pp-desc" data-calib-status>${calibSummary()}</span>
+      </div>
+      <div class="pp-desc">${PITCH.profile.desc}</div>
+      ${secureWarn}`;
+  });
+}
+
+// ── CALIBRAZIONE GUIDATA ──────────────────────────────────────────────────────
+// Due fasi: (1) silenzio → misura il rumore di fondo; (2) corde a vuoto → misura
+// il livello del segnale e verifica che le corde vengano riconosciute.
+// Risultato: gate = rumore×3 (i falsi positivi da rumore di dita/ambiente
+// spariscono) e gain che porta il picco del tuo strumento a livello ottimale.
+// Salvato per profilo in localStorage: elettrica via line-in e classica al mic
+// hanno tarature indipendenti.
+const CALIB = { running: false };
+
+function calibSummary() {
+  if (CALIB.running) return '';
+  if (PITCH.calibGate > 0) {
+    return `tarato ✓ (gate ${PITCH.calibGate.toFixed(4)} · gain ×${PITCH.calibGain.toFixed(2)}) — rifai la taratura se cambi stanza o strumento`;
+  }
+  return 'non tarato — 15 secondi: silenzio + corde a vuoto';
+}
+
+function _calibStatus(msg) {
+  document.querySelectorAll('[data-calib-status]').forEach(el => { el.innerHTML = msg; });
+}
+
+function _calibRms() {
+  PITCH.analyser.getFloatTimeDomainData(PITCH.buf);
+  let sum = 0;
+  for (let i = 0; i < PITCH.buf.length; i++) sum += PITCH.buf[i] * PITCH.buf[i];
+  return Math.sqrt(sum / PITCH.buf.length);
+}
+
+async function calibStart() {
+  if (CALIB.running) return;
+  try { await PITCH.acquire('calib'); }
+  catch (e) { _calibStatus('<span class="pp-warn">' + pitchErrorMsg(e) + '</span>'); return; }
+  CALIB.running = true;
+  const NOTE_N = NOTE_STRINGS; // nomi nota per il riepilogo corde
+
+  const sample = (ms, onTick) => new Promise(res => {
+    const vals = [];
+    const t0 = performance.now();
+    (function loop() {
+      if (!PITCH.analyser) return res(vals); // stream caduto
+      vals.push(_calibRms());
+      const left = ms - (performance.now() - t0);
+      if (onTick) onTick(left, vals);
+      if (left <= 0) return res(vals);
+      setTimeout(loop, 50);
+    })();
+  });
+
+  try {
+    // Fase 1 — rumore di fondo
+    for (let c = 3; c >= 1; c--) {
+      _calibStatus(`🤫 <strong>fase 1/2:</strong> fai silenzio… parto tra ${c}`);
+      await new Promise(r => setTimeout(r, 700));
+    }
+    const noiseVals = await sample(2000, left =>
+      _calibStatus(`🤫 <strong>fase 1/2:</strong> misuro il rumore di fondo… ${(left / 1000).toFixed(1)}s`));
+    noiseVals.sort((a, b) => a - b);
+    const noise = noiseVals[Math.floor(noiseVals.length * 0.9)] || 0; // 90° percentile
+
+    // Fase 2 — corde a vuoto
+    let peak = 0;
+    const heard = new Set();
+    const gateNow = Math.max(noise * 2.5, 0.003);
+    await sample(8000, (left, vals) => {
+      const rms = vals[vals.length - 1];
+      if (rms > peak) peak = rms;
+      if (rms > gateNow) {
+        const f = autocorrelate(PITCH.buf, PITCH.ctx.sampleRate,
+          { gate: gateNow, fMin: 60, fMax: 700, yinThresh: 0.2 });
+        if (f > 0) heard.add(NOTE_N[((Math.round(12 * Math.log2(f / TUNER.aRef) + 69) % 12) + 12) % 12]);
+      }
+      const lvl = '▮'.repeat(Math.min(10, Math.round(rms * 120))).padEnd(10, '▯');
+      _calibStatus(`🎸 <strong>fase 2/2:</strong> suona le corde a vuoto, una alla volta… ${(left / 1000).toFixed(0)}s &nbsp;<span style="letter-spacing:1px">${lvl}</span>`);
+    });
+
+    if (peak < noise * 3 || peak < 0.004) {
+      _calibStatus('<span class="pp-warn">⚠ segnale troppo debole: avvicina il microfono / alza il volume dell’interfaccia e riprova</span>');
+    } else {
+      // Le misure sono post-gain: k riporta il picco al livello target e scala
+      // coerentemente anche il gate misurato sul rumore.
+      const k = Math.max(0.5, Math.min(4, 0.25 / peak));
+      PITCH.calibGain = Math.max(0.25, Math.min(6, PITCH.calibGain * k));
+      PITCH.calibGate = Math.max(0.0035, Math.min(0.05, noise * k * 3));
+      try {
+        localStorage.setItem('pitch-calib-' + PITCH.profileKey,
+          JSON.stringify({ gain: PITCH.calibGain, gate: PITCH.calibGate }));
+      } catch (e) {}
+      PITCH._applyProfile();
+      const strs = heard.size ? ` · corde sentite: ${[...heard].join(' ')}` : '';
+      _calibStatus(`✅ taratura completata (gate ${PITCH.calibGate.toFixed(4)} · gain ×${PITCH.calibGain.toFixed(2)}${strs})`);
+    }
+  } finally {
+    CALIB.running = false;
+    PITCH.release('calib');
+  }
+}
+if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+  navigator.mediaDevices.addEventListener('devicechange', () => renderPitchPanels());
+}
+document.addEventListener('DOMContentLoaded', () => renderPitchPanels());
+
 // ─── ACCORDATORE (Pitch Detection via Autocorrelazione) ──────────────────────
 const TUNER_PRESETS = {
   standard: { name:'Standard (E A D G B E)', notes:['E','A','D','G','B','E'], notesFull:['E2','A2','D3','G3','B3','E4'], freqs:[82.41,110.00,146.83,196.00,246.94,329.63] },
@@ -10416,8 +11273,7 @@ const TUNER_PRESETS = {
 };
 
 const TUNER = {
-  running: false, stream: null, ctx: null,
-  analyser: null, buf: null, rafId: null,
+  running: false, rafId: null,   // mic/analyser condivisi: vedi PITCH
   aRef: 440,
   activeTuning: null  // set after TUNER_PRESETS declared
 };
@@ -10474,16 +11330,19 @@ function freqToNote(freq) {
 // funzione differenza e sceglie il primo minimo sotto soglia, eliminando gli
 // errori di ottava e agganciando correttamente anche le corde basse.
 // Ritorna la frequenza in Hz, o -1 se non c'è un tono affidabile.
-function autocorrelate(buf, sampleRate) {
+// opts (facoltativi, dal profilo strumento): gate RMS, range Hz, soglia YIN.
+function autocorrelate(buf, sampleRate, opts) {
+  autocorrelate.confidence = 0; // azzera: le uscite anticipate non devono lasciare valori stantii
+  const o = opts || {};
   const n = buf.length;
   // Gate RMS: ignora silenzio / rumore di fondo. Soglia bassa per acustiche non forti.
   let rms = 0;
   for (let i = 0; i < n; i++) rms += buf[i] * buf[i];
-  if (Math.sqrt(rms / n) < 0.006) return -1;
+  if (Math.sqrt(rms / n) < (o.gate || 0.006)) return -1;
 
   // Range chitarra ~70–1320 Hz (dal Do#2 al ~Mi6, con margine per le armoniche utili)
-  const minLag = Math.max(2, Math.floor(sampleRate / 1320));
-  const maxLag = Math.min((n >> 1) - 1, Math.ceil(sampleRate / 70));
+  const minLag = Math.max(2, Math.floor(sampleRate / (o.fMax || 1320)));
+  const maxLag = Math.min((n >> 1) - 1, Math.ceil(sampleRate / (o.fMin || 70)));
   if (maxLag <= minLag) return -1;
 
   // Finestra costante così d(tau) è confrontabile tra i vari tau (niente bias di lunghezza)
@@ -10510,7 +11369,7 @@ function autocorrelate(buf, sampleRate) {
   }
 
   // 3) Absolute threshold: primo minimo locale sotto soglia entro il range chitarra
-  const THRESH = 0.12;
+  const THRESH = o.yinThresh || 0.12;
   let tau = -1;
   for (let t = minLag; t <= maxLag; t++) {
     if (cmnd[t] < THRESH) {
@@ -10529,15 +11388,31 @@ function autocorrelate(buf, sampleRate) {
   }
   if (tau < minLag) return -1;
 
-  // 4) Interpolazione parabolica sub-campione attorno al minimo di cmnd
+  // 4) CORREZIONE D'OTTAVA: l'errore classico su chitarra è l'ottava SOPRA —
+  // una 2ª armonica forte scava un dip a τ/2 che scatta per primo sotto soglia.
+  // Se il minimo attorno a 2τ è nettamente più profondo, la vera fondamentale
+  // è un'ottava sotto: preferiscila.
+  if (2 * tau <= maxLag) {
+    let t2 = 2 * tau, best2 = cmnd[t2];
+    for (let t = Math.max(minLag, 2 * tau - 3); t <= Math.min(maxLag, 2 * tau + 3); t++) {
+      if (cmnd[t] < best2) { best2 = cmnd[t]; t2 = t; }
+    }
+    if (best2 < Math.min(cmnd[tau] * 0.85, THRESH)) tau = t2;
+  }
+
+  // 5) Interpolazione parabolica sub-campione attorno al minimo di cmnd
   let betterTau = tau;
   if (tau > minLag && tau < maxLag) {
     const s0 = cmnd[tau - 1], s1 = cmnd[tau], s2 = cmnd[tau + 1];
     const denom = s0 - 2 * s1 + s2;
     if (denom > 0) betterTau = tau + (s0 - s2) / (2 * denom);
   }
+  // Confidenza = quanto è profondo il minimo CMND (1 = periodicità perfetta).
+  // Esposta come proprietà per non cambiare la firma (freq resta il ritorno).
+  autocorrelate.confidence = Math.max(0, Math.min(1, 1 - cmnd[tau]));
   return sampleRate / betterTau;
 }
+autocorrelate.confidence = 0;
 
 let _tunerFrame = 0;
 const _tunerStrLastActive = new Array(6).fill(0);
@@ -10599,8 +11474,7 @@ function tunerTick() {
   if (!TUNER.running) return;
   TUNER.rafId = requestAnimationFrame(tunerTick);
   if (++_tunerFrame % 4 !== 0) return; // run analysis at ~15fps to save CPU on mobile
-  TUNER.analyser.getFloatTimeDomainData(TUNER.buf);
-  const freq = autocorrelate(TUNER.buf, TUNER.ctx.sampleRate);
+  const freq = PITCH.detect().freq;
   const noteEl  = document.getElementById('tuner-note');
   const freqEl  = document.getElementById('tuner-freq');
   const centsEl = document.getElementById('tuner-cents');
@@ -10647,9 +11521,7 @@ async function tunerToggle() {
   if (TUNER.running) {
     TUNER.running = false;
     cancelAnimationFrame(TUNER.rafId);
-    if (TUNER.stream) TUNER.stream.getTracks().forEach(t => t.stop());
-    if (TUNER.ctx)    TUNER.ctx.close();
-    TUNER.stream = TUNER.ctx = null;
+    PITCH.release('tuner');
     _tunerStrLastActive.fill(0);
     document.querySelectorAll('#tuner-strings-list .tuner-str').forEach(el => el.className = 'tuner-str');
     btn.textContent = '🎤 Avvia accordatore';
@@ -10658,25 +11530,11 @@ async function tunerToggle() {
     freqEl.style.color = '';
     return;
   }
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    freqEl.textContent = '⚠ Microfono non supportato in questo browser';
-    freqEl.style.color = '#ef4444';
-    return;
-  }
   btn.textContent = '⏳ Accesso microfono...';
   btn.disabled = true;
   freqEl.style.color = '';
   try {
-    TUNER.stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-      video: false
-    });
-    TUNER.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (TUNER.ctx.state === 'suspended') await TUNER.ctx.resume();
-    TUNER.analyser = TUNER.ctx.createAnalyser();
-    TUNER.analyser.fftSize = 2048;
-    TUNER.buf = new Float32Array(TUNER.analyser.fftSize);
-    TUNER.ctx.createMediaStreamSource(TUNER.stream).connect(TUNER.analyser);
+    await PITCH.acquire('tuner');
     TUNER.running = true;
     btn.textContent = '⏹ Ferma accordatore';
     btn.disabled = false;
@@ -10685,12 +11543,7 @@ async function tunerToggle() {
   } catch (e) {
     btn.textContent = '🎤 Avvia accordatore';
     btn.disabled = false;
-    const msg = e.name === 'NotAllowedError'
-      ? '⚠ Permesso microfono negato — abilita il microfono nelle impostazioni del browser'
-      : e.name === 'NotFoundError'
-      ? '⚠ Microfono non trovato'
-      : '⚠ Errore microfono: ' + (e.message || e.name || e);
-    freqEl.textContent = msg;
+    freqEl.textContent = pitchErrorMsg(e);
     freqEl.style.color = '#ef4444';
   }
 }
@@ -10699,7 +11552,7 @@ async function tunerToggle() {
 // Riusa autocorrelate() e la stessa pipeline mic dell'accordatore, ma con stato
 // separato: accordatore e manico live possono essere usati indipendentemente.
 const MICFB = {
-  running: false, stream: null, ctx: null, analyser: null, buf: null,
+  running: false,               // mic/analyser condivisi: vedi PITCH
   rafId: null, frame: 0, built: false,
   lastMidi: -1, lastSignalAt: 0,
   hist: [], // stabilizzazione d'ottava (anti-jitter), come JLIVE
@@ -10799,12 +11652,161 @@ function micFbClear() {
   MICFB.lastPos = null;
 }
 
+// ── MODALITÀ ACCORDI (beta) ───────────────────────────────────────────────────
+// YIN è monofonico: per gli accordi si passa a FFT 8192 → vettore chroma (12
+// classi di altezza, pesato per attenuare le armoniche acute) → template
+// matching su 36 sagome (maj/min/dom7 × 12 toniche). Percorso separato che non
+// tocca il rilevamento monofonico.
+const MICCHORD = {
+  on: false, fbuf: null,
+  lastName: '', stableCount: 0, shownName: '', lastHitAt: 0,
+};
+// 24 template di TRIADE (maj/min × 12 toniche). La settima di dominante non è
+// un template a sé (conterrebbe la triade maggiore e vincerebbe/perderebbe per
+// un soffio): si aggiunge come "upgrade" se la ♭7 è davvero presente nel chroma.
+const CHORD_TEMPLATES = (() => {
+  const shapes = [
+    { suf: '',  pcs: [1, 0, 0, 0, .85, 0, 0, .9, 0, 0, 0, 0], tones: [0, 4, 7], major: true },
+    { suf: 'm', pcs: [1, 0, 0, .85, 0, 0, 0, .9, 0, 0, 0, 0], tones: [0, 3, 7], major: false },
+  ];
+  const out = [];
+  for (let r = 0; r < 12; r++) {
+    for (const sh of shapes) {
+      out.push({
+        name: NOTES[r] + sh.suf,
+        root: r,
+        major: sh.major,
+        tones: sh.tones.map(t => (r + t) % 12),
+        pcs: Array.from({ length: 12 }, (_, i) => sh.pcs[((i - r) % 12 + 12) % 12]),
+      });
+    }
+  }
+  return out;
+})();
+
+function micFbSetChordMode(on) {
+  MICCHORD.on = !!on;
+  MICCHORD.lastName = ''; MICCHORD.stableCount = 0; MICCHORD.shownName = '';
+  PITCH.setFft(on ? 8192 : 2048); // più risoluzione in frequenza per i bassi
+  micFbClear();
+  document.getElementById('micfb-mode-mono')?.classList.toggle('active', !on);
+  document.getElementById('micfb-mode-chord')?.classList.toggle('active', on);
+  const noteEl = document.getElementById('micfb-note');
+  const metaEl = document.getElementById('micfb-meta');
+  if (noteEl) noteEl.textContent = '—';
+  if (metaEl) metaEl.textContent = MICFB.running
+    ? (on ? 'suona un accordo…' : 'in ascolto…') : 'in attesa…';
+}
+
+// Estrae il chroma dallo spettro e cerca l'accordo più plausibile.
+// Ritorna il template o null (segnale debole / nessuna dominanza netta).
+function micChordDetect() {
+  const an = PITCH.analyser;
+  if (!an) return null;
+  // gate RMS come nel percorso mono
+  PITCH.analyser.getFloatTimeDomainData(PITCH.buf);
+  let sum = 0;
+  const tb = PITCH.buf;
+  for (let i = 0; i < tb.length; i++) sum += tb[i] * tb[i];
+  if (Math.sqrt(sum / tb.length) < PITCH.gateLevel()) return null;
+
+  const n = an.frequencyBinCount;
+  if (!MICCHORD.fbuf || MICCHORD.fbuf.length !== n) MICCHORD.fbuf = new Float32Array(n);
+  an.getFloatFrequencyData(MICCHORD.fbuf);
+  const binHz = PITCH.ctx.sampleRate / an.fftSize;
+  const chroma = new Array(12).fill(0);
+  let total = 0;
+  const i0 = Math.max(1, Math.floor(70 / binHz));
+  const i1 = Math.min(n - 1, Math.ceil(1100 / binHz));
+  for (let i = i0; i <= i1; i++) {
+    const db = MICCHORD.fbuf[i];
+    if (db < -75) continue;
+    const f = i * binHz;
+    const mag = Math.pow(10, db / 20) / (1 + f / 500); // pesa meno le armoniche acute
+    const midi = Math.round(69 + 12 * Math.log2(f / 440));
+    chroma[((midi % 12) + 12) % 12] += mag;
+    total += mag;
+  }
+  if (total < 1e-7) return null;
+  for (let i = 0; i < 12; i++) chroma[i] /= total;
+
+  // Similarità coseno chroma↔template: invariante alla concentrazione dell'energia
+  // (una triade secca e un accordo a 4 note ottengono punteggi confrontabili).
+  let cNorm = 0;
+  for (let i = 0; i < 12; i++) cNorm += chroma[i] * chroma[i];
+  cNorm = Math.sqrt(cNorm);
+  if (cNorm < 1e-7) return null;
+  const T_NORM = Math.sqrt(1 + 0.85 * 0.85 + 0.9 * 0.9); // uguale per tutti i template
+  let best = null, bestScore = 0, second = 0;
+  for (const t of CHORD_TEMPLATES) {
+    let dot = 0;
+    for (let i = 0; i < 12; i++) dot += chroma[i] * t.pcs[i];
+    const s = dot / (cNorm * T_NORM);
+    if (s > bestScore) { second = bestScore; bestScore = s; best = t; }
+    else if (s > second) second = s;
+  }
+  // serve buona somiglianza E dominanza netta sul 2° classificato
+  if (!best || bestScore < 0.72 || bestScore - second < 0.04) return null;
+
+  // Upgrade a settima di dominante: triade maggiore vinta + ♭7 chiaramente
+  // presente rispetto alla media dei toni della triade.
+  let name = best.name, tones = best.tones;
+  if (best.major) {
+    const b7 = (best.root + 10) % 12;
+    const triAvg = (chroma[best.root] + chroma[(best.root + 4) % 12] + chroma[(best.root + 7) % 12]) / 3;
+    if (chroma[b7] > 0.05 && chroma[b7] > 0.55 * triAvg) {
+      name = NOTES[best.root] + '7';
+      tones = [...best.tones, b7];
+    }
+  }
+  return { name, root: best.root, tones, score: bestScore };
+}
+
+// Evidenzia i toni dell'accordo sul manico: tonica piena, altri toni soft.
+function micChordHighlight(t) {
+  const fb = document.getElementById('micfb-fretboard');
+  if (!fb) return;
+  const toneSet = new Set(t ? t.tones : []);
+  fb.querySelectorAll('.note-dot').forEach(d => {
+    const pc = ((parseInt(d.dataset.midi) % 12) + 12) % 12;
+    d.classList.toggle('mic-hit', !!t && pc === t.root);
+    d.classList.toggle('mic-oct', !!t && pc !== t.root && toneSet.has(pc));
+  });
+}
+
+function micChordTick(noteEl, metaEl, now) {
+  const t = micChordDetect();
+  if (t) {
+    MICCHORD.lastHitAt = now;
+    // isteresi: 3 letture uguali consecutive prima di cambiare il nome mostrato
+    if (t.name === MICCHORD.lastName) MICCHORD.stableCount++;
+    else { MICCHORD.lastName = t.name; MICCHORD.stableCount = 1; }
+    if (MICCHORD.stableCount >= 3 && t.name !== MICCHORD.shownName) {
+      MICCHORD.shownName = t.name;
+      micChordHighlight(t);
+      noteEl.textContent = t.name;
+    }
+    if (MICCHORD.shownName) metaEl.textContent = `accordo · aff. ${Math.round(t.score * 100)}%`;
+  } else if (MICCHORD.shownName && now - MICCHORD.lastHitAt > MICFB_HOLD_MS) {
+    MICCHORD.shownName = ''; MICCHORD.lastName = ''; MICCHORD.stableCount = 0;
+    micChordHighlight(null);
+    noteEl.textContent = '—';
+    metaEl.textContent = 'suona un accordo…';
+  }
+}
+
 function micFbTick() {
   if (!MICFB.running) return;
   MICFB.rafId = requestAnimationFrame(micFbTick);
-  if (++MICFB.frame % 3 !== 0) return; // ~20fps di analisi
-  MICFB.analyser.getFloatTimeDomainData(MICFB.buf);
-  const freq = autocorrelate(MICFB.buf, MICFB.ctx.sampleRate);
+  if (MICCHORD.on) {
+    if (++MICFB.frame % 4 !== 0) return; // ~15fps: la FFT 8192 è più pesante
+    micChordTick(document.getElementById('micfb-note'),
+                 document.getElementById('micfb-meta'), performance.now());
+    return;
+  }
+  if (++MICFB.frame % 2 !== 0) return; // ~30fps di analisi (feedback più reattivo)
+  const det = PITCH.detect();
+  const freq = det.freq;
   const noteEl = document.getElementById('micfb-note');
   const metaEl = document.getElementById('micfb-meta');
   const now = performance.now();
@@ -10814,7 +11816,7 @@ function micFbTick() {
     const rawMidi = Math.round(midiF);
     // Range chitarra (E2..~D6); fuori range = rumore, ignora
     if (rawMidi >= 38 && rawMidi <= 86) {
-      const midi = stabilizePitch(MICFB.hist, rawMidi); // anti salto d'ottava
+      const midi = stabilizePitch(MICFB.hist, midiF, MICFB.lastMidi); // mediana + isteresi anti-flicker
       const cents = Math.round((midiF - midi) * 100);
       MICFB.lastSignalAt = now;
       if (midi !== MICFB.lastMidi) {
@@ -10823,7 +11825,7 @@ function micFbTick() {
       }
       const octave = Math.floor(midi / 12) - 1;
       noteEl.textContent = NOTES[((midi % 12) + 12) % 12] + octave;
-      metaEl.textContent = `${freq.toFixed(1)} Hz · ${Math.abs(cents) <= 60 ? (cents >= 0 ? '+' : '') + cents + ' cent' : '…'}`;
+      metaEl.textContent = `${freq.toFixed(1)} Hz · ${Math.abs(cents) <= 60 ? (cents >= 0 ? '+' : '') + cents + ' cent' : '…'} · aff. ${Math.round(det.conf * 100)}%`;
     }
   } else if (MICFB.lastMidi !== -1 && now - MICFB.lastSignalAt > MICFB_HOLD_MS) {
     micFbClear();
@@ -10838,34 +11840,17 @@ async function micFbToggle() {
   if (MICFB.running) {
     MICFB.running = false;
     if (MICFB.rafId) cancelAnimationFrame(MICFB.rafId);
-    if (MICFB.stream) MICFB.stream.getTracks().forEach(t => t.stop());
-    if (MICFB.ctx) { try { MICFB.ctx.close(); } catch(e) {} }
-    MICFB.stream = null; MICFB.ctx = null; MICFB.analyser = null;
+    PITCH.release('micfb');
     micFbClear();
     document.getElementById('micfb-note').textContent = '—';
     metaEl.textContent = 'in attesa…';
     btn.textContent = '🎤 Avvia ascolto';
     return;
   }
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    metaEl.textContent = '⚠ microfono non supportato';
-    return;
-  }
   btn.textContent = '⏳ …';
   btn.disabled = true;
   try {
-    MICFB.stream = await navigator.mediaDevices.getUserMedia({
-      // autoGainControl attivo: aiuta le acustiche deboli senza alterare il pitch (YIN è
-      // robusto all'ampiezza). echoCancellation/noiseSuppression off per non deformare il segnale.
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true },
-      video: false
-    });
-    MICFB.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (MICFB.ctx.state === 'suspended') await MICFB.ctx.resume();
-    MICFB.analyser = MICFB.ctx.createAnalyser();
-    MICFB.analyser.fftSize = 2048;
-    MICFB.buf = new Float32Array(MICFB.analyser.fftSize);
-    MICFB.ctx.createMediaStreamSource(MICFB.stream).connect(MICFB.analyser);
+    await PITCH.acquire('micfb'); // pipeline condivisa: gain/highpass/gate dal profilo strumento
     MICFB.running = true;
     btn.textContent = '⏹ Ferma ascolto';
     btn.disabled = false;
@@ -10874,9 +11859,7 @@ async function micFbToggle() {
   } catch (e) {
     btn.textContent = '🎤 Avvia ascolto';
     btn.disabled = false;
-    metaEl.textContent = e.name === 'NotAllowedError'
-      ? '⚠ permesso microfono negato'
-      : '⚠ errore: ' + (e.message || e.name);
+    metaEl.textContent = pitchErrorMsg(e);
   }
 }
 
