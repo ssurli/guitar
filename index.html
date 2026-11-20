@@ -3105,13 +3105,18 @@
     color: #111; font-size: 20px; font-weight: 800; cursor: pointer; margin: 10px 0 6px;
   }
   .scard-play.playing { background: var(--red); color: #fff; }
-  .scard-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 14px; }
+  /* 2 colonne uguali: le 4 scorciatoie di studio in griglia, Modifica a tutta larghezza sotto */
+  .scard-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 8px 0 14px; }
   .scard-chip {
     min-height: 48px; padding: 8px 14px; border-radius: 12px; background: var(--bg3);
-    border: 1px solid var(--border); color: var(--text); font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border); color: var(--text); font-size: 15px; cursor: pointer;
+    text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  .scard-chip--edit { grid-column: 1 / -1; text-align: center; background: none; border-style: dashed; color: var(--text-mid); min-height: var(--tap); }
   .scard-chip:disabled { opacity: .45; cursor: default; }
-  .scard-hint { width: 100%; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); }
+  .song-chart-sub { font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); margin: 4px 0 10px; }
+  .song-chart-sub span { font-weight: 400; font-size: 13px; color: var(--text-dim); margin-left: 6px; }
+  .scard-hint { grid-column: 1 / -1; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-dim); }
 
   /* Vista performance: accordo corrente/prossimo a distanza-leggìo (B-11) */
   .setlist-nowplaying {
@@ -7530,12 +7535,8 @@ function songlabRenderChart() {
     </div>`;
   }).join('');
   el.innerHTML = `
-    <div class="song-chart-head">
-      <div class="song-chart-title">${song.title || 'senza titolo'} ${song.artist ? `<small>· ${song.artist}</small>` : ''}</div>
-      <button class="ccp-btn load" onclick="songTogglePlay()">${isPlayingThis ? '⏸ Stop' : '▶ Suona'}</button>
-      <button class="songlab-action" onclick="songlabToggleEdit()">${SONGLAB.editing ? '✓ fine' : '✏️ modifica'}</button>
-    </div>
-    <div class="sed-hint" style="margin:0">// ${flat} accordi · tap su un accordo per voicing + scala + arpeggio · ▶ per suonarla con la base (batteria + basso + accordi)</div>
+    <!-- titolo, ▶ e ✏️ sono già nella testata della scheda (setlist-card-head / chips): qui solo gli accordi -->
+    <div class="song-chart-sub">Accordi · ${flat} <span>tocca un accordo per voicing, scala e arpeggio</span></div>
     ${sectionsHTML}`;
   if (isPlayingThis && _songChartIdx >= 0) {
     const now = el.querySelector(`.sc-chord[data-flat="${_songChartIdx}"]`);
@@ -14136,9 +14137,10 @@ function setlistRenderCardChips(song) {
   el.appendChild(play);
   const chips = document.createElement('div');
   chips.className = 'scard-chips';
-  const mkChip = (label, fn, enabled, hint) => {
+  const mkChip = (label, fn, enabled, hint, extra) => {
     const b = document.createElement('button');
-    b.className = 'scard-chip';
+    b.className = 'scard-chip' + (extra ? ' ' + extra : '');
+    b.title = b.title || label;
     b.textContent = label;
     if (enabled) b.onclick = fn;
     else { b.disabled = true; if (hint) b.title = hint; }
@@ -14147,14 +14149,14 @@ function setlistRenderCardChips(song) {
   };
   const noKeyHint = 'imposta la tonalità in ✏️ Modifica (o ✨ rilevala dagli accordi)';
   mkChip('🎸 Manico' + (keyName ? ' in ' + keyName : ''), songlabGoFretboard, hasKey, noKeyHint);
-  mkChip('🧩 CAGED' + (song.launch && song.launch.cagedFocus ? ' · forma ' + song.launch.cagedFocus : ''), songlabGoCaged, hasKey, noKeyHint);
+  mkChip('🧩 CAGED' + (keyName ? ' in ' + keyName : '') + (song.launch && song.launch.cagedFocus ? ' · ' + song.launch.cagedFocus : ''), songlabGoCaged, hasKey, noKeyHint);
   mkChip('🎯 Target-tone' + (keyName ? ' in ' + keyName : ''), () => songlabGoDrill(7), hasKey, noKeyHint);
   mkChip('🧠 Drill note' + (keyName ? ' in ' + keyName : ''), () => songlabGoDrill(null), hasKey, noKeyHint);
-  mkChip(SONGLAB.editing ? '✓ fine modifica' : '✏️ Modifica', () => { songlabToggleEdit(); setlistRenderAll(); }, true);
+  mkChip(SONGLAB.editing ? '✓ fine modifica' : '✏️ Modifica', () => { songlabToggleEdit(); setlistRenderAll(); }, true, null, 'scard-chip--edit');
   if (!hasKey) {
     const hint = document.createElement('span');
     hint.className = 'scard-hint';
-    hint.textContent = '// i chip si attivano impostando la tonalità in ✏️ Modifica — o con ✨ rileva dagli accordi';
+    hint.textContent = 'Le scorciatoie si attivano impostando la tonalità in ✏️ Modifica, o con ✨ rileva dagli accordi.';
     chips.appendChild(hint);
   }
   el.appendChild(chips);
