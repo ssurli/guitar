@@ -1093,6 +1093,12 @@
   .tech-tab:hover { color:var(--text); }
   .tech-tab.active { color:var(--amber); border-bottom-color:var(--amber); background:var(--amber-glow); }
   .tech-panel { display:none; }
+  /* pallino che suona: si ingrandisce e si accende (Equator, Blend, Sweep, Eric Johnson) */
+  .tf-dot { transform-box: fill-box; transform-origin: center; transition: transform .08s ease-out; }
+  .tf-dot.tf-on { transform: scale(1.35); }
+  .tf-dot.tf-on circle { stroke: #fff; stroke-width: 3px; filter: drop-shadow(0 0 6px rgba(255,255,255,.85)); }
+  .ej-info { font-size: 14px; line-height: 1.5; color: var(--text-mid); margin: 0 0 12px; }
+  @media (prefers-reduced-motion: reduce) { .tf-dot { transition: none; } .tf-dot.tf-on { transform: none; } }
   .tech-panel.active { display:block; }
 
   .sweep-shapes-row { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:16px; }
@@ -3365,11 +3371,16 @@
     select { font-family: 'DM Sans', sans-serif; font-size: 16px; min-height: var(--tap); }   /* 16px: niente zoom automatico iOS */
     /* ── 14. MOBILE fase 2: pagine dense (Scale & Accordi, CAGED, Penta, Tecnica) ── */
     /* 2° livello = schede sottolineate (diverse dalle pillole hub), con sfumatura che dice "scorri" */
-    .cpage-tabs, .tech-tabs, .triad-type-tabs {
+    /* i 11 tab di Tecnica avanzata: tutti visibili come pillole a capo, niente scorrimento nascosto */
+    .tech-tabs { flex-wrap: wrap; overflow: visible; gap: 8px; border-bottom: none; padding-bottom: 0; margin-bottom: 18px; }
+    .tech-tabs .tech-tab { border: 1px solid var(--border); border-radius: 18px; padding: 8px 12px; min-height: 40px; background: var(--bg3); }
+    .tech-tabs .tech-tab.active { border-color: var(--amber); }
+    .cpage-tabs, .triad-type-tabs {
       -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent);
               mask-image: linear-gradient(90deg, #000 85%, transparent);
       padding-right: 32px;
     }
+    .tech-tabs { -webkit-mask-image: none; mask-image: none; padding-right: 0; }
     .cpage-tab-btn, .tech-tab {
       font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
       letter-spacing: 0; text-transform: none; padding: 8px 12px;
@@ -3449,7 +3460,7 @@
     <button class="nav-btn" onclick="showPage('circle');renderCircleOfFifths()">♯♭ Circolo</button>
     <button class="nav-btn" onclick="showPage('jam')">🎸 Basi</button>
     <button class="nav-btn" onclick="showPage('audio')">🎛 Audio</button>
-    <button class="nav-btn" onclick="showPage('technique');showTechSubpage('pratica')">⚡ Tecnica</button>
+    <button class="nav-btn" onclick="showPage('technique');showTechSubpage('tecnica')">⚡ Tecnica</button>
     <button class="nav-btn" onclick="showPage('coscienza');FCUI&&FCUI.init()">🧠 Coscienza</button>
     <a class="nav-btn nav-btn-ext" href="https://ssurli.github.io/chordlab/" target="_blank" rel="noopener" title="Apri ChordLab (progetto companion)">🎵 ChordLab ↗</a>
   </nav>
@@ -4609,7 +4620,26 @@ function _ensureTechGain() {
   }
   return _techGain;
 }
+// Pallino che si accende mentre la nota suona (diagrammi SVG di Tecnica).
+// Ogni pallino è un <g data-tf="corda:tasto">; i timer si cancellano con lo stop.
+let _techFlashTimers = [];
+function techFlash(rootEl, string, fret, delayMs, holdMs) {
+  if (!rootEl) return;
+  const on = setTimeout(() => {
+    rootEl.querySelectorAll(`[data-tf="${string}:${fret}"]`).forEach(g => {
+      g.classList.add('tf-on');
+      const off = setTimeout(() => g.classList.remove('tf-on'), holdMs || 260);
+      _techFlashTimers.push(off);
+    });
+  }, Math.max(0, delayMs));
+  _techFlashTimers.push(on);
+}
+function _techFlashClear() {
+  _techFlashTimers.forEach(clearTimeout); _techFlashTimers = [];
+  document.querySelectorAll('[data-tf].tf-on').forEach(g => g.classList.remove('tf-on'));
+}
 function _stopTechPlayback() {
+  _techFlashClear();
   if (_techGain) {
     try { _techGain.disconnect(); } catch(e) {}
     _techGain = null;
@@ -9545,7 +9575,7 @@ function showPage(name, keepReturn) {
 // I link "Vedi sul manico" / "Apri nel Fretboard" / "Studia" saltano ad un'altra
 // pagina; qui memorizziamo la pagina di partenza e mostriamo un pulsante per
 // tornarci esattamente dove si era (le sotto-pagine restano intatte).
-const NAV_PAGE_LABELS = { setlist:'Setlist', fretboard:'Fretboard', scales:'Scale & Accordi', caged:'CAGED', penta5:'5 Box Penta', circle:'Circolo', jam:'Basi', audio:'Audio', technique:'Tecnica', coscienza:'Coscienza' };
+const NAV_PAGE_LABELS = { setlist:'Setlist', fretboard:'Fretboard', scales:'Scale & Accordi', caged:'CAGED', penta5:'5 Box Penta', circle:'Circolo', jam:'Basi', audio:'Audio', technique:'Tecnica avanzata', coscienza:'Coscienza' };
 // Return-STACK (max 3 livelli, B-20): canzone → Triadi → altro → il ritorno alla
 // canzone non si perde più. API navArm/navReturn/navDisarm invariata all'esterno.
 let _navReturn = [];
@@ -10683,15 +10713,15 @@ window.addEventListener('DOMContentLoaded', function() {
 <!-- ═══════════════════════════ TECNICA AVANZATA ═══════════════════════════ -->
 <div id="page-technique" class="page">
   <div class="cpage-tabs">
-    <button class="cpage-tab-btn active" data-tab="pratica" onclick="showTechSubpage('pratica')">Pratica</button>
-    <button class="cpage-tab-btn" data-tab="tecnica" onclick="showTechSubpage('tecnica');initTechPage()">⚡ Tecnica</button>
+    <button class="cpage-tab-btn active" data-tab="tecnica" onclick="showTechSubpage('tecnica')">⚡ Tecnica avanzata</button>
+    <button class="cpage-tab-btn" data-tab="pratica" onclick="showTechSubpage('pratica')">Guida alla pratica</button>
   </div>
-  <div id="tpage-pratica" class="cpage-view active">
+  <div id="tpage-pratica" class="cpage-view">
     <h2>Guida alla Pratica</h2>
     <div class="subtitle">// strategie per sviluppare l'improvvisazione</div>
     <div class="practice-grid" id="practice-grid"></div>
   </div>
-  <div id="tpage-tecnica" class="cpage-view">
+  <div id="tpage-tecnica" class="cpage-view active">
   <h2>⚡ Tecnica Avanzata</h2>
   <div class="subtitle">// sweep picking, alternate, legato, tapping — studia i virtuosi del rock</div>
 
@@ -10986,6 +11016,54 @@ window.addEventListener('DOMContentLoaded', function() {
       le due note nella <em>stessa colonna</em> si suonano simultaneamente.
     </div>
     <div class="ex-grid" id="ex-doublestops-grid"></div>
+  </div>
+
+  <!-- ERIC JOHNSON: pentatoniche sovrapposte sull'accordo di dominante -->
+  <div id="tp-ejohnson" class="tech-panel">
+    <div class="notice">
+      <strong>Pentatoniche ibride su accordo di dominante (alla Eric Johnson):</strong> sopra <em>un solo</em> accordo non
+      usare una sola pentatonica. Eric Johnson sovrappone più pentatoniche allo stesso accordo e le
+      <em>incardina</em> una nell'altra: ognuna mette in luce note diverse dell'accordo. Su un X7 restano tutte dentro la
+      misolidia, tranne la pentatonica minore (per il colore blues). La <strong>pentatonica dominante</strong> (1 3 4 5 ♭7)
+      è la più "ibrida": ha la 3 maggiore e la ♭7 insieme.
+    </div>
+
+    <div class="controls" style="margin-bottom:12px">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Accordo</div>
+        <select id="ej-key" onchange="renderEjView()">
+          <option value="0">C7</option><option value="1">C#7</option><option value="2">D7</option>
+          <option value="3">D#7</option><option value="4">E7</option><option value="5">F7</option>
+          <option value="6">F#7</option><option value="7">G7</option><option value="8">G#7</option>
+          <option value="9" selected>A7</option><option value="10">A#7</option><option value="11">B7</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">Tonica sulla</div>
+        <div style="display:flex;gap:4px;margin-top:2px">
+          <button class="pos-btn active" id="ej-pos6" onclick="setEjPos(6)">6ª corda</button>
+          <button class="pos-btn" id="ej-pos5" onclick="setEjPos(5)">5ª corda</button>
+        </div>
+      </div>
+      <div class="ctrl-group" style="flex:1 1 100%">
+        <div class="ctrl-label">Pentatonica sopra l'accordo</div>
+        <div id="ej-colour-btns" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px"></div>
+      </div>
+    </div>
+
+    <div id="ej-colour-info" class="ej-info"></div>
+    <div id="ej-fretboard-wrap" style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
+    <div class="eq-legend-row" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin:12px 0">
+      <span class="eq-legend-chip"><span class="eq-legend-dot" style="background:#f59e0b"></span>Tonica dell'accordo</span>
+      <span class="eq-legend-chip"><span class="eq-legend-dot" style="background:#1c1c1c;border:2px solid #fff;width:8px;height:8px"></span>Nota dell'accordo (3 · 5 · ♭7)</span>
+      <span class="eq-legend-chip"><span class="eq-legend-dot" id="ej-legend-colour" style="background:#3b82f6"></span>Colore (tensione)</span>
+    </div>
+    <div class="eq-play-row" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:20px">
+      <button class="play-btn" onclick="playEj('scale')">▶ Scala</button>
+      <button class="play-btn" onclick="playEj('chord')">▶ Sopra l'accordo</button>
+      <button class="play-btn" onclick="playEj('hinge')">↺ Catena di pentatoniche</button>
+    </div>
+    <div class="ex-grid" id="ex-ejohnson-grid"></div>
   </div>
 
   <!-- I MAESTRI -->
@@ -12250,7 +12328,7 @@ const TECH_EXERCISES = {
       tips:['Pennata rigorosamente ↓↑↓↑','Usa il metronomo','Registrati e ascolta'],
       tags:['cromatico','riscaldamento'] },
     { title:'Scale pentatonica Am (pattern 1)', diff:2, bpmSlow:70, bpmMid:110, bpmFast:150,
-      tab:'e |--5-8------|--8-5------|\nB |--5-8------|--8-5------|\nG |--5-7------|--7-5------|\nD |--5-7------|--7-5------|\nA |--5-7------|--7-5------|\nE |--5-8------|--8-5------|',
+      tab:'e |----------------------5-8-|--8-5---------------------|\nB |------------------5-8-----|------8-5-----------------|\nG |--------------5-7---------|----------7-5-------------|\nD |----------5-7-------------|--------------7-5---------|\nA |------5-7-----------------|------------------7-5-----|\nE |--5-8---------------------|----------------------8-5-|',
       tips:['Tieni il polso rilassato','Partenza con pennata verso il basso','Segna i punti di corda cambiamento'],
       tags:['pentatonica','scale'] },
     { title:'Sequenza di 3 note (triplet run)', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
@@ -12258,7 +12336,7 @@ const TECH_EXERCISES = {
       tips:['Ogni gruppo di 3 comincia ↓','Tutte note di La min pentatonica (A C D … G E)','Accelera solo quando il ritmo è preciso'],
       tags:['sequenza','triplet'] },
     { title:'Inside/Outside picking', diff:4, bpmSlow:50, bpmMid:80, bpmFast:110,
-      tab:'e |--8-10------|--10-8------|\nB |--8-10------|--10-8------|\nG |------------|------------|\nD |--7-9-------|--9-7-------|\nA |--7-9-------|--9-7-------|\nE |------------|------------|',
+      tab:'e |----8----10-|--10----8---|----------|----------|\nB |--8---10----|-----10---8-|----------|----------|\nG |------------|------------|----------|----------|\nD |------------|------------|----7---9-|--9---7---|\nA |------------|------------|--7---9---|----9---7-|\nE |------------|------------|----------|----------|',
       tips:['Inside = pennata nel mezzo delle corde','Outside = pennata verso fuori','Difficile: parte slow'],
       tags:['inside','outside','avanzato'] },
   ],
@@ -12268,7 +12346,7 @@ const TECH_EXERCISES = {
       tips:['Colpisci forte con le dita di arrivo','Non sollevare le dita sulla corda'],
       tags:['hammer-on','pull-off'] },
     { title:'Scala legato 3 note per corda', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
-      tab:'e |--5h7h8-----|--8p7p5-----|\nB |--5h6h8-----|--8p6p5-----|\nG |--5h7h9-----|--9p7p5-----|\nD |--5h7h9-----|--9p7p5-----|\nA |--5h7h8-----|--8p7p5-----|\nE |--5h7h8-----|--8p7p5-----|',
+      tab:'e |--------------------------------5h7h8-|--8p7p5-------------------------------|\nB |--------------------------5h6h8-------|--------8p6p5-------------------------|\nG |--------------------5h7h9-------------|--------------9p7p5-------------------|\nD |--------------5h7h9-------------------|--------------------9p7p5-------------|\nA |--------5h7h8-------------------------|--------------------------8p7p5-------|\nE |--5h7h8-------------------------------|--------------------------------8p7p5-|',
       tips:['Primo pizzico per ogni corda','Massima efficienza mano sinistra'],
       tags:['scale','legato'] },
     { title:'Legato con hammer-on da vuoto', diff:2, bpmSlow:60, bpmMid:95, bpmFast:125,
@@ -12299,40 +12377,40 @@ const TECH_EXERCISES = {
       tags:['tapping','arpeggio'] },
   ],
   skipping: [
-    { title:'Ottave skipping', diff:2, bpmSlow:70, bpmMid:100, bpmFast:130,
+    { chords:true, title:'Ottave skipping', diff:2, bpmSlow:70, bpmMid:100, bpmFast:130,
       tab:'e |--5---7---8---10--|\nB |------------------|\nG |--2---4---5---7---|\nD |------------------|\nA |------------------|\nE |------------------|',
       tips:['Muta con le dita della mano sinistra','Suona le due corde quasi insieme'],
       tags:['ottave','string skipping'] },
     { title:'Skip di 2 corde (Gilbert pattern)', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
-      tab:'e |--5-7-8-----------|\nB |------------------|\nG |------5-7-9-------|\nD |------------------|\nA |----------5-7-8---|\nE |------------------|',
+      tab:'e |--5-7-8-------------|\nB |--------------------|\nG |--------5-7-9-------|\nD |--------------------|\nA |--------------5-7-8-|\nE |--------------------|',
       tips:['Salta sempre 1 corda','Ancora la mano sul corpo della chitarra'],
       tags:['string skipping','Paul Gilbert'] },
-    { title:'10e intervalli (Guthrie Govan)', diff:4, bpmSlow:50, bpmMid:75, bpmFast:100,
+    { chords:true, title:'10e intervalli (Guthrie Govan)', diff:4, bpmSlow:50, bpmMid:75, bpmFast:100,
       tab:'e |----7-------9-------10----|\nB |--------------------------|\nG |--------------------------|\nD |----5-------7-------9-----|\nA |--------------------------|\nE |--------------------------|\n(corde D+e, skip di 2 corde: ogni coppia = 10ª suonata insieme)',
       tips:['10ª = ottava + terza (es. G→B)','Le due note di ogni coppia si suonano INSIEME (stessa colonna) — non in sequenza','Nota grave su D, la sua 10ª su e','Stira le dita gradualmente'],
       tags:['10e','avanzato'] },
   ],
   dwps: [
     { title:'DWPS base - 2 note per corda (numero PARI)', diff:1, bpmSlow:60, bpmMid:90, bpmFast:120,
-      tab:'e |--5-6--5-6--5-6--|\nB |-----5-6--5-6--5-6|\nG |--5-6--5-6--5-6--|',
+      tab:'e |----------------------5-8-|\nB |------------------5-8-----|\nG |--------------5-7---------|\nD |----------5-7-------------|\nA |------5-7-----------------|\nE |--5-8---------------------|',
       tips:['2 note per corda = numero PARI','Sempre finisci con up-stroke (posizione libera)','Cambio corda è facile e naturale'],
       tags:['dwps','base','pari'] },
     { title:'DWPS cambio corda - Pattern 2 note', diff:2, bpmSlow:65, bpmMid:90, bpmFast:115,
-      tab:'E |--5-7--5-7--5-7--5-7--|\nA |-----5-7--5-7--5-7--5-7|\nD |--5-7--5-7--5-7--5-7--|',
+      tab:'e |--------------|--------------|\nB |--------------|--------------|\nG |--------------|--------------|\nD |----------5-7-|----------5-7-|\nA |------5-7-----|------5-7-----|\nE |--5-7---------|--5-7---------|',
       tips:['E (grave) → A → D (salita): cambio dopo up-stroke','Plettro inclinato verso il basso durante il downstroke','Niente sforzo nel cambio corda - il plettro è libero'],
       tags:['dwps','cambio corda','outside picking'] },
     { title:'DWPS con legato - 3 note (numero DISPARI)', diff:3, bpmSlow:60, bpmMid:85, bpmFast:110,
-      tab:'e |--5-6h7-|--5-6h7-|\nB |--5-6h7-|--5-6h7-|\nG |--------|--------|',
+      tab:'e |--------5-6h7-|--------5-6h7-|\nB |--5-6h7-------|--5-6h7-------|\nG |--------------|--------------|\nD |--------------|--------------|\nA |--------------|--------------|\nE |--------------|--------------|',
       tips:['3 note (dispari) = usa hammer-on sulla 3ª nota','Risparmi una pennata = posizione libera per cambio','Legato risolve il problema del numero dispari'],
       tags:['dwps','legato','dispari','hammer-on'] },
     { title:'Pentatonic Cascade di Eric Johnson', diff:4, bpmSlow:50, bpmMid:75, bpmFast:100,
-      tab:'e |--8-5-----------8-5-----------|\nB |------8-5-----------8-5-------|\nG |----------7-----------7-------|\nD |-----------------------------|\nA |-----------------------------|\nE |-----------------------------|',
-      tips:['Pattern pentatonico 5 note (Do La Sol Mi Re) ripetuto 2 volte = 10 note (numero PARI)','Tutte note di La min pentatonica — niente note di passaggio','Discendente: usa sweep o legato per arrivare all\'up-stroke finale','Questo è il vero esercizio di Johnson'],
+      tab:'e |--8-5-------|--8-5-------|\nB |------8-5---|------8-5---|\nG |----------7-|----------7-|\nD |------------|------------|\nA |------------|------------|\nE |------------|------------|',
+      tips:['Pattern pentatonico 5 note (Do La Sol Mi Re) ripetuto 2 volte = 10 note (numero PARI)','Tutte note di La min pentatonica — niente note di passaggio','Discendente: usa sweep o legato per arrivare all\'up-stroke finale','Gruppi da 5 discendenti: è il fraseggio a «cascata» tipico di Eric Johnson'],
       tags:['dwps','pentatonica','Johnson','cascade','avanzato'] },
   ],
   'legato-phrasing': [
     { title:'Unprepared hammer-on base', diff:2, bpmSlow:70, bpmMid:100, bpmFast:130,
-      tab:'e |--5h6h7h8-----|--7h6h5p3-----|\nB |--------------|--------------|\nG |--------------|--------------|\nD |--------------|--------------|\nA |--------------|--------------|\nE |--------------|--------------|',
+      tab:'e |--5h6h7h8-|--8p7p6p5-|\nB |----------|----------|\nG |----------|----------|\nD |----------|----------|\nA |----------|----------|\nE |----------|----------|',
       tips:['Colpisci la prima nota con il plettro','Tutti gli altri: hammer-on senza pizzico','Non sollevare le dita, scivola fra le note'],
       tags:['legato','hammer-on','Pat Metheny'] },
     { title:'Slides espressivi con cromatica', diff:3, bpmSlow:60, bpmMid:85, bpmFast:110,
@@ -12348,17 +12426,31 @@ const TECH_EXERCISES = {
       tips:['Prima nota: pick, resto: hammer-ons','Movimento fluido come uno strumento a fiato','Velocità crescente, espressione sempre alta'],
       tags:['legato','chromatic','avanzato','Pat Metheny'] },
   ],
+  ejohnson: [
+    { title:'Pentatonica dominante di A su A7 (5ª posizione)', diff:2, bpmSlow:60, bpmMid:85, bpmFast:110,
+      tab:'e |----------------------5-9-|\nB |------------------5-8-----|\nG |--------------6-7---------|\nD |----------5-7-------------|\nA |----4-5-7-----------------|\nE |--5-----------------------|',
+      tips:['Note: A · C# · D · E · G = 1 · 3 · 4 · 5 · ♭7','Il C# al 9° tasto del cantino è un\'estensione: tienila col mignolo','Fermati sul C# (la 3): è la nota che dice "accordo di dominante"'],
+      tags:['pentatonica dominante','Eric Johnson','A7'] },
+    { title:'Quintine discendenti (gruppi da 5) in La minore pent.', diff:4, bpmSlow:50, bpmMid:70, bpmFast:95,
+      tab:'e |--8-5-------|--5---------|------------|------------|\nB |------8-5---|----8-5-----|--8-5-------|--5---------|\nG |----------7-|--------7-5-|------7-5---|----7-5-----|\nD |------------|------------|----------7-|--------7-5-|\nA |------------|------------|------------|------------|\nE |------------|------------|------------|------------|',
+      tips:['Gruppi di 5 note che ripartono ogni volta una nota più in basso','Accento sulla prima di ogni gruppo: il "giro" scivola sul tempo, è il suono di EJ','Plettrata alternata, lenta e regolare prima di accelerare'],
+      tags:['quintine','pentatonica','Eric Johnson','fraseggio'] },
+    { title:'Catena su A7: Bm pent → Em pent → dominante, chiusa sulla 3', diff:3, bpmSlow:55, bpmMid:75, bpmFast:100,
+      tab:'e |--7-5-------|------------|----------|\nB |------7-5---|--8-5-------|----------|\nG |----------7-|------7-4---|----------|\nD |------------|----------7-|--5-------|\nA |------------|------------|----7-5-4-|\nE |------------|------------|----------|',
+      tips:['Battuta 1: Bm pent (9 · 11 · 5 · 13 · 1), suono sospeso','Battuta 2: Em pent (5 · ♭7 · 1 · 9 · 11), più misolidio','Battuta 3: pentatonica dominante, risolvi sul C# (3ª di A7)'],
+      tags:['pentatoniche sovrapposte','hinge','Eric Johnson','A7'] },
+  ],
   equator: [
     { title:'Crossing the equator: bend ♭3 → 3 (in La)', diff:1, bpmSlow:60, bpmMid:80, bpmFast:100,
       tab:'e |--8b(9)-8-5---------|\nB |-------------5------|\nG |--------------------|\nD |--------------------|\nA |--------------------|\nE |--------------------|',
       tips:['Il bend è sul Do (♭3, cantino 8° tasto) tirato fino a Do# (3): è l\'equatore','Bendi lentamente: ascolta il momento in cui la nota "diventa" maggiore','Risolvi sulla 5 (Mi, corda B 5° tasto) per stabilizzare la frase'],
       tags:['blues','bending','John Mayer','equator'] },
     { title:'Slide fra emisferi: La min → La maj (3 tasti giù)', diff:2, bpmSlow:55, bpmMid:80, bpmFast:105,
-      tab:'e |--5-8-5\\2-----------|\nB |--5-8-5\\2-----------|\nG |--5-7-5\\2-----------|\nD |--5-7-5\\2-----------|\nA |--5-7-5\\2-----------|\nE |--5-8-5\\2-----------|',
+      tab:'e |----------------------5-8-|----------------------2-5-|\nB |------------------5-8-----|------------------2-5-----|\nG |--------------5-7---------|--------------2-4---------|\nD |----------5-7-------------|----------2-4-------------|\nA |------5-7-----------------|------2-4-----------------|\nE |--5-8---------------------|--2-5---------------------|',
       tips:['Stessa forma del box: solo la posizione cambia','Slide pulito di 3 tasti = cambio di emisfero','Senti come il colore si schiarisce dopo lo slide'],
       tags:['pentatonica','slide','equator','John Mayer'] },
     { title:'Mayer-style I-IV: nord su A7, sud su D7', diff:3, bpmSlow:55, bpmMid:75, bpmFast:95,
-      tab:'e |---2-5-(A7)----------5-8-(D7)------|\nB |---2-5---------------5-8-----------|\nG |---2-4---------------5-7-----------|\nD |----------------------------------|\nA |----------------------------------|\nE |----------------------------------|',
+      tab:'e |----------2-5-|----------5-8-|\nB |------2-5-----|------5-8-----|\nG |--2-4---------|--5-7---------|\nD |--------------|--------------|\nA |--------------|--------------|\nE |--------------|--------------|',
       tips:['Battuta 1 (A7): A maj pent al 2° tasto = NORD','Battuta 2 (D7): A min pent al 5° tasto = SUD','Il root resta La in entrambi i casi: solo il clima cambia'],
       tags:['blues','I-IV','John Mayer','equator'] },
     { title:'Hybrid lick: pentatonica ibrida sull\'equatore', diff:3, bpmSlow:50, bpmMid:75, bpmFast:100,
@@ -12366,29 +12458,29 @@ const TECH_EXERCISES = {
       tips:['Bendi la ♭3 (Do, cantino 8°) verso la 3 (Do#) prima di scendere','Uso della pent. ibrida (1-2-♭3-3-5-6-♭7) — la scala dei due emisferi insieme','Termina sul Mi (5, corda B 5°) per chiudere "neutro"'],
       tags:['pentatonica ibrida','blues','John Mayer','equator'] },
     { title:'"Gravity" feel: oscilla fra nord e sud ogni 2 tempi', diff:4, bpmSlow:50, bpmMid:70, bpmFast:90,
-      tab:'e |--5-8-5\\2-5-2----|--2-5-2/5-8-5----|\nB |--5-8-5\\2-5-2----|--2-5-2/5-8------|\nG |--5-7-5\\2-4-2----|--2-4-2/5-7------|\nD |-----------------|-----------------|\nA |-----------------|-----------------|\nE |-----------------|-----------------|',
+      tab:'e |--8-5-------------|----------2-5/8-|\nB |------8-5---------|------2-5-------|\nG |----------7-5\\2-4-|--2-4-----------|\nD |------------------|----------------|\nA |------------------|----------------|\nE |------------------|----------------|',
       tips:['Misura 1: parti SUD (5° tasto) → scivola NORD (2° tasto)','Misura 2: parti NORD → scivola SUD','Il root La (5° tasto, 6ª corda) è la tua bussola: sempre presente nell\'orecchio','Vibrato lento sulle note finali, alla Mayer'],
       tags:['blues','frase lunga','John Mayer','Gravity','equator','avanzato'] },
   ],
   doublestops: [
-    { title:'Terze pentatoniche (Chuck Berry, La maggiore)', diff:2, bpmSlow:60, bpmMid:85, bpmFast:110,
+    { chords:true, title:'Terze pentatoniche (Chuck Berry, La maggiore)', diff:2, bpmSlow:60, bpmMid:85, bpmFast:110,
       tab:'e |----------------------|\nB |--2-2--5-5--2-2--5-5--|\nG |--2-2--6-6--2-2--6-6--|\nD |----------------------|\nA |----------------------|\nE |----------------------|',
       tips:['Barra indice e anulare tenendo le due note perfettamente insieme','Attacca entrambe le corde con la stessa plettrata secca','Muta le corde adiacenti col palmo per un suono pulito rock and roll'],
       tags:['double stop','terze','La maggiore','Chuck Berry'] },
-    { title:'Quarte alla Hendrix/Mayer (La minore)', diff:2, bpmSlow:65, bpmMid:90, bpmFast:115,
+    { chords:true, title:'Quarte alla Hendrix/Mayer (La minore)', diff:2, bpmSlow:65, bpmMid:90, bpmFast:115,
       tab:'e |--5--8--10--8--5--|\nB |--5--8--10--8--5--|\nG |------------------|\nD |------------------|\nA |------------------|\nE |------------------|',
       tips:['Stessa barra su corde B ed e: è la forma classica di Little Wing','Sali e scendi la pentatonica mantenendo le due note allineate','Prova hybrid picking (plettro su B, medio su e) per il colore Mayer'],
       tags:['double stop','quarte','La minore','Hendrix','Mayer'] },
-    { title:'Double stop con slide (Wonderful Tonight / Berry)', diff:3, bpmSlow:55, bpmMid:80, bpmFast:105,
+    { chords:true, title:'Double stop con slide (Wonderful Tonight / Berry)', diff:3, bpmSlow:55, bpmMid:80, bpmFast:105,
       tab:'e |--2/5--5\\2--5/7--7\\5--|\nB |--2/5--5\\2--5/7--7\\5--|\nG |----------------------|\nD |----------------------|\nA |----------------------|\nE |----------------------|',
       tips:['Fai scivolare la forma parallela senza staccare le dita','Lo slide di arrivo va fermato con precisione sul tasto giusto','Lascia respirare la nota finale con un vibrato leggero'],
       tags:['double stop','slide','La maggiore','ballad'] },
-    { title:'Unison bend (La minore)', diff:3, bpmSlow:50, bpmMid:75, bpmFast:100,
+    { chords:true, title:'Unison bend (La minore)', diff:3, bpmSlow:50, bpmMid:75, bpmFast:100,
       tab:'e |--5------10------12-----|\nB |--8b-----13b-----15b----|\nG |------------------------|\nD |------------------------|\nA |------------------------|\nE |------------------------|',
       tips:['La nota sul cantino è fissa: piega la B finché i due suoni si fondono','Ascolta il battimento sparire = intonazione perfetta','Rinforza il bending con medio e anulare dietro l\'indice'],
       tags:['double stop','unison bend','La minore','blues'] },
-    { title:'Lick riassuntivo (Mayer/SRV, La minore)', diff:4, bpmSlow:55, bpmMid:75, bpmFast:95,
-      tab:'e |--5/8--8-------8----|\nB |--5/8--8--5----10b--|\nG |----------5---------|\nD |--------------------|\nA |--------------------|\nE |--------------------|',
+    { chords:true, title:'Lick riassuntivo (Mayer/SRV, La minore)', diff:4, bpmSlow:55, bpmMid:75, bpmFast:95,
+      tab:'e |--5/8--8-------8----|\nB |--5/8--8--5----10b(13)|\nG |----------5---------|\nD |--------------------|\nA |--------------------|\nE |--------------------|',
       tips:['Unisce quarte in slide, una terza e un unison bend finale','Il bend finale è di una terza minore (3 semitoni): da La a Do, all\'unisono col cantino','Chiudi con vibrato sull\'unison bend, alla John Mayer'],
       tags:['double stop','lick','La minore','Mayer','SRV'] },
   ]
@@ -12476,6 +12568,7 @@ function initTechPage() {
     { id:'legato-phrasing', label:'Legato Phrasing' },
     { id:'equator',   label:'Equator Trick (Mayer)' },
     { id:'doublestops', label:'Double Stops' },
+    { id:'ejohnson',  label:'Eric Johnson' },
     { id:'masters',   label:'I Maestri' },
   ];
   const tabsEl = document.getElementById('tech-tabs');
@@ -12509,7 +12602,7 @@ function initTechPage() {
     return parsed.map(p => p.tab ? `${p.label} |${p.body.padEnd(maxLen, '-')}|` : p.raw).join('\n');
   }
 
-  ['alternate','legato','tapping','skipping','dwps','legato-phrasing','equator','doublestops'].forEach(key => {
+  ['alternate','legato','tapping','skipping','dwps','legato-phrasing','equator','doublestops','ejohnson'].forEach(key => {
     const grid = document.getElementById('ex-' + key + '-grid');
     if (!grid) return;
     grid.innerHTML = (TECH_EXERCISES[key] || []).map((ex, exIdx) => `
@@ -12558,6 +12651,7 @@ function initTechPage() {
   // Equator Trick diagrams
   renderEquatorView();
   renderEqBlendDiagrams();
+  renderEjView();
   _techInitialized = true;
 }
 
@@ -12665,7 +12759,7 @@ function drawEquatorSvg(view) {
     const x = leftPad + f * cellW;
     svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+5*cellH}" stroke="#2e2e2e" stroke-width="1"/>`;
     const fn = minFret + f;
-    if (fn > 0) svg += `<text x="${x + cellW/2}" y="${H-5}" text-anchor="middle" font-size="10" fill="${equatorFrets.includes(fn) ? COL_EQ : '#8a8a8a'}" font-family="'Space Mono',monospace" font-weight="${equatorFrets.includes(fn) ? 'bold' : 'normal'}">${fn}</text>`;
+    if (f > 0 && fn > 0) svg += `<text x="${x - cellW/2}" y="${H-5}" text-anchor="middle" font-size="10" fill="${equatorFrets.includes(fn) ? COL_EQ : '#8a8a8a'}" font-family="'Space Mono',monospace" font-weight="${equatorFrets.includes(fn) ? 'bold' : 'normal'}">${fn}</text>`;
   }
 
   // Inlay markers
@@ -12698,8 +12792,8 @@ function drawEquatorSvg(view) {
     const strokeC = n.isRoot ? '#fff' : 'none';
     const sw = n.isRoot ? 2 : 0;
     const noteLbl = NOTES_LBL[n.noteClass];
-    svg += `<circle cx="${dotX}" cy="${dotY}" r="${dotR}" fill="${fill}" stroke="${strokeC}" stroke-width="${sw}" opacity="${n.isRoot ? 1 : 0.92}"/>`;
-    svg += `<text x="${dotX}" y="${dotY+3}" text-anchor="middle" font-size="8" fill="#fff" font-family="'Space Mono',monospace" font-weight="bold">${noteLbl}</text>`;
+    svg += `<g class="tf-dot" data-tf="${n.string}:${n.fret}"><circle cx="${dotX}" cy="${dotY}" r="${dotR}" fill="${fill}" stroke="${strokeC}" stroke-width="${sw}" opacity="${n.isRoot ? 1 : 0.92}"/>`;
+    svg += `<text x="${dotX}" y="${dotY+3}" text-anchor="middle" font-size="8" fill="#fff" font-family="'Space Mono',monospace" font-weight="bold">${noteLbl}</text></g>`;
   });
 
   svg += '</svg>';
@@ -12751,10 +12845,12 @@ function playEqBox(which) {
   // Ordina: dalla 6ª corda (low E = string 5) all'1ª, per ogni corda dal fret più basso al più alto
   pool.sort((a, b) => (b.string - a.string) || (a.fret - b.fret));
 
+  const wrap = document.getElementById('eq-fretboard-wrap');
   pool.forEach((n, i) => {
     const midi = TECH_OPEN_MIDI[n.string] + n.fret;
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
     playNote(freq, now + i * step, 0.7, dest);
+    techFlash(wrap, n.string, n.fret, (now + i * step - ctx.currentTime) * 1000, step * 1000 * 0.9);
   });
 }
 function playEqEquator() { playEqBox('equator'); }
@@ -12813,11 +12909,11 @@ function buildEqBlendSvg(c) {
     const x = leftPad + f * cellW;
     svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+5*cellH}" stroke="#2e2e2e" stroke-width="1"/>`;
     const fn = c.minFret + f;
-    if (fn > 0) svg += `<text x="${x + cellW/2}" y="${H-5}" text-anchor="middle" font-size="9" fill="#8a8a8a" font-family="'Space Mono',monospace">${fn}</text>`;
+    if (f > 0 && fn > 0) svg += `<text x="${x - cellW/2}" y="${H-5}" text-anchor="middle" font-size="9" fill="#8a8a8a" font-family="'Space Mono',monospace">${fn}</text>`;
   }
   [3,5,7,9].forEach(f => {
-    if (f >= c.minFret && f < c.maxFret) {
-      const cx = leftPad + (f - c.minFret) * cellW + cellW/2;
+    if (f > c.minFret && f <= c.maxFret) {
+      const cx = leftPad + (f - c.minFret) * cellW - cellW/2;
       const cy = topPad + 5*cellH + 7;
       svg += `<circle cx="${cx}" cy="${cy}" r="2" fill="#3a2e1a"/>`;
     }
@@ -12834,8 +12930,8 @@ function buildEqBlendSvg(c) {
     let fill='#2c3e50', stroke='none', sw=0, txt='#cfd8dc';
     if (n.root)       { fill=c.color;      stroke='#fff'; sw=1.5; txt='#000'; }
     else if (n.third) { fill=c.thirdColor; stroke='#fff'; sw=1.4; txt='#fff'; }
-    svg += `<circle cx="${dotX}" cy="${dotY}" r="${dotR}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
-    svg += `<text x="${dotX}" y="${dotY+3}" text-anchor="middle" font-size="8" fill="${txt}" font-family="'Space Mono',monospace" font-weight="bold">${n.label}</text>`;
+    svg += `<g class="tf-dot" data-tf="${n.string}:${n.fret}"><circle cx="${dotX}" cy="${dotY}" r="${dotR}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+    svg += `<text x="${dotX}" y="${dotY+3}" text-anchor="middle" font-size="8" fill="${txt}" font-family="'Space Mono',monospace" font-weight="bold">${n.label}</text></g>`;
   });
   svg += '</svg>';
   return svg;
@@ -12856,10 +12952,12 @@ function playEqBlendHemi(side) {
   const ctx = getAudioCtx();
   const now = ctx.currentTime + 0.02;
   const step = 0.30;
+  const wrap = document.getElementById('eq-blend-diagram-' + side);
   box.seq.forEach(([str, fret], i) => {
     const midi = TECH_OPEN_MIDI[str] + fret;
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
     playNote(freq, now + i * step, 0.65, dest);
+    techFlash(wrap, str, fret, (now + i * step - ctx.currentTime) * 1000, step * 1000 * 0.9);
   });
 }
 
@@ -12872,6 +12970,146 @@ function playEqBlendCross() {
   const csMidi = TECH_OPEN_MIDI[2] + 6;
   playNote(440 * Math.pow(2,(cMidi -69)/12), now,        1.0, dest);
   playNote(440 * Math.pow(2,(csMidi-69)/12), now + 0.55, 1.4, dest);
+}
+
+
+// ─── ERIC JOHNSON: pentatoniche sovrapposte su un accordo di dominante ──────
+// Intervalli dalla tonica dell'accordo (X7 = 1 3 5 ♭7). Ogni "colore" è una
+// pentatonica costruita su un altro grado e suonata sopra lo stesso accordo.
+const EJ_IV_NAME = { 0:'1', 1:'♭9', 2:'9', 3:'♭3', 4:'3', 5:'11', 6:'♯11', 7:'5', 8:'♭13', 9:'13', 10:'♭7', 11:'7' };
+const EJ_COLOURS = [
+  { id:'dom',  name:'Pentatonica dominante', from:0, ivs:[0,4,5,7,10], color:'#06b6d4',
+    info:'1 · 3 · 4 · 5 · ♭7 — contiene 3 e ♭7 insieme: è la pentatonica "ibrida" che suona già come un X7.' },
+  { id:'maj',  name:'Maggiore dalla radice', from:0, ivs:[0,2,4,7,9], color:'#22c55e',
+    info:'1 · 9 · 3 · 5 · 13 — il colore "country/aperto". È la stessa forma della minore 3 tasti sotto.' },
+  { id:'min2', name:'Minore dalla 2ª', from:2, ivs:[2,5,7,9,0], color:'#3b82f6',
+    info:'9 · 11 · 5 · 13 · 1 — niente 3: suono sospeso, moderno. Si sposta di un tono sopra la tonica.' },
+  { id:'min5', name:'Minore dalla 5ª', from:7, ivs:[7,10,0,2,5], color:'#a855f7',
+    info:'5 · ♭7 · 1 · 9 · 11 — sottolinea la ♭7 e la 9: misolidia senza 3. Risolvi sulla 3 per chiudere.' },
+  { id:'min1', name:'Minore dalla radice (blues)', from:0, ivs:[0,3,5,7,10], color:'#ef4444',
+    info:'1 · ♭3 · 4 · 5 · ♭7 — il contrasto blues: piega la ♭3 verso la 3 dell\'accordo.' },
+];
+const EJ_HINGE = ['maj', 'min2', 'min5', 'dom'];   // la "catena": stesso accordo, colori in sequenza
+const EJ_STATE = { colour: 'dom', rootString: 6 };
+
+function setEjPos(str) {
+  EJ_STATE.rootString = str;
+  document.getElementById('ej-pos6').classList.toggle('active', str === 6);
+  document.getElementById('ej-pos5').classList.toggle('active', str === 5);
+  renderEjView();
+}
+function setEjColour(id) { EJ_STATE.colour = id; renderEjView(); }
+
+// Note della pentatonica in una posizione: finestra di 6 tasti attorno alla tonica
+// sulla corda scelta. string index 0 = cantino (e), 5 = 6ª corda (E grave).
+function buildEjView(keyIdx, colourId, rootString) {
+  const col = EJ_COLOURS.find(c => c.id === colourId) || EJ_COLOURS[0];
+  const sIdx = rootString === 5 ? 4 : 5;
+  let rootFret = ((keyIdx - TECH_OPEN_MIDI[sIdx]) % 12 + 12) % 12;
+  if (rootFret < 2) rootFret += 12;
+  const lo = rootFret - 1, hi = rootFret + 4;
+  const pcs = new Set(col.ivs.map(iv => (keyIdx + iv) % 12));
+  const chordIvs = new Set([0, 4, 7, 10]);
+  const notes = [];
+  for (let s = 0; s < 6; s++) {
+    for (let f = lo; f <= hi; f++) {
+      const pc = (TECH_OPEN_MIDI[s] + f) % 12;
+      if (!pcs.has(pc)) continue;
+      const iv = ((pc - keyIdx) % 12 + 12) % 12;
+      notes.push({ string: s, fret: f, iv, isRoot: iv === 0, isChord: chordIvs.has(iv) });
+    }
+  }
+  return { col, notes, minFret: lo - 1, maxFret: hi + 1 };
+}
+
+function drawEjSvg(view) {
+  const sNames = ['e','B','G','D','A','E'];
+  const { col, notes, minFret, maxFret } = view;
+  const span = maxFret - minFret;
+  const cellW = 40, cellH = 28, leftPad = 30, topPad = 18, dotR = 12;
+  const W = leftPad + span * cellW + 16, H = topPad + 5 * cellH + 28;
+  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:${W}px" role="img" aria-label="${col.name} sul manico">`;
+  svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="10"/>`;
+  for (let f = 0; f <= span; f++) {
+    const x = leftPad + f * cellW;
+    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad + 5 * cellH}" stroke="#2e2e2e" stroke-width="1"/>`;
+    const fn = minFret + f;
+    if (f > 0 && fn > 0) svg += `<text x="${x - cellW / 2}" y="${H - 5}" text-anchor="middle" font-size="10" fill="#8a8a8a" font-family="'Space Mono',monospace">${fn}</text>`;
+  }
+  for (let s = 0; s < 6; s++) {
+    const y = topPad + s * cellH;
+    svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + span * cellW}" y2="${y}" stroke="#555" stroke-width="${s === 0 ? 0.7 : s === 5 ? 1.6 : 1}"/>`;
+    svg += `<text x="${leftPad - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#888" font-family="'Space Mono',monospace">${sNames[s]}</text>`;
+  }
+  notes.forEach(n => {
+    const x = leftPad + (n.fret - minFret) * cellW - cellW / 2;
+    const y = topPad + n.string * cellH;
+    const fill = n.isRoot ? '#f59e0b' : (n.isChord ? '#1c1c1c' : col.color);
+    const stroke = n.isRoot || n.isChord ? '#fff' : 'none';
+    const txt = n.isRoot ? '#111' : '#fff';
+    svg += `<g class="tf-dot" data-tf="${n.string}:${n.fret}"><circle cx="${x}" cy="${y}" r="${dotR}" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+    svg += `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="10" fill="${txt}" font-family="'Space Mono',monospace" font-weight="bold">${EJ_IV_NAME[n.iv]}</text></g>`;
+  });
+  return svg + '</svg>';
+}
+
+function renderEjView() {
+  const keySel = document.getElementById('ej-key');
+  if (!keySel) return;
+  const keyIdx = parseInt(keySel.value);
+  const btns = document.getElementById('ej-colour-btns');
+  btns.innerHTML = EJ_COLOURS.map(c => {
+    const from = NOTES_TECH[(keyIdx + c.from) % 12];
+    const lbl = c.id === 'dom' ? `${NOTES_TECH[keyIdx]} dominante` : c.id === 'maj' ? `${from} maggiore` : `${from}m`;
+    return `<button class="pos-btn${c.id === EJ_STATE.colour ? ' active' : ''}" style="border-color:${c.color}" onclick="setEjColour('${c.id}')">${lbl}</button>`;
+  }).join('');
+  const view = buildEjView(keyIdx, EJ_STATE.colour, EJ_STATE.rootString);
+  document.getElementById('ej-colour-info').innerHTML = `<strong style="color:${view.col.color}">${view.col.name}</strong> su ${NOTES_TECH[keyIdx]}7: ${view.col.info}`;
+  document.getElementById('ej-legend-colour').style.background = view.col.color;
+  document.getElementById('ej-fretboard-wrap').innerHTML = drawEjSvg(view);
+}
+
+// mode: 'scale' (su e giù), 'chord' (accordo X7 poi la scala), 'hinge' (catena di colori)
+function playEj(mode) {
+  _stopTechPlayback();
+  const dest = _ensureTechGain();
+  const ctx = getAudioCtx();
+  const keyIdx = parseInt(document.getElementById('ej-key').value);
+  const wrap = document.getElementById('ej-fretboard-wrap');
+  const order = (a, b) => (TECH_OPEN_MIDI[a.string] + a.fret) - (TECH_OPEN_MIDI[b.string] + b.fret);
+  const freq = m => 440 * Math.pow(2, (m - 69) / 12);
+  let t = ctx.currentTime + 0.05;
+  const step = 0.2;
+  const playSeq = (view, seq) => {
+    seq.forEach(n => {
+      playNote(freq(TECH_OPEN_MIDI[n.string] + n.fret), t, 0.6, dest);
+      techFlash(wrap, n.string, n.fret, (t - ctx.currentTime) * 1000, step * 1000 * 0.9);
+      t += step;
+    });
+  };
+  const chordAt = () => {
+    // X7 compatto dalla tonica grave: 1 5 ♭7 3 (voicing "shell" più quinta)
+    const base = 40 + ((keyIdx - 40) % 12 + 12) % 12;
+    const root = base < 43 ? base + 12 : base;
+    [0, 7, 10, 16].forEach(iv => playNote(freq(root + iv), t, 1.6, dest));
+    t += 1.0;
+  };
+  if (mode === 'hinge') {
+    EJ_HINGE.forEach(id => {
+      const v = buildEjView(keyIdx, id, EJ_STATE.rootString);
+      const asc = [...v.notes].sort(order).slice(0, 6);
+      // il diagramma segue il colore che sta suonando
+      const delay = (t - ctx.currentTime) * 1000;
+      _techFlashTimers.push(setTimeout(() => { EJ_STATE.colour = id; renderEjView(); }, Math.max(0, delay - 40)));
+      playSeq(v, asc);
+      t += step;
+    });
+    return;
+  }
+  const v = buildEjView(keyIdx, EJ_STATE.colour, EJ_STATE.rootString);
+  const asc = [...v.notes].sort(order);
+  if (mode === 'chord') chordAt();
+  playSeq(v, asc.concat(asc.slice(0, -1).reverse()));
 }
 
 // ─── TRIADI & MODI (sub-tab CAGED) ──────────────────────────────────────────
@@ -13257,7 +13495,7 @@ function renderSweepPanel() {
     const x = leftPad + f * cellW;
     svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+5*cellH}" stroke="#333" stroke-width="1"/>`;
     const fn = minFret + f;
-    if (fn > 0) svg += `<text x="${x + cellW/2}" y="${topPad-5}" text-anchor="middle" font-size="8" fill="#8a8a8a" font-family="monospace">${fn}</text>`;
+    if (f > 0 && fn > 0) svg += `<text x="${x - cellW/2}" y="${topPad-5}" text-anchor="middle" font-size="8" fill="#8a8a8a" font-family="monospace">${fn}</text>`;
   }
 
   // Strings
@@ -13274,8 +13512,8 @@ function renderSweepPanel() {
     const dotX = leftPad + (f - minFret) * cellW - cellW / 2;
     const dotY = topPad + si * cellH;
     const isRoot = shape.semitones[ii] === 0;
-    svg += `<circle cx="${dotX}" cy="${dotY}" r="${dotR}" fill="${isRoot ? shape.color : '#2563eb'}" stroke="${isRoot ? '#fff' : 'none'}" stroke-width="1.5"/>`;
-    svg += `<text x="${dotX}" y="${dotY+3}" text-anchor="middle" font-size="7" fill="#fff" font-family="monospace" font-weight="bold">${f}</text>`;
+    svg += `<g class="tf-dot" data-tf="${si}:${f}"><circle cx="${dotX}" cy="${dotY}" r="${dotR}" fill="${isRoot ? shape.color : '#2563eb'}" stroke="${isRoot ? '#fff' : 'none'}" stroke-width="1.5"/>`;
+    svg += `<text x="${dotX}" y="${dotY+3}" text-anchor="middle" font-size="7" fill="#fff" font-family="monospace" font-weight="bold">${f}</text></g>`;
   });
 
   svg += '</svg>';
@@ -13313,13 +13551,13 @@ function playSweepArp(direction) {
   const keyIdx = parseInt(document.getElementById('sweep-key')?.value || '9');
   const frets = computeArpFrets(keyIdx, shape.strings, shape.semitones);
 
-  // Build sequence of MIDI notes
-  let midiNotes = shape.strings.map((si, ii) => TECH_OPEN_MIDI[si] + frets[ii]);
+  // Sequenza di {corda, tasto, midi}: serve anche per accendere il pallino giusto
+  const pts = shape.strings.map((si, ii) => ({ s: si, f: frets[ii], midi: TECH_OPEN_MIDI[si] + frets[ii] }));
 
   let seq = [];
-  if (direction === false) seq = [...midiNotes];            // up
-  else if (direction === true) seq = [...midiNotes].reverse(); // down
-  else seq = [...midiNotes, ...[...midiNotes].reverse()];    // up+down
+  if (direction === false) seq = [...pts];            // up
+  else if (direction === true) seq = [...pts].reverse(); // down
+  else seq = [...pts, ...[...pts].reverse()];    // up+down
 
   _stopTechPlayback();
   const dest = _ensureTechGain();
@@ -13327,10 +13565,12 @@ function playSweepArp(direction) {
   const now = ctx.currentTime + 0.02;
   const step = 0.10; // seconds between notes
 
-  seq.forEach((midi, i) => {
-    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+  const wrap = document.getElementById('sweep-diagram');
+  seq.forEach((pt, i) => {
+    const freq = 440 * Math.pow(2, (pt.midi - 69) / 12);
     const t = now + i * step;
     playNote(freq, t, 0.7, dest);
+    techFlash(wrap, pt.s, pt.f, (t - ctx.currentTime) * 1000, 180);
   });
 }
 
@@ -13354,8 +13594,9 @@ function playTechExercise(techKey, exIndex, slowMode) {
     if (idx === undefined) return;
 
     // Strip parenthetical annotations (e.g. "(A7)", "(9)" bend target) so
-    // they don't get misread as fret numbers.
-    const data = m[2].replace(/\([^)]*\)/g, match => ' '.repeat(match.length));
+    // they don't get misread as fret numbers — but keep a bend target "b(9)".
+    const raw = m[2];
+    const data = raw.replace(/\([^)]*\)/g, match => ' '.repeat(match.length));
 
     let i = 0;
     while (i < data.length) {
@@ -13363,8 +13604,15 @@ function playTechExercise(techKey, exIndex, slowMode) {
       if (/\d/.test(c)) {
         const twoDigit = i + 1 < data.length && /\d/.test(data[i + 1]);
         const fret = parseInt(twoDigit ? c + data[i + 1] : c);
-        notes.push({ string: idx, fret, col: i });
-        i += twoDigit ? 2 : 1;
+        const end = i + (twoDigit ? 2 : 1);
+        const note = { string: idx, fret, col: i };
+        // bend: "8b(9)" → sale al 9; "8b" senza target → un tono (+2)
+        if (raw[end] === 'b') {
+          const bt = /^b\((\d{1,2})\)/.exec(raw.slice(end));
+          note.bendTo = bt ? parseInt(bt[1]) : fret + 2;
+        }
+        notes.push(note);
+        i = end;
       } else {
         i++;
       }
@@ -13390,10 +13638,26 @@ function playTechExercise(techKey, exIndex, slowMode) {
   const ctx = getAudioCtx();
   const now = ctx.currentTime + 0.02;
 
-  notes.forEach((n, i) => {
-    const midi = TECH_OPEN_MIDI[n.string] + n.fret;
-    const freq = 440 * Math.pow(2, (midi - 69) / 12);
-    playNote(freq, now + i * step, Math.min(1.2, step * 2.2), dest);
+  // ex.chords: le note nella STESSA colonna suonano insieme (double stop, ottave, decime).
+  // Negli altri esercizi ogni nota è un passo a sé (linee a nota singola).
+  const steps = [];
+  notes.forEach(n => {
+    const last = steps[steps.length - 1];
+    if (ex.chords && last && last[0].col === n.col) last.push(n);
+    else steps.push([n]);
+  });
+  const hz = (st, f) => 440 * Math.pow(2, (TECH_OPEN_MIDI[st] + f - 69) / 12);
+  steps.forEach((grp, i) => {
+    const t = now + i * step;
+    grp.forEach(n => {
+      if (n.bendTo != null) {
+        // il bend si sente: nota di partenza breve, poi l'arrivo
+        playNote(hz(n.string, n.fret), t, step * 0.5, dest);
+        playNote(hz(n.string, n.bendTo), t + step * 0.45, Math.min(1.4, step * 2.4), dest);
+      } else {
+        playNote(hz(n.string, n.fret), t, Math.min(1.2, step * 2.2), dest);
+      }
+    });
   });
 }
 
@@ -13935,7 +14199,7 @@ function navOpenPage(page) {
   showPage(page);
   if (page === 'coscienza' && window.FCUI) FCUI.init();
   else if (page === 'circle') { try { renderCircleOfFifths(); } catch (e) {} }
-  else if (page === 'technique' && typeof showTechSubpage === 'function') showTechSubpage('pratica');
+  else if (page === 'technique' && typeof showTechSubpage === 'function') showTechSubpage('tecnica');
 }
 function navRenderHubTabs(page) {
   const el = document.getElementById('hub-tabs');
