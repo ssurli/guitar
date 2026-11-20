@@ -3105,13 +3105,19 @@
     color: #111; font-size: 20px; font-weight: 800; cursor: pointer; margin: 10px 0 6px;
   }
   .scard-play.playing { background: var(--red); color: #fff; }
-  .scard-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 14px; }
+  /* 2 colonne uguali: le 4 scorciatoie di studio in griglia, Modifica a tutta larghezza sotto */
+  .scard-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 8px 0 14px; }
   .scard-chip {
     min-height: 48px; padding: 8px 14px; border-radius: 12px; background: var(--bg3);
-    border: 1px solid var(--border); color: var(--text); font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border); color: var(--text); font-size: 15px; cursor: pointer;
+    text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  .scard-study-head { grid-column: 1 / -1; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; color: var(--amber); margin-top: 4px; }
+  .scard-chip--edit { grid-column: 1 / -1; text-align: center; background: none; border-style: dashed; color: var(--text-mid); min-height: var(--tap); }
   .scard-chip:disabled { opacity: .45; cursor: default; }
-  .scard-hint { width: 100%; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); }
+  .song-chart-sub { font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); margin: 4px 0 10px; }
+  .song-chart-sub span { font-weight: 400; font-size: 13px; color: var(--text-dim); margin-left: 6px; }
+  .scard-hint { grid-column: 1 / -1; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-dim); }
 
   /* Vista performance: accordo corrente/prossimo a distanza-leggìo (B-11) */
   .setlist-nowplaying {
@@ -7470,22 +7476,45 @@ function songlabWireLaunchFields(el, song) {
   if (autoBtn) autoBtn.onclick = () => songlabAutoLaunch(song);
 }
 
+// Riconosce un blues: almeno il 60% di accordi di dominante, con un dominante sulla
+// tonica e sul IV o sul V. Ritorna la tonica (pitch class) o null.
+const SONG_DOM_TYPES = new Set(['dom7', 'dom9', 'dom7b9', 'dom7s9']);
+function songDetectBlues(chords, detectedTonic) {
+  if (!chords.length) return null;
+  const doms = chords.filter(c => SONG_DOM_TYPES.has(c.type));
+  if (doms.length / chords.length < 0.6) return null;
+  const domRoots = new Set(doms.map(c => c.rootPc));
+  const ok = t => domRoots.has(t) && (domRoots.has((t + 5) % 12) || domRoots.has((t + 7) % 12));
+  // la tonica è il dominante che pesa di più (battute); a parità, quella rilevata, poi l'ultimo accordo
+  const weight = t => chords.reduce((w, c) => w + (c.rootPc === t ? (c.bars || 1) : 0), 0);
+  const last = chords[chords.length - 1].rootPc;
+  const cands = [...domRoots].filter(ok);
+  if (!cands.length) return null;
+  cands.sort((a, b) => (weight(b) - weight(a)) || ((b === detectedTonic) - (a === detectedTonic)) || ((b === last) - (a === last)));
+  return cands[0];
+}
+
 // ✨ Rileva tonalità/modo dagli accordi (riusa detectSongKey del motore jam) e
 // precompila i campi launch — B-04 senza costringere l'utente a saperlo fare.
 function songlabAutoLaunch(song) {
   song = song || songlabCur();
   if (!song) return;
   const chords = [];
-  song.sections.forEach(sec => songParseTokens(sec.chords).forEach(t => { if (t.parsed) chords.push({ rootPc: t.parsed.rootPc, type: t.parsed.type }); }));
+  song.sections.forEach(sec => songParseTokens(sec.chords).forEach(t => { if (t.parsed) chords.push({ rootPc: t.parsed.rootPc, type: t.parsed.type, bars: t.bars }); }));
   if (!chords.length) { alert('Inserisci prima qualche accordo nelle sezioni.'); return; }
-  const { tonicPc, modeKey } = detectSongKey(chords);
+  const det = detectSongKey(chords);
+  let tonicPc = det.tonicPc, modeKey = det.modeKey;
+  // Blues: accordi di dominante su I e IV o V → pentatonica minore / blues, non la scala maggiore
+  const blues = songDetectBlues(chords, tonicPc);
+  if (blues != null) { tonicPc = blues; modeKey = 'blues'; }
   const l = songlabEnsureLaunch(song);
   l.fretboardKey = tonicPc;
-  if (!l.suggestedScales.length) {
-    l.suggestedScales = modeKey === 'major' ? ['major', 'penta_major'] : ['natural_minor', 'penta_minor'];
-  }
+  // ✨ è una richiesta esplicita: sovrascrive sempre modo e scale (prima restavano quelli
+  // del primo rilevamento anche cambiando gli accordi)
+  l.suggestedScales = modeKey === 'blues' ? ['penta_minor', 'blues', 'mixolydian']
+    : modeKey === 'major' ? ['major', 'penta_major'] : ['natural_minor', 'penta_minor'];
   const p = songlabEnsurePreset(song);
-  if (!p.mode) p.mode = modeKey;
+  p.mode = modeKey;
   songlabSave();
   songlabRenderEditor();
   if (typeof setlistRenderAll === 'function') setlistRenderAll();
@@ -7530,12 +7559,8 @@ function songlabRenderChart() {
     </div>`;
   }).join('');
   el.innerHTML = `
-    <div class="song-chart-head">
-      <div class="song-chart-title">${song.title || 'senza titolo'} ${song.artist ? `<small>· ${song.artist}</small>` : ''}</div>
-      <button class="ccp-btn load" onclick="songTogglePlay()">${isPlayingThis ? '⏸ Stop' : '▶ Suona'}</button>
-      <button class="songlab-action" onclick="songlabToggleEdit()">${SONGLAB.editing ? '✓ fine' : '✏️ modifica'}</button>
-    </div>
-    <div class="sed-hint" style="margin:0">// ${flat} accordi · tap su un accordo per voicing + scala + arpeggio · ▶ per suonarla con la base (batteria + basso + accordi)</div>
+    <!-- titolo, ▶ e ✏️ sono già nella testata della scheda (setlist-card-head / chips): qui solo gli accordi -->
+    <div class="song-chart-sub">Accordi · ${flat} <span>tocca un accordo per voicing, scala e arpeggio</span></div>
     ${sectionsHTML}`;
   if (isPlayingThis && _songChartIdx >= 0) {
     const now = el.querySelector(`.sc-chord[data-flat="${_songChartIdx}"]`);
@@ -14136,9 +14161,18 @@ function setlistRenderCardChips(song) {
   el.appendChild(play);
   const chips = document.createElement('div');
   chips.className = 'scard-chips';
-  const mkChip = (label, fn, enabled, hint) => {
+  // da dove vengono le scorciatoie: tonalità e modo della canzone (✏️ Modifica / ✨ rileva)
+  const head = document.createElement('div');
+  head.className = 'scard-study-head';
+  const modeName = { major: 'maggiore', natural_minor: 'minore', harmonic_minor: 'minore armonica', dorian: 'dorico',
+    phrygian: 'frigio', lydian: 'lidio', mixolydian: 'misolidio', blues: 'blues' };
+  const bpMode = song.launch && song.launch.backingPreset && song.launch.backingPreset.mode;
+  head.textContent = hasKey ? 'Studia in ' + keyName + (modeName[bpMode] ? ' ' + modeName[bpMode] : '') : 'Studia la canzone';
+  chips.appendChild(head);
+  const mkChip = (label, fn, enabled, hint, extra) => {
     const b = document.createElement('button');
-    b.className = 'scard-chip';
+    b.className = 'scard-chip' + (extra ? ' ' + extra : '');
+    b.title = b.title || label;
     b.textContent = label;
     if (enabled) b.onclick = fn;
     else { b.disabled = true; if (hint) b.title = hint; }
@@ -14146,15 +14180,15 @@ function setlistRenderCardChips(song) {
     return b;
   };
   const noKeyHint = 'imposta la tonalità in ✏️ Modifica (o ✨ rilevala dagli accordi)';
-  mkChip('🎸 Manico' + (keyName ? ' in ' + keyName : ''), songlabGoFretboard, hasKey, noKeyHint);
+  mkChip('🎸 Manico', songlabGoFretboard, hasKey, noKeyHint);
   mkChip('🧩 CAGED' + (song.launch && song.launch.cagedFocus ? ' · forma ' + song.launch.cagedFocus : ''), songlabGoCaged, hasKey, noKeyHint);
-  mkChip('🎯 Target-tone' + (keyName ? ' in ' + keyName : ''), () => songlabGoDrill(7), hasKey, noKeyHint);
-  mkChip('🧠 Drill note' + (keyName ? ' in ' + keyName : ''), () => songlabGoDrill(null), hasKey, noKeyHint);
-  mkChip(SONGLAB.editing ? '✓ fine modifica' : '✏️ Modifica', () => { songlabToggleEdit(); setlistRenderAll(); }, true);
+  mkChip('🎯 Target-tone', () => songlabGoDrill(7), hasKey, noKeyHint);
+  mkChip('🧠 Drill note', () => songlabGoDrill(null), hasKey, noKeyHint);
+  mkChip(SONGLAB.editing ? '✓ fine modifica' : '✏️ Modifica', () => { songlabToggleEdit(); setlistRenderAll(); }, true, null, 'scard-chip--edit');
   if (!hasKey) {
     const hint = document.createElement('span');
     hint.className = 'scard-hint';
-    hint.textContent = '// i chip si attivano impostando la tonalità in ✏️ Modifica — o con ✨ rileva dagli accordi';
+    hint.textContent = 'Le scorciatoie si attivano impostando la tonalità in ✏️ Modifica, o con ✨ rileva dagli accordi.';
     chips.appendChild(hint);
   }
   el.appendChild(chips);
