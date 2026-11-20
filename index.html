@@ -3325,6 +3325,7 @@
 
   /* ── 13. MOBILE: una sola navigazione, manico in vista, testo leggibile ── */
   .hub-tabs { display: none; }
+  .lbl-short { display: none; }
   .fb-options { margin: 0 0 20px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-lg); }
   .fb-options-sum {
     min-height: var(--tap); padding: 10px 16px; cursor: pointer; list-style: none;
@@ -3356,6 +3357,29 @@
     .subtitle { font-family: 'DM Sans', sans-serif; font-size: 14px; margin-bottom: 16px; }
     h2 { font-size: 28px; }
     select { font-family: 'DM Sans', sans-serif; font-size: 16px; min-height: var(--tap); }   /* 16px: niente zoom automatico iOS */
+    /* ── 14. MOBILE fase 2: pagine dense (Scale & Accordi, CAGED, Penta, Tecnica) ── */
+    /* 2° livello = schede sottolineate (diverse dalle pillole hub), con sfumatura che dice "scorri" */
+    .cpage-tabs, .tech-tabs, .triad-type-tabs {
+      -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent);
+              mask-image: linear-gradient(90deg, #000 85%, transparent);
+      padding-right: 32px;
+    }
+    .cpage-tab-btn, .tech-tab {
+      font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+      letter-spacing: 0; text-transform: none; padding: 8px 12px;
+    }
+    .cpage-tab-btn.active, .tech-tab.active { font-weight: 700; }
+    /* scelte dentro la pagina: stesso linguaggio dei segmenti, niente maiuscolo spaziato */
+    .triad-tab, .inv-tab, .strset-tab, .pos-btn, .cs-mode-tab, .sweep-shape-btn, .play-btn {
+      font-family: 'DM Sans', sans-serif; font-size: 14px; letter-spacing: 0; text-transform: none;
+    }
+    .inv-tabs, .strset-tabs { display: flex; flex-wrap: nowrap; gap: 6px; width: 100%; margin-bottom: 8px; }
+    div:has(> .ctrl-label + .inv-tabs), div:has(> .ctrl-label + .strset-tabs) { flex: 1 1 100%; min-width: 0; }
+    .lbl-long { display: none; } .lbl-short { display: inline; }
+    .inv-tab, .strset-tab { flex: 1 1 0; min-width: 0; padding: 6px 4px; text-align: center; white-space: normal; line-height: 1.15; }
+    /* tonalità unica: sulle pagine teoria comanda il selettore nell'header (sempre visibile) */
+    .ctrl-group:has(> #tr-key, > #s7-key, > #n9-key, > #caged-key, > #p5-key, > #prog-key) { display: none; }
+    .controls:not(:has(> .ctrl-group:not([style*="display:none"]):not(:has(> #tr-key, > #s7-key, > #n9-key, > #caged-key, > #p5-key, > #prog-key)))) { display: none; }
     .fb-options-toggles label { font-family: 'DM Sans', sans-serif !important; font-size: 15px !important; text-transform: none !important; letter-spacing: 0 !important; color: var(--text) !important; min-height: var(--tap); }
   }
 
@@ -3756,9 +3780,9 @@
           <div>
             <div class="ctrl-label" style="margin-bottom:6px">Inversione</div>
             <div class="inv-tabs" id="inv-tabs">
-              <button class="inv-tab active" onclick="setInversion(0)">Fondamentale</button>
-              <button class="inv-tab" onclick="setInversion(1)">1ª Inversione</button>
-              <button class="inv-tab" onclick="setInversion(2)">2ª Inversione</button>
+              <button class="inv-tab active" onclick="setInversion(0)"><span class="lbl-long">Fondamentale</span><span class="lbl-short">Fond.</span></button>
+              <button class="inv-tab" onclick="setInversion(1)">1ª<span class="lbl-long"> Inversione</span></button>
+              <button class="inv-tab" onclick="setInversion(2)">2ª<span class="lbl-long"> Inversione</span></button>
             </div>
           </div>
           <div>
@@ -3800,10 +3824,10 @@
           <div>
             <div class="ctrl-label" style="margin-bottom:6px">Inversione</div>
             <div class="inv-tabs" id="s7-inv-tabs">
-              <button class="inv-tab active" onclick="setS7Inversion(0)">Fondamentale</button>
-              <button class="inv-tab" onclick="setS7Inversion(1)">1ª Inversione</button>
-              <button class="inv-tab" onclick="setS7Inversion(2)">2ª Inversione</button>
-              <button class="inv-tab" onclick="setS7Inversion(3)">3ª Inversione</button>
+              <button class="inv-tab active" onclick="setS7Inversion(0)"><span class="lbl-long">Fondamentale</span><span class="lbl-short">Fond.</span></button>
+              <button class="inv-tab" onclick="setS7Inversion(1)">1ª<span class="lbl-long"> Inversione</span></button>
+              <button class="inv-tab" onclick="setS7Inversion(2)">2ª<span class="lbl-long"> Inversione</span></button>
+              <button class="inv-tab" onclick="setS7Inversion(3)">3ª<span class="lbl-long"> Inversione</span></button>
             </div>
           </div>
           <div>
@@ -8076,7 +8100,8 @@ function initTriadTypeTabs() {
 
 function setInversion(inv) {
   TR_STATE.inversion = inv;
-  document.querySelectorAll('.inv-tab').forEach((b, i) => b.classList.toggle('active', i === inv));
+  // solo le inversioni delle triadi: prima spegneva anche l'evidenziazione delle settime
+  document.querySelectorAll('#inv-tabs .inv-tab').forEach((b, i) => b.classList.toggle('active', i === inv));
   renderTriads();
 }
 
@@ -13628,6 +13653,7 @@ function showBasiSubpage(tab) {
     v.classList.toggle('active', v.id==='bpage-'+tab));
 }
 function showTechSubpage(tab) {
+  if (tab === 'tecnica' && typeof initTechPage === 'function') initTechPage();
   document.querySelectorAll('#page-technique .cpage-tab-btn').forEach(b=>
     b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('#page-technique .cpage-view').forEach(v=>
@@ -14302,7 +14328,7 @@ function songlabGoDrill(drillId) {
 window.addEventListener('DOMContentLoaded', function () {
   const hadCtx = ctxLoad();
   // two-way: i selettori locali di tonalità aggiornano il contesto globale
-  ['fb-key', 'tr-key', 's7-key', 'n9-key', 'caged-key', 'p5-key'].forEach(id => {
+  ['fb-key', 'prog-key', 'tr-key', 's7-key', 'n9-key', 'caged-key', 'p5-key'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('change', function () { ctxSetKey(this.value, { skipJam: true }); });
   });
