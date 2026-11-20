@@ -99,6 +99,14 @@
 
     /* ── Target touch (contratti: ≥44px) ── */
     --tap: 44px; --tap-lg: 56px; --tap-xl: 64px;
+
+    /* ── Livelli (z-index): unica scala, dal manico ai fogli modali ── */
+    --z-neck: 12;         /* nome corda sticky sopra i pallini (2) e la nota suonata (10) */
+    --z-header: 100;      /* header sticky + tab hub */
+    --z-float: 900;       /* barra "← Torna a" */
+    --z-nav: 950;         /* bottom-nav */
+    --z-modal: 1000;      /* modali e fogli: sempre sopra manico e nav */
+    --z-top: 9999;        /* banner di sistema */
   }
 
   /* Palette per daltonici (Okabe–Ito: distinguibile con deuteranopia/protanopia) */
@@ -142,7 +150,7 @@
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: var(--z-header);
     display: flex;
     flex-direction: column;   /* struttura a 2 righe sempre, niente flex-wrap tricks */
   }
@@ -296,7 +304,7 @@
 
   .ctrl-label {
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-dim);
@@ -586,7 +594,7 @@
   }
   .jam-now-wrap { display: flex; align-items: center; gap: 8px; }
   .jam-now-lbl {
-    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 1px;
+    font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 1px;
     color: var(--text-dim); text-transform: uppercase;
   }
   .jam-now-chord {
@@ -704,7 +712,7 @@
   .scl-fb-wrap svg { display:block; min-width:780px; width:100%; height:auto; }
   .scl-fb-legend {
     display:flex; gap:12px; flex-wrap:wrap; margin-top:6px;
-    font-family:'Space Mono',monospace; font-size:10px; color:var(--text-mid);
+    font-family:'Space Mono',monospace; font-size:11px; color:var(--text-mid);
   }
   .scl-fb-legend i { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; vertical-align:-1px; }
 
@@ -845,7 +853,7 @@
   .looper-btn:hover:not(:disabled) { border-color: var(--amber-dim); color: var(--text); transform: translateY(-1px); }
   .looper-btn:disabled { opacity: .35; cursor: default; }
   .looper-btn-icon { font-size: 20px; line-height: 1; }
-  .looper-btn-lbl { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 2px; }
+  .looper-btn-lbl { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 2px; }
   .looper-btn.rec .looper-btn-icon { color: var(--red); }
   .looper-btn.recording {
     border-color: var(--red); color: #fff;
@@ -870,7 +878,7 @@
   .looper-status { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-mid); }
   .looper-info-row { display: flex; gap: 22px; align-items: flex-end; flex-wrap: wrap; }
   .looper-stat { display: flex; flex-direction: column; gap: 4px; }
-  .looper-stat-lbl { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 1px; color: var(--text-dim); }
+  .looper-stat-lbl { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--text-dim); }
   .looper-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1; color: var(--amber); }
 
   /* ── MANICO LIVE DAL MICROFONO ── */
@@ -1024,9 +1032,9 @@
   }
   .tuner-str:active { background: var(--amber-glow); }
   .tuner-str.active { border-color: var(--amber); background: rgba(245,158,11,0.08); }
-  .tuner-str .str-hint { font-family:'Space Mono',monospace; font-size:7px; color:var(--text-dim); margin-top:2px; }
+  .tuner-str .str-hint { font-family:'Space Mono',monospace; font-size:10px; color:var(--text-dim); margin-top:2px; }
   .tuner-str .str-name { font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--amber); }
-  .tuner-str .str-freq { font-family:'Space Mono',monospace; font-size:9px; color:var(--text-dim); }
+  .tuner-str .str-freq { font-family:'Space Mono',monospace; font-size:10px; color:var(--text-dim); }
   .tuner-btn {
     display: flex; gap: 12px; justify-content: center; margin-bottom: 24px;
   }
@@ -1039,7 +1047,7 @@
   }
   .pp-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .pp-lbl {
-    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 1px;
+    font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 1px;
     text-transform: uppercase; color: var(--text-dim); min-width: 76px;
   }
   .pp-chips { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -1090,7 +1098,7 @@
   .sweep-shapes-row { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:16px; }
   .sweep-shape-btn {
     background:var(--bg3); border:1px solid var(--border); color:var(--text-mid);
-    font-family:'Space Mono',monospace; font-size:10px;
+    font-family:'Space Mono',monospace; font-size:11px;
     padding:5px 12px; border-radius:6px; cursor:pointer; transition:all .2s;
   }
   .sweep-shape-btn:hover { border-color:var(--amber-dim); }
@@ -1119,7 +1127,7 @@
   }
   .sweep-interval-row { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 12px; }
   .sweep-pill {
-    font-family:'Space Mono',monospace; font-size:9px; padding:2px 8px;
+    font-family:'Space Mono',monospace; font-size:11px; padding:2px 8px;
     border-radius:10px; border:1px solid;
   }
 
@@ -1134,8 +1142,8 @@
   .ex-card:hover { border-color:var(--amber-dim); }
   .ex-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
   .ex-bpm-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
-  .ex-bpm-row span { font-family:'Space Mono',monospace; font-size:10px; padding:2px 8px; border-radius:4px; border:1px solid; }
-  .ex-diff { font-size:10px; color:var(--amber); }
+  .ex-bpm-row span { font-family:'Space Mono',monospace; font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid; }
+  .ex-diff { font-size:11px; color:var(--amber); }
   .ex-card-title {
     font-family:'Bebas Neue',sans-serif; font-size:17px; letter-spacing:1px;
     color:var(--amber); margin-bottom:4px;
@@ -1144,7 +1152,7 @@
   .ex-dot { width:7px; height:7px; border-radius:50%; background:var(--border); }
   .ex-dot.on { background:var(--amber); }
   .ex-tab {
-    font-family:'Space Mono',monospace; font-size:10px; color:var(--green);
+    font-family:'Space Mono',monospace; font-size:11px; color:var(--green);
     background:#0a120a; border:1px solid #1a2a1a; border-radius:6px;
     padding:8px 10px; line-height:1.7; overflow-x:auto; white-space:pre;
     margin:8px 0; -webkit-overflow-scrolling:touch;
@@ -1152,7 +1160,7 @@
   .ex-desc { font-size:12px; color:var(--text-mid); line-height:1.5; margin-bottom:6px; }
   .ex-chips { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; }
   .ex-chip {
-    font-family:'Space Mono',monospace; font-size:9px; padding:2px 8px;
+    font-family:'Space Mono',monospace; font-size:11px; padding:2px 8px;
     border-radius:10px; background:var(--bg3); border:1px solid var(--border);
     color:var(--text-dim);
   }
@@ -1173,13 +1181,13 @@
   .master-card:hover { border-color:var(--amber-dim); transform:translateY(-2px); }
   .master-header { padding:14px 16px 12px; border-bottom:1px solid var(--border); }
   .master-name { font-family:'Bebas Neue',sans-serif; font-size:25px; letter-spacing:1.5px; margin-bottom:1px; }
-  .master-meta { font-family:'Space Mono',monospace; font-size:9px; color:var(--text-dim); text-transform:uppercase; }
+  .master-meta { font-family:'Space Mono',monospace; font-size:11px; color:var(--text-dim); text-transform:uppercase; }
   .master-body { padding:12px 16px 16px; }
   .master-techs { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; }
-  .master-tech-tag { font-family:'Space Mono',monospace; font-size:9px; padding:2px 8px; border-radius:10px; border:1px solid; text-transform:uppercase; }
+  .master-tech-tag { font-family:'Space Mono',monospace; font-size:11px; padding:2px 8px; border-radius:10px; border:1px solid; text-transform:uppercase; }
   .master-sound { font-size:12px; color:var(--text-mid); line-height:1.5; margin-bottom:10px; }
   .master-songs { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; }
-  .master-song { font-family:'Space Mono',monospace; font-size:9px; background:var(--bg3); border:1px solid var(--border); padding:2px 8px; border-radius:4px; color:var(--text-mid); }
+  .master-song { font-family:'Space Mono',monospace; font-size:11px; background:var(--bg3); border:1px solid var(--border); padding:2px 8px; border-radius:4px; color:var(--text-mid); }
   .master-challenge { background:var(--bg3); border-radius:8px; padding:8px 10px; font-size:11px; color:var(--text-mid); line-height:1.5; border-left:3px solid; }
 
   /* ── EQUATOR TRICK (John Mayer) ── */
@@ -1200,12 +1208,12 @@
   .eq-hemi-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:2px; line-height:1; }
   .eq-hemi.nord .eq-hemi-title { color:var(--amber); }
   .eq-hemi.sud .eq-hemi-title { color:var(--blue); }
-  .eq-hemi-sub { font-family:'Space Mono',monospace; font-size:10px; color:var(--text-mid); text-transform:uppercase; letter-spacing:.5px; margin-top:3px; }
+  .eq-hemi-sub { font-family:'Space Mono',monospace; font-size:11px; color:var(--text-mid); text-transform:uppercase; letter-spacing:.5px; margin-top:3px; }
   .eq-hemi-head .play-btn { margin-left:auto; padding:6px 14px; font-size:12px; }
   .eq-diagram { overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:10px; }
   .eq-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
   .eq-chip {
-    font-family:'Space Mono',monospace; font-size:10px; padding:3px 10px;
+    font-family:'Space Mono',monospace; font-size:11px; padding:3px 10px;
     border-radius:10px; border:1px solid var(--border); color:var(--text-mid); background:var(--bg3);
   }
   .eq-chip.root { color:#000; background:var(--amber); border-color:var(--amber); font-weight:bold; }
@@ -1216,7 +1224,7 @@
   .eq-line { flex:1; border-top:2px dashed var(--amber); opacity:.55; }
   .eq-divider-center { display:flex; flex-direction:column; align-items:center; gap:7px; }
   .eq-divider-label {
-    font-family:'Space Mono',monospace; font-size:10px; color:var(--amber);
+    font-family:'Space Mono',monospace; font-size:11px; color:var(--amber);
     letter-spacing:1.5px; text-transform:uppercase; text-align:center;
   }
   .eq-cross-btn {
@@ -1244,7 +1252,7 @@
   .eq-essence { font-size:12.5px; color:var(--amber); font-style:italic; margin:14px 0 24px; line-height:1.6; }
   .eq-legend-chip {
     display:inline-flex; align-items:center; gap:6px;
-    font-family:'Space Mono',monospace; font-size:10px; color:var(--text-mid);
+    font-family:'Space Mono',monospace; font-size:11px; color:var(--text-mid);
     background:var(--bg3); border:1px solid var(--border); padding:5px 10px; border-radius:14px;
   }
   .eq-legend-dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
@@ -1272,7 +1280,7 @@
   }
   .mdx-degree-pill:hover { border-color:var(--amber-dim); color:var(--text); }
   .mdx-degree-pill.active { background:var(--amber-glow); border-color:var(--amber); color:var(--amber); }
-  .mdx-degree-pill small { display:block; font-family:'Space Mono',monospace; font-size:9px; letter-spacing:0; margin-top:1px; }
+  .mdx-degree-pill small { display:block; font-family:'Space Mono',monospace; font-size:11px; letter-spacing:0; margin-top:1px; }
 
   .mdx-degree-summary {
     background:linear-gradient(180deg, var(--amber-glow), rgba(245,158,11,0));
@@ -1302,7 +1310,7 @@
     border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:12px;
   }
   .mdx-set-name { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:1.5px; color:var(--amber); }
-  .mdx-set-strings { font-family:'Space Mono',monospace; font-size:10px; color:var(--text-dim); text-transform:uppercase; }
+  .mdx-set-strings { font-family:'Space Mono',monospace; font-size:11px; color:var(--text-dim); text-transform:uppercase; }
   .mdx-inversions { display:flex; gap:10px; flex-wrap:wrap; justify-content:space-around; }
   .mdx-inv {
     flex:1; min-width:74px; text-align:center;
@@ -1311,18 +1319,18 @@
   }
   .mdx-inv:hover { border-color:var(--amber-dim); }
   .mdx-inv-label {
-    font-family:'Space Mono',monospace; font-size:9px; color:var(--text-dim);
+    font-family:'Space Mono',monospace; font-size:11px; color:var(--text-dim);
     text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px;
   }
   .mdx-inv-bass {
-    display:inline-block; font-family:'Space Mono',monospace; font-size:9px;
+    display:inline-block; font-family:'Space Mono',monospace; font-size:11px;
     color:var(--amber); padding:1px 6px; border:1px solid var(--amber-dim);
     border-radius:8px; margin-bottom:4px;
   }
   .mdx-inv-svg { margin:4px auto; display:block; }
   .mdx-inv-play {
     background:var(--amber-glow); border:1px solid var(--amber-dim); color:var(--amber);
-    font-family:'Space Mono',monospace; font-size:10px;
+    font-family:'Space Mono',monospace; font-size:11px;
     padding:3px 10px; border-radius:5px; cursor:pointer; transition:all .15s;
     margin-top:6px;
   }
@@ -1482,7 +1490,7 @@
 
   .mode-card .degree {
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-dim);
     margin-bottom: 10px;
     text-transform: uppercase;
@@ -1569,7 +1577,7 @@
     border-radius: 4px;
     padding: 1px 7px;
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     white-space: nowrap;
     flex-shrink: 0;
     margin-top: 1px;
@@ -1761,11 +1769,11 @@
   .circle-chord-btn {
     text-align:center; padding:7px 3px; border-radius:6px;
     border:1px solid var(--border); background:var(--bg3);
-    font-family:'Space Mono',monospace; font-size:10px;
+    font-family:'Space Mono',monospace; font-size:11px;
     cursor:pointer; transition:all .15s;
   }
   .circle-chord-btn:hover { border-color:var(--amber-dim); }
-  .circle-chord-btn .role { font-size:8px; color:var(--text-dim); }
+  .circle-chord-btn .role { font-size:10px; color:var(--text-dim); }
   .circle-near-keys { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
 
   /* ── GLOW FX ── */
@@ -1869,9 +1877,9 @@
     padding: 6px 10px; min-width: 84px;
   }
   .scale-seq-chord { font-weight: 700; font-size: 14px; color: var(--text); }
-  .scale-seq-arrow { font-size: 10px; color: var(--text-dim); line-height: 1; }
+  .scale-seq-arrow { font-size: 11px; color: var(--text-dim); line-height: 1; }
   .scale-seq-scale {
-    font-size: 10px; text-align: center; border: 1px solid; border-radius: 3px;
+    font-size: 11px; text-align: center; border: 1px solid; border-radius: 3px;
     padding: 2px 6px; font-family: 'Space Mono', monospace;
   }
 
@@ -1912,7 +1920,7 @@
   }
   .bpm-lbl {
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -1938,7 +1946,7 @@
     border: 1px solid var(--border);
     color: var(--text-mid);
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     padding: 7px 14px;
     border-radius: 6px;
     cursor: pointer;
@@ -2036,7 +2044,7 @@
   .sed-section .sed-del { background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; padding-top:8px; }
   .sed-section .sed-del:hover { color:var(--red); }
   @media (max-width:480px) { .sed-section { grid-template-columns:90px 1fr 26px; } }
-  .sed-hint { font-size:10px; color:var(--text-dim); font-family:'Space Mono',monospace; margin:2px 0 10px; }
+  .sed-hint { font-size:11px; color:var(--text-dim); font-family:'Space Mono',monospace; margin:2px 0 10px; }
   .song-chart {
     background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px;
   }
@@ -2045,7 +2053,7 @@
   .song-chart-title small { color:var(--text-dim); font-size:12px; font-family:'Space Mono',monospace; letter-spacing:0; }
   .sc-section { margin-top:12px; }
   .sc-name {
-    font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:2px;
+    font-family:'Space Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:2px;
     color:var(--amber); margin-bottom:6px;
   }
   .sc-chords { display:flex; gap:6px; flex-wrap:wrap; }
@@ -2054,7 +2062,7 @@
     font-family:'Space Mono',monospace; font-size:14px; font-weight:700; color:var(--text); cursor:pointer;
     display:flex; flex-direction:column; align-items:center; gap:1px; min-width:52px;
   }
-  .sc-chord small { font-size:9px; font-weight:400; color:var(--text-dim); }
+  .sc-chord small { font-size:11px; font-weight:400; color:var(--text-dim); }
   .sc-chord:hover { border-color:var(--amber-dim); }
   .sc-chord.selected { border-color:var(--purple); color:var(--purple); }
   .sc-chord.now { border-color:var(--amber); color:var(--amber); background:var(--amber-glow); box-shadow:0 0 12px -4px var(--amber); }
@@ -2070,7 +2078,7 @@
 
   /* Popup tablatura accordo (riusato dai chip "accordi compatibili") */
   .chord-modal-backdrop {
-    position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:1000;
+    position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:var(--z-modal);
     display:flex; align-items:center; justify-content:center; padding:16px;
   }
   .chord-modal {
@@ -2085,7 +2093,7 @@
 
   /* Pulsante "← torna indietro" per i rimandi al manico */
   #nav-return-bar {
-    position:fixed; left:12px; bottom:14px; z-index:900;
+    position:fixed; left:12px; bottom:14px; z-index:var(--z-float);
     background:var(--amber); color:#1a1200; border:none; border-radius:20px;
     font-family:'Space Mono',monospace; font-size:12px; font-weight:700;
     padding:9px 15px; cursor:pointer; box-shadow:0 6px 20px -6px rgba(0,0,0,0.75);
@@ -2125,7 +2133,7 @@
   .chord-block.chord-active .chord-root { color: var(--amber); }
   .chord-block .chord-qual {
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-dim);
     margin-top: 2px;
   }
@@ -2147,7 +2155,7 @@
   .mix-slot { display: flex; flex-direction: column; gap: 4px; }
   .vol-lbl {
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -2206,7 +2214,7 @@
   }
   .msect-lbl {
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-dim);
@@ -2227,7 +2235,7 @@
   /* loop indicator */
   .loop-info {
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-dim);
     margin-bottom: 6px;
     display: flex; justify-content: space-between; align-items: center;
@@ -2237,7 +2245,7 @@
     border: 1px solid var(--border);
     border-radius: 4px;
     padding: 2px 8px;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-dim);
     font-family: 'Space Mono', monospace;
   }
@@ -2329,7 +2337,7 @@
     border: 1px solid var(--border);
     color: var(--text-mid);
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     padding: 5px 12px;
     border-radius: 4px;
     cursor: pointer;
@@ -2355,7 +2363,7 @@
     border: 1px solid var(--border);
     color: var(--text-mid);
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     padding: 5px 12px;
     border-radius: 4px;
     cursor: pointer;
@@ -2386,7 +2394,7 @@
 
   .shape-title {
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-dim);
@@ -2402,7 +2410,7 @@
   }
   .shape-note {
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     padding: 2px 7px;
     border-radius: 4px;
     border: 1px solid;
@@ -2436,7 +2444,7 @@
   }
   .caged-pos-tag {
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -2450,7 +2458,7 @@
   }
   .cnpill {
     font-family: 'Space Mono', monospace;
-    font-size: 9px;
+    font-size: 11px;
     padding: 1px 5px;
     border-radius: 3px;
     border: 1px solid;
@@ -2478,7 +2486,7 @@
     color: var(--text-mid);
     font-family: 'Space Mono', monospace;
   }
-  .caged-detail-grid .lbl { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; align-self: center; }
+  .caged-detail-grid .lbl { color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; align-self: center; }
   .caged-detail-grid .val { color: var(--text); }
 
   .caged-neck-wrap {
@@ -2492,7 +2500,7 @@
   }
   .caged-neck-title {
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-dim);
@@ -2532,7 +2540,7 @@
   }
   .p5-tab small {
     font-family: 'Space Mono', monospace;
-    font-size: 8px;
+    font-size: 10px;
     font-weight: 400;
     color: var(--text-dim);
     letter-spacing: 0.5px;
@@ -2608,7 +2616,7 @@
     width: 22px; height: 22px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     flex-shrink: 0;
   }
@@ -2642,7 +2650,7 @@
   }
   .p5-overview-title {
     font-family: 'Space Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-dim);
@@ -2678,7 +2686,7 @@
   .mini-diag-card.diag-active { border-color: var(--amber); background: var(--amber-glow); }
   .mini-diag-label {
     font-family: 'Space Mono', monospace;
-    font-size: 8px; text-transform: uppercase;
+    font-size: 10px; text-transform: uppercase;
     letter-spacing: 0.5px; color: var(--text-dim);
     white-space: nowrap;
   }
@@ -2691,7 +2699,7 @@
   .nps-mode-tag {
     display: inline-block;
     font-family: 'Space Mono', monospace;
-    font-size: 9px; text-transform: uppercase;
+    font-size: 11px; text-transform: uppercase;
     letter-spacing: 0.5px;
     padding: 2px 6px; border-radius: 3px;
     border: 1px solid; margin-right: 4px; margin-bottom: 4px;
@@ -2734,7 +2742,7 @@
     overflow-y: auto; max-height: 70vh; scrollbar-width: thin;
   }
   .cs-group-hdr {
-    padding: 8px 12px 5px; font-family: 'Space Mono', monospace; font-size: 10px;
+    padding: 8px 12px 5px; font-family: 'Space Mono', monospace; font-size: 11px;
     color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;
     border-bottom: 1px solid var(--border); position: sticky; top: 0;
     background: var(--bg2); z-index: 2;
@@ -2748,7 +2756,7 @@
   .cs-scale-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .cs-scale-item-text { display: flex; flex-direction: column; gap: 1px; }
   .cs-scale-item-name { font-size: 13px; color: var(--text); }
-  .cs-scale-item-fn { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text-dim); }
+  .cs-scale-item-fn { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); }
 
   .cs-right {
     background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
@@ -2759,7 +2767,7 @@
     margin-bottom: 2px;
   }
   .cs-detail-fn {
-    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim);
+    font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim);
     margin-bottom: 14px;
   }
   .cs-formula-row {
@@ -2771,7 +2779,7 @@
     font-family: 'Space Mono', monospace;
   }
   .cs-deg .deg-int { font-size: 13px; font-weight: bold; }
-  .cs-deg .deg-lbl { font-size: 8px; opacity: 0.75; text-transform: uppercase; }
+  .cs-deg .deg-lbl { font-size: 10px; opacity: 0.75; text-transform: uppercase; }
   /* root */
   .cs-deg.role-root { background: rgba(245,158,11,0.18); border-color: #f59e0b; color: #f59e0b; }
   /* chord tone */
@@ -2784,7 +2792,7 @@
   .cs-deg.role-avoid { background: rgba(239,68,68,0.1); border-color: #7f1d1d; color: #f87171; opacity: 0.85; }
 
   .cs-section-lbl {
-    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim);
+    font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim);
     text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; margin-top: 16px;
   }
   .cs-chord-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 4px; }
@@ -2797,10 +2805,10 @@
   .cs-chord-chip { cursor: pointer; }
   .cs-chord-chip:hover { border-color: var(--amber); }
   .cs-chord-chip .chip-sym { font-size: 15px; font-weight: bold; }
-  .cs-chord-chip .chip-label { font-size: 9px; color: var(--text-dim); }
+  .cs-chord-chip .chip-label { font-size: 11px; color: var(--text-dim); }
 
   .cs-legend { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
-  .cs-legend-item { display: flex; align-items: center; gap: 5px; font-family: 'Space Mono', monospace; font-size: 10px; }
+  .cs-legend-item { display: flex; align-items: center; gap: 5px; font-family: 'Space Mono', monospace; font-size: 11px; }
   .cs-legend-dot { width: 9px; height: 9px; border-radius: 50%; }
 
   .cs-context-box {
@@ -2836,14 +2844,14 @@
   }
   .cs-scale-card-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
   .cs-scale-card-name { font-size: 14px; font-weight: 500; }
-  .cs-scale-card-fn { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim); }
+  .cs-scale-card-fn { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); }
   .cs-scale-card-tip { font-size: 12px; color: var(--text-mid); line-height: 1.5; }
 
   /* Scale position fretboards */
   .cs-pos-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
   .cs-pos-block { display: flex; flex-direction: column; align-items: center; gap: 5px; }
   .cs-pos-lbl {
-    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim);
+    font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim);
     text-align: center;
   }
   .cs-pos-block .mini-fb { width: 190px; height: auto; border-radius: 6px; }
@@ -2866,12 +2874,12 @@
   .cm-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:4px;}
   .cm-header{text-align:center;}
   .cm-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;color:var(--amber);}
-  .cm-subtitle{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);}
+  .cm-subtitle{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-dim);}
   .cm-key-row{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-mid);}
   .cm-key-row select{background:var(--bg3);border:1px solid var(--border);color:var(--text);
     padding:4px 8px;border-radius:4px;font-family:'Space Mono',monospace;font-size:11px;}
   .cm-mode-btns{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:440px;}
-  .cm-mode-btn{padding:5px 9px;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:1px;
+  .cm-mode-btn{padding:5px 9px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;
     border-radius:4px;border:1.5px solid;background:transparent;color:var(--text-mid);
     cursor:pointer;text-transform:uppercase;transition:all .15s;}
   .cm-circle-wrap{width:min(300px,95%);aspect-ratio:1;}
@@ -3016,7 +3024,7 @@
     color: var(--text-mid);
   }
   .site-footer strong { color: var(--amber); letter-spacing: 1.5px; }
-  .site-footer .foot-dim { margin-top: 7px; color: var(--text-dim); font-size: 10px; line-height: 1.7; }
+  .site-footer .foot-dim { margin-top: 7px; color: var(--text-dim); font-size: 11px; line-height: 1.7; }
 
   /* Accessibilità: rispetta chi disattiva le animazioni */
   @media (prefers-reduced-motion: reduce) {
@@ -3031,7 +3039,7 @@
   /* Bottom-nav fissa a 4 voci (B-01/B-02): sempre visibile, zona pollice */
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
   .bottom-nav {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 950;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-nav);
     display: flex;
     min-height: 60px;
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -3042,7 +3050,7 @@
   .bnav-btn {
     flex: 1; min-height: 56px; background: none; border: none; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-    color: var(--text-mid); font-family: 'Space Mono', monospace; font-size: 10px;
+    color: var(--text-mid); font-family: 'Space Mono', monospace; font-size: 11px;
     letter-spacing: 1px; text-transform: uppercase;
   }
   .bnav-btn .bnav-ico { font-size: 20px; line-height: 1; }
@@ -3103,7 +3111,7 @@
     border: 1px solid var(--border); color: var(--text); font-size: 13px; cursor: pointer;
   }
   .scard-chip:disabled { opacity: .45; cursor: default; }
-  .scard-hint { width: 100%; font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim); }
+  .scard-hint { width: 100%; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); }
 
   /* Vista performance: accordo corrente/prossimo a distanza-leggìo (B-11) */
   .setlist-nowplaying {
@@ -3128,7 +3136,7 @@
     width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
     color: var(--text); padding: 8px; font-family: 'Space Mono', monospace; font-size: 12px; min-height: 44px;
   }
-  .sed-field-lbl { font-size: 10px; color: var(--text-dim); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+  .sed-field-lbl { font-size: 11px; color: var(--text-dim); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
   .sed-notes {
     width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
     color: var(--text); padding: 8px; font-family: 'Space Mono', monospace; font-size: 12px;
@@ -3226,7 +3234,7 @@
     justify-content: center;
     transition: font-size .15s, border-color .15s, background .15s;
   }
-  .sc-chord small { font-size: 10px; }
+  .sc-chord small { font-size: 11px; }
   .sc-chord.now {                                   /* accordo corrente: peso + dimensione, non solo colore */
     font-size: 19px;
     border-width: 2px;
@@ -3314,6 +3322,43 @@
   [aria-busy="true"] { animation: eBusyPulse 1.1s ease-in-out infinite; pointer-events: none; }
   @keyframes eBusyPulse { 50% { opacity: .55; } }
 
+
+  /* ── 13. MOBILE: una sola navigazione, manico in vista, testo leggibile ── */
+  .hub-tabs { display: none; }
+  .fb-options { margin: 0 0 20px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-lg); }
+  .fb-options-sum {
+    min-height: var(--tap); padding: 10px 16px; cursor: pointer; list-style: none;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; color: var(--text);
+  }
+  .fb-options-sum::-webkit-details-marker { display: none; }
+  .fb-options-sum::before { content: '▸'; color: var(--amber); transition: transform .15s; }
+  .fb-options[open] > .fb-options-sum::before { transform: rotate(90deg); }
+  .fb-options-hint { font-weight: 400; font-size: var(--fs-ui); color: var(--text-dim); }
+  .fb-options-body { padding: 4px 16px 8px; margin-bottom: 0; }
+  .fb-options-toggles { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 0 16px 12px; }
+  @media (max-width: 900px) {
+    header > nav { display: none; }                       /* via la nav a 10 voci: resta la bottom-nav */
+    .hub-tabs {
+      display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+      padding: 8px 12px; border-top: 1px solid var(--border);
+    }
+    .hub-tabs[hidden] { display: none; }
+    .hub-tabs::-webkit-scrollbar { display: none; }
+    .hub-tab {
+      flex-shrink: 0; min-height: 40px; padding: 0 14px; border-radius: 20px; cursor: pointer;
+      background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; white-space: nowrap;
+    }
+    .hub-tab.active { background: var(--amber); border-color: var(--amber); color: var(--on-accent); font-weight: 700; }
+    .bnav-btn { font-family: 'DM Sans', sans-serif; font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 500; }
+    .ctrl-label { font-family: 'DM Sans', sans-serif; font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--text-mid); }
+    .subtitle { font-family: 'DM Sans', sans-serif; font-size: 14px; margin-bottom: 16px; }
+    h2 { font-size: 28px; }
+    select { font-family: 'DM Sans', sans-serif; font-size: 16px; min-height: var(--tap); }   /* 16px: niente zoom automatico iOS */
+    .fb-options-toggles label { font-family: 'DM Sans', sans-serif !important; font-size: 15px !important; text-transform: none !important; letter-spacing: 0 !important; color: var(--text) !important; min-height: var(--tap); }
+  }
+
   /* Nota: il blocco prefers-reduced-motion esistente usa !important su
      animation/transition-duration, quindi copre anche tutte le regole qui sopra. */
 </style>
@@ -3378,6 +3423,8 @@
     <button class="nav-btn" onclick="showPage('coscienza');FCUI&&FCUI.init()">🧠 Coscienza</button>
     <a class="nav-btn nav-btn-ext" href="https://ssurli.github.io/chordlab/" target="_blank" rel="noopener" title="Apri ChordLab (progetto companion)">🎵 ChordLab ↗</a>
   </nav>
+  <!-- Mobile: un solo sistema di navigazione. Le schede dell'hub attivo (bottom-nav) sostituiscono la nav a 10 voci. -->
+  <div class="hub-tabs" id="hub-tabs" role="tablist" aria-label="Sezioni"></div>
 </header>
 
 <!-- ═══════════════════ SETLIST PAGE (launchpad — Agente D) ═══════════════════
@@ -3471,6 +3518,36 @@
         </optgroup>
       </select>
     </div>
+    <div class="ctrl-group" style="flex:0 0 auto;margin-top:18px;">
+      <button class="play-btn" onclick="playScale()">▶ Play scala</button>
+    </div>
+  </div>
+
+  <!-- Scale notes summary -->
+  <div id="scale-notes-display" class="scale-notes-row"></div>
+
+  <div id="nps-info-row" style="display:none;margin-bottom:12px">
+    <div class="notice" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span>3 note per corda &mdash; posizione <strong id="nps-pos-label">1</strong>
+      &nbsp;·&nbsp; tasto di partenza: <strong id="nps-start-fret-label">—</strong></span>
+      <span id="nps-position-wrap" style="display:none;gap:4px;align-items:center">
+          <span class="ctrl-label">Posizione:</span>
+          <span id="nps-pos-tabs" style="display:flex;gap:4px;flex-wrap:wrap"></span>
+        </span>
+      <button class="play-btn" onclick="playNpsPattern()" style="margin-left:auto">▶ Play pattern</button>
+    </div>
+  </div>
+
+  <div class="fretboard-wrap">
+    <div class="fretboard-rel">
+      <div id="fretboard" class="fretboard"></div>
+      <svg id="pattern-lines-svg"></svg>
+    </div>
+  </div>
+
+  <details class="fb-options" id="fb-options">
+    <summary class="fb-options-sum">Opzioni manico <span class="fb-options-hint">tasti · accordatura · capo · etichette · colori · modalità</span></summary>
+    <div class="controls fb-options-body">
     <div class="ctrl-group">
       <div class="ctrl-label">Frets</div>
       <select id="fb-frets" onchange="renderFretboard()">
@@ -3523,9 +3600,6 @@
         <option value="hc">Alto contrasto</option>
       </select>
     </div>
-    <div class="ctrl-group" style="flex:0 0 auto;margin-top:18px;">
-      <button class="play-btn" onclick="playScale()">▶ Play scala</button>
-    </div>
     <div class="ctrl-group" style="flex:0 0 100%;margin-top:14px;">
       <div class="ctrl-label" style="margin-bottom:6px">Modalità visualizzazione</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
@@ -3533,26 +3607,10 @@
         <button class="pos-btn" id="mode-nps-btn" onclick="setFbMode('nps')">3 note per corda</button>
         <button class="pos-btn" id="mode-caged-btn" onclick="setFbMode('caged')">Box CAGED</button>
         <button class="pos-btn" id="tech-btn" onclick="toggleTech()" style="margin-left:8px">Tecnica off</button>
-        <span id="nps-position-wrap" style="display:none;margin-left:8px;display:none;gap:4px;align-items:center">
-          <span class="ctrl-label">Posizione:</span>
-          <span id="nps-pos-tabs" style="display:flex;gap:4px;flex-wrap:wrap"></span>
-        </span>
       </div>
     </div>
-  </div>
-
-  <!-- Scale notes summary -->
-  <div id="scale-notes-display" class="scale-notes-row"></div>
-
-  <div id="nps-info-row" style="display:none;margin-bottom:12px">
-    <div class="notice" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-      <span>3 note per corda &mdash; posizione <strong id="nps-pos-label">1</strong>
-      &nbsp;·&nbsp; tasto di partenza: <strong id="nps-start-fret-label">—</strong></span>
-      <button class="play-btn" onclick="playNpsPattern()" style="margin-left:auto">▶ Play pattern</button>
     </div>
-  </div>
-
-  <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;flex-wrap:wrap">
+  <div class="fb-options-toggles">
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">
       <input type="checkbox" id="toggle-pattern-lines" onchange="drawPatternLines()" style="accent-color:var(--amber);width:16px;height:16px">
       Mostra linee pattern
@@ -3566,6 +3624,7 @@
       Note fuori scala
     </label>
   </div>
+  </details>
   <div class="fblive-row">
     <button class="jam-live-btn" id="fblive-btn" onclick="fbLiveToggle()">🎤 Suona live</button>
     <button class="jam-live-btn" id="fblive-trail-btn" onclick="fbLiveToggleTrail()" style="display:none">Scia: on</button>
@@ -3577,12 +3636,6 @@
       </div>
       <span class="fblive-cents" id="fblive-cents">—</span>
       <div class="conf-bar" title="confidenza del rilevamento"><i id="fblive-conf"></i></div>
-    </div>
-  </div>
-  <div class="fretboard-wrap">
-    <div class="fretboard-rel">
-      <div id="fretboard" class="fretboard"></div>
-      <svg id="pattern-lines-svg"></svg>
     </div>
   </div>
 
@@ -5163,7 +5216,7 @@ function renderFretboard() {
       const dot = document.createElement('div');
       const role = getIntervalRole(openInterval, scale.intervals);
       dot.className = openIsOutside ? 'note-dot other outside' : `note-dot ${role}`;
-      dot.style.width = '28px'; dot.style.height = '28px'; dot.style.fontSize = '9px';
+      dot.style.width = '28px'; dot.style.height = '28px'; dot.style.fontSize = '10px';
       dot.title = '○ corda a vuoto';
       if (labelMode === 'name') dot.textContent = NOTES[openNoteIndex];
       else if (labelMode === 'interval') dot.textContent = INTERVAL_NAMES[openInterval];
@@ -5427,11 +5480,11 @@ function renderScalesPage() {
       <p style="margin-bottom:8px;font-size:13px;color:var(--text-mid)">${s.mood}</p>
       <div class="scale-intervals">${notes}</div>
       <div style="margin-top:10px;margin-bottom:8px">
-        <div style="font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px">Posizioni (in C)</div>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px">Posizioni (in C)</div>
         <div class="mini-diag-wrap">${diagrams}</div>
       </div>
       <div style="margin-top:6px">
-        <button class="play-btn" style="font-size:10px;padding:4px 10px" onclick="loadScaleOnFretboard('${scaleKey}')">
+        <button class="play-btn" style="font-size:11px;padding:4px 10px" onclick="loadScaleOnFretboard('${scaleKey}')">
           ▶ Vedi sul manico
         </button>
       </div>`;
@@ -5491,7 +5544,7 @@ function renderModesPage() {
       const modeKeyIdx = (keyIdx + npsPos.ao) % 12;
       const svg = drawMiniDiagram(frets, m.color, '#3b82f6', modeKeyIdx, modeKeyIdx, scaleData.intervals);
       diagHtml = `<div style="margin:10px 0 8px">
-        <div style="font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px">Pattern 3NPS (in C, tasto ${anchor === 0 ? 'aperto' : anchor})</div>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px">Pattern 3NPS (in C, tasto ${anchor === 0 ? 'aperto' : anchor})</div>
         <div style="display:inline-block">${svg}</div>
       </div>`;
     }
@@ -5512,7 +5565,7 @@ function renderModesPage() {
       ${diagHtml}
       <div class="use-over">Usa su: <span>${m.useOver}</span></div>
       <div style="margin-top:10px">
-        <button class="play-btn" style="font-size:10px;padding:4px 10px" onclick="loadScaleOnFretboard('${m.key}')">
+        <button class="play-btn" style="font-size:11px;padding:4px 10px" onclick="loadScaleOnFretboard('${m.key}')">
           ▶ Manico
         </button>
       </div>`;
@@ -5554,7 +5607,7 @@ function renderProgressions() {
 
     card.innerHTML = `
       <h3>${p.name}</h3>
-      <div style="font-family:Space Mono,monospace;font-size:10px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${p.genre}</div>
+      <div style="font-family:Space Mono,monospace;font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${p.genre}</div>
       <div class="chords-row">${chordPills}</div>
       <div class="suggestions-list">${suggestionsHTML}</div>`;
     grid.appendChild(card);
@@ -6545,7 +6598,7 @@ function makeJamDot(s, f, noteIndex, keyIndex, scale) {
   const role = getIntervalRole(interval, scale.intervals);
   const dot = document.createElement('div');
   dot.className = `note-dot ${role}`;
-  if (f === 0) { dot.style.width = '28px'; dot.style.height = '28px'; dot.style.fontSize = '9px'; }
+  if (f === 0) { dot.style.width = '28px'; dot.style.height = '28px'; dot.style.fontSize = '10px'; }
   dot.textContent = NOTES[noteIndex];
   dot.dataset.pc = noteIndex;
   const midi = OPEN_STRING_MIDI[s] + f;
@@ -7931,7 +7984,7 @@ function renderTriads() {
     <div class="triad-degrees">${degreesHTML}</div>
     <div class="msect-lbl">Inversione attiva</div>
     <div class="hint-box" style="font-family:'Space Mono',monospace;font-size:12px;margin-bottom:14px">
-      <div style="color:var(--text-dim);font-size:10px;margin-bottom:6px">${invLabels[TR_STATE.inversion]}</div>
+      <div style="color:var(--text-dim);font-size:11px;margin-bottom:6px">${invLabels[TR_STATE.inversion]}</div>
       ${invNotes.map((n,i)=>`<span style="color:${degCols[i]};font-weight:bold;font-size:15px">${n}</span>`).join('<span style="color:var(--text-dim);margin:0 4px">–</span>')}
     </div>
     <div class="msect-lbl">Usata come</div>
@@ -7940,7 +7993,7 @@ function renderTriads() {
     <div style="display:flex;flex-direction:column;gap:5px;margin-top:6px">
       ${degCols.map((c,i)=>`<div style="display:flex;align-items:center;gap:6px">
         <div style="width:14px;height:14px;border-radius:50%;background:${c}"></div>
-        <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-mid)">${degLabels[i]} (${noteNames[i]})</span>
+        <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-mid)">${degLabels[i]} (${noteNames[i]})</span>
       </div>`).join('')}
     </div>`;
 
@@ -8007,7 +8060,7 @@ function initTriadTypeTabs() {
   Object.entries(TRIAD_TYPES).forEach(([key, tt]) => {
     const btn = document.createElement('button');
     btn.className = 'triad-tab' + (key === TR_STATE.type ? ' active' : '');
-    btn.innerHTML = `<span style="color:${key===TR_STATE.type?tt.color:''}">${tt.name}</span>&nbsp;<span style="font-size:9px;opacity:0.55">${tt.formula}</span>`;
+    btn.innerHTML = `<span style="color:${key===TR_STATE.type?tt.color:''}">${tt.name}</span>&nbsp;<span style="font-size:11px;opacity:0.75">${tt.formula}</span>`;
     btn.onclick = () => {
       TR_STATE.type = key;
       document.querySelectorAll('.triad-tab').forEach((b, i) => {
@@ -8222,7 +8275,7 @@ function renderSeventh() {
     <div class="triad-degrees">${degreesHTML}</div>
     <div class="msect-lbl">Inversione attiva</div>
     <div class="hint-box" style="font-family:'Space Mono',monospace;font-size:12px;margin-bottom:14px">
-      <div style="color:var(--text-dim);font-size:10px;margin-bottom:6px">${invLabels[S7_STATE.inversion]}</div>
+      <div style="color:var(--text-dim);font-size:11px;margin-bottom:6px">${invLabels[S7_STATE.inversion]}</div>
       ${invNotes.map((n,i)=>`<span style="color:${degCols[i]};font-weight:bold;font-size:15px">${n}</span>`).join('<span style="color:var(--text-dim);margin:0 4px">–</span>')}
     </div>
     <div class="msect-lbl">Usato come</div>
@@ -8231,7 +8284,7 @@ function renderSeventh() {
     <div style="display:flex;flex-direction:column;gap:5px;margin-top:6px">
       ${degCols.map((c,i)=>`<div style="display:flex;align-items:center;gap:6px">
         <div style="width:14px;height:14px;border-radius:50%;background:${c}"></div>
-        <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-mid)">${degLabels[i]} (${noteNames[i]})</span>
+        <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-mid)">${degLabels[i]} (${noteNames[i]})</span>
       </div>`).join('')}
     </div>`;
 
@@ -8280,7 +8333,7 @@ function initSeventh() {
   Object.entries(SEVENTH_CHORD_TYPES).forEach(([key, ct]) => {
     const btn = document.createElement('button');
     btn.className = 'triad-tab' + (key === S7_STATE.type ? ' active' : '');
-    btn.innerHTML = `<span style="color:${key===S7_STATE.type?ct.color:''}">${ct.name}</span>&nbsp;<span style="font-size:9px;opacity:0.55">${ct.symbol}</span>`;
+    btn.innerHTML = `<span style="color:${key===S7_STATE.type?ct.color:''}">${ct.name}</span>&nbsp;<span style="font-size:11px;opacity:0.75">${ct.symbol}</span>`;
     btn.onclick = () => {
       S7_STATE.type = key;
       document.querySelectorAll('#s7-type-tabs .triad-tab').forEach((b, i) => {
@@ -8445,7 +8498,7 @@ function initNinth() {
     const lib = CHORD_LIB[key];
     const btn = document.createElement('button');
     btn.className = 'triad-tab' + (key === N9_STATE.type ? ' active' : '');
-    btn.innerHTML = `<span style="color:${key === N9_STATE.type ? N9_UI_COLORS[key] : ''}">${lib.sym}</span>&nbsp;<span style="font-size:9px;opacity:0.55">${lib.name}</span>`;
+    btn.innerHTML = `<span style="color:${key === N9_STATE.type ? N9_UI_COLORS[key] : ''}">${lib.sym}</span>&nbsp;<span style="font-size:11px;opacity:0.75">${lib.name}</span>`;
     btn.onclick = () => {
       N9_STATE.type = key;
       container.querySelectorAll('.triad-tab').forEach((b, i) => {
@@ -9329,7 +9382,7 @@ function renderPenta5() {
       const isRoot = (ni - keyIdx + 12) % 12 === 0;
       return `<span class="p5-fp-dot ${isRoot?'root':'note'}">${NOTES[ni]}</span>`;
     }).join('');
-    return `<div class="p5-fp-row"><span class="p5-fp-sname">${sNames[s]}</span>${noteNames}<span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);margin-left:6px">${frets.join('-')}</span></div>`;
+    return `<div class="p5-fp-row"><span class="p5-fp-sname">${sNames[s]}</span>${noteNames}<span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);margin-left:6px">${frets.join('-')}</span></div>`;
   }).join('');
 
   const anchor = p5AnchorFret(box, keyIdx);
@@ -9340,7 +9393,7 @@ function renderPenta5() {
 
   document.getElementById('p5-info').innerHTML = `
     <h3 style="color:${box.color}">${keyName} ${box.name}</h3>
-    <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);margin-bottom:12px">
+    <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:12px">
       TASTO DI PARTENZA: <span style="color:${box.color};font-size:14px">${anchor}</span>
     </div>
     <div style="font-size:13px;color:var(--text-mid);line-height:1.5;margin-bottom:14px">${box.desc}</div>
@@ -9431,7 +9484,8 @@ function showPage(name, keepReturn) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => {
-    if (b.getAttribute('onclick').includes("'" + name + "'")) b.classList.add('active');
+    // il link esterno ChordLab è un <a> senza onclick: prima faceva lanciare un errore a ogni cambio pagina
+    if ((b.getAttribute('onclick') || '').includes("'" + name + "'")) b.classList.add('active');
   });
   // Bottom-nav attiva + memoria hub + ultimo contesto (gil_ctx_v1) — additivo
   if (typeof navUpdateBottomNav === 'function') navUpdateBottomNav(name);
@@ -10230,7 +10284,7 @@ window.addEventListener('DOMContentLoaded', function() {
         <option value="16">Sedicesimi</option>
       </select>
     </div>
-    <span class="ctrl-label" style="color:var(--text-dim);font-size:10px">// usa il BPM del jam · indipendente dalla base</span>
+    <span class="ctrl-label" style="color:var(--text-dim);font-size:11px">// usa il BPM del jam · indipendente dalla base</span>
   </div>
 
   <div class="jam-controls-row">
@@ -11603,7 +11657,7 @@ function micFbInit() {
       const midi = OPEN_STRING_MIDI[s] + fret;
       const dot = document.createElement('div');
       dot.className = 'note-dot other';
-      if (fret === 0) { dot.style.width = '28px'; dot.style.height = '28px'; dot.style.fontSize = '9px'; }
+      if (fret === 0) { dot.style.width = '28px'; dot.style.height = '28px'; dot.style.fontSize = '10px'; }
       dot.textContent = NOTES[midi % 12];
       dot.dataset.midi = midi;
       dot.dataset.string = s;
@@ -12966,7 +13020,7 @@ function renderModi() {
         <div class="mdx-inv">
           <div class="mdx-inv-label">${invLabel}</div>
           <div class="mdx-inv-bass">Basso: ${bassLabel}</div>
-          ${valid ? mdxDrawVoicing(notes, rootMidi, '#f59e0b') : '<div style="font-size:10px;color:var(--text-dim);padding:14px 0">fuori range</div>'}
+          ${valid ? mdxDrawVoicing(notes, rootMidi, '#f59e0b') : '<div style="font-size:11px;color:var(--text-dim);padding:14px 0">fuori range</div>'}
           ${valid ? `<button class="mdx-inv-play" onclick="playMdxVoicing('${set.id}',${inv})">▶ Arpeggio</button>` : ''}
         </div>`);
     }
@@ -13416,7 +13470,7 @@ function selectCircleKey(i) {
 
   document.getElementById('circle-info').innerHTML = `
     <h3>${k.major} maggiore</h3>
-    <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);margin-bottom:14px">
+    <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:14px">
       ${k.acc || '0 alterazioni'} · relativa minore: <span style="color:var(--amber)">${k.minor}</span>
     </div>
 
@@ -13611,10 +13665,10 @@ function showChordScaleSubpage(tab) {
   #page-coscienza .fc-ministats { display:flex; gap:18px; flex:1; }
   #page-coscienza .fc-ministats div { display:flex; flex-direction:column; }
   #page-coscienza .fc-ministats b { font-size:20px; color:var(--text); font-family:'Space Mono',monospace; }
-  #page-coscienza .fc-ministats span { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
+  #page-coscienza .fc-ministats span { font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
   #page-coscienza .fc-ctrls { display:flex; gap:8px; margin-bottom:12px; }
   #page-coscienza .fc-selw { flex:1; }
-  #page-coscienza .fc-sellbl { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  #page-coscienza .fc-sellbl { font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
   #page-coscienza .fc-sel { width:100%; min-height:44px; background:var(--bg3); color:var(--text);
     border:1px solid var(--border); border-radius:10px; font-size:14px; padding:0 8px; }
   #page-coscienza .fc-toggle { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text);
@@ -13635,7 +13689,7 @@ function showChordScaleSubpage(tab) {
   /* fretboard */
   #page-coscienza .fc-neckwrap { overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:8px; margin:8px -4px; }
   #page-coscienza .fc-neck { display:grid; gap:3px; min-width:min-content; align-items:center; }
-  #page-coscienza .fc-fnum, #page-coscienza .fc-nlabel { font-size:10px; color:var(--text-dim); text-align:center;
+  #page-coscienza .fc-fnum, #page-coscienza .fc-nlabel { font-size:11px; color:var(--text-dim); text-align:center;
     font-family:'Space Mono',monospace; }
   #page-coscienza .fc-nlabel { font-weight:700; }
   #page-coscienza .fc-cell { width:var(--fc-cw); height:40px; border-radius:8px; background:var(--bg3);
@@ -13643,10 +13697,10 @@ function showChordScaleSubpage(tab) {
     align-items:center; justify-content:center; cursor:pointer; padding:0; line-height:1.1; }
   #page-coscienza .fc-cell.lit { border-color:transparent; font-weight:700; }
   #page-coscienza .fc-cell b { font-size:12px; }
-  #page-coscienza .fc-cell i { font-size:9px; font-style:normal; opacity:0.85; }
+  #page-coscienza .fc-cell i { font-size:10px; font-style:normal; opacity:0.85; }
   #page-coscienza .fc-cell.target { outline:3px solid var(--amber); outline-offset:-1px; box-shadow:0 0 12px rgba(245,158,11,0.6); z-index:1; }
   #page-coscienza .fc-legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-  #page-coscienza .fc-legitem { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text-dim); }
+  #page-coscienza .fc-legitem { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-dim); }
   #page-coscienza .fc-legitem i { width:14px; height:14px; border-radius:3px; display:inline-block; }
   #page-coscienza .fc-segrow, #page-coscienza .fc-choices { display:flex; gap:8px; }
   #page-coscienza .fc-seg { flex:1; min-height:40px; background:var(--bg3); color:var(--text-dim);
@@ -13660,7 +13714,7 @@ function showChordScaleSubpage(tab) {
     border:1px solid var(--border); color:var(--text-dim); font-size:16px; cursor:pointer; }
   #page-coscienza .fc-bar { height:8px; background:var(--bg3); border-radius:4px; overflow:hidden; margin-bottom:12px; }
   #page-coscienza .fc-bar i { display:block; height:100%; background:linear-gradient(90deg,var(--amber-dim),var(--amber)); border-radius:4px; transition:width .3s; }
-  #page-coscienza .fc-barlbl { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  #page-coscienza .fc-barlbl { font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
   #page-coscienza .fc-prompt { font-size:19px; font-weight:600; text-align:center; margin:6px 0 14px; color:var(--text); line-height:1.4; }
   #page-coscienza .fc-answer { margin-top:14px; }
   #page-coscienza .fc-choices { flex-wrap:wrap; }
@@ -13689,7 +13743,7 @@ function showChordScaleSubpage(tab) {
   #page-coscienza .fc-stat { background:var(--bg2); border-radius:10px; padding:12px; }
   #page-coscienza .fc-statv { font-size:22px; font-weight:800; color:var(--amber); font-family:'Space Mono',monospace; }
   #page-coscienza .fc-statl { font-size:12px; color:var(--text); margin-top:2px; }
-  #page-coscienza .fc-stats { font-size:10px; color:var(--text-dim); }
+  #page-coscienza .fc-stats { font-size:11px; color:var(--text-dim); }
   #page-coscienza .fc-drow { display:flex; align-items:center; gap:10px; font-size:12px; margin-bottom:6px; }
   #page-coscienza .fc-drow > span:first-child { flex:1; color:var(--text-dim); }
   #page-coscienza .fc-dbar { width:80px; height:6px; background:var(--bg3); border-radius:3px; overflow:hidden; }
@@ -13825,7 +13879,26 @@ const NAV_HUB_OF = {
   technique: 'train', coscienza: 'train',
 };
 const NAV_HUB_DEFAULT = { play: 'jam', neck: 'fretboard', train: 'coscienza' };
+// Schede dell'hub attivo (solo mobile, CSS): stesse pagine e stessi init della nav in alto
+function navOpenPage(page) {
+  showPage(page);
+  if (page === 'coscienza' && window.FCUI) FCUI.init();
+  else if (page === 'circle') { try { renderCircleOfFifths(); } catch (e) {} }
+  else if (page === 'technique' && typeof showTechSubpage === 'function') showTechSubpage('pratica');
+}
+function navRenderHubTabs(page) {
+  const el = document.getElementById('hub-tabs');
+  if (!el) return;
+  const hub = NAV_HUB_OF[page];
+  const pages = Object.keys(NAV_HUB_OF).filter(p => NAV_HUB_OF[p] === hub);
+  if (!hub || pages.length < 2) { el.innerHTML = ''; el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = pages.map(p => `<button class="hub-tab${p === page ? ' active' : ''}" role="tab" aria-selected="${p === page}" onclick="navOpenPage('${p}')">${NAV_PAGE_LABELS[p] || p}</button>`).join('');
+  const act = el.querySelector('.hub-tab.active');
+  if (act && act.scrollIntoView) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
 function navUpdateBottomNav(page) {
+  navRenderHubTabs(page);
   const hub = NAV_HUB_OF[page];
   document.querySelectorAll('.bottom-nav .bnav-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.hub === hub));
@@ -14231,8 +14304,11 @@ window.addEventListener('DOMContentLoaded', function () {
   // two-way: i selettori locali di tonalità aggiornano il contesto globale
   ['fb-key', 'tr-key', 's7-key', 'n9-key', 'caged-key', 'p5-key'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener('change', function () { ctxSetKey(this.value, { silent: true }); });
+    if (el) el.addEventListener('change', function () { ctxSetKey(this.value, { skipJam: true }); });
   });
+  // Pannello opzioni del manico: aperto su desktop, chiuso su mobile (il manico resta in vista)
+  const fbo = document.getElementById('fb-options');
+  if (fbo && window.matchMedia && window.matchMedia('(min-width: 901px)').matches) fbo.open = true;
   if (hadCtx) {
     try {
       jamSetBPM(GCTX.bpm);
@@ -14244,12 +14320,12 @@ window.addEventListener('DOMContentLoaded', function () {
       if (typeof BACKING_TRACKS !== 'undefined' && BACKING_TRACKS[GCTX.mode]) BT.modeKey = GCTX.mode;
       if (typeof DRUM_PATTERNS !== 'undefined' && DRUM_PATTERNS[GCTX.style]) BT.styleKey = GCTX.style;
       liveUpdateAnchorFromKey(); jamRebuildChordUI(); jamRenderModeInfo(); renderJamFretboard();
-      const fb = document.getElementById('fb-key');
-      if (fb) { fb.value = String(GCTX.key); renderFretboard(); }
     } catch (e) {}
     if (GCTX.lastSongId && SONGLAB.songs.some(s => s.id === GCTX.lastSongId)) SONGLAB.curId = GCTX.lastSongId;
   }
-  ctxKeyBadgeUpdate();
+  // Tonalità unica: allinea TUTTE le viste a quella dell'header (anche al primo avvio:
+  // prima l'header diceva A e il Fretboard restava su C)
+  ctxSetKey(GCTX.key, { skipJam: true });
   let target = (hadCtx && GCTX.lastPage && document.getElementById('page-' + GCTX.lastPage)) ? GCTX.lastPage : 'setlist';
   if (target === 'setlist') showSetlistPage();
   else {
