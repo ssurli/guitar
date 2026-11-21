@@ -12344,7 +12344,7 @@ const TECH_EXERCISES = {
       tips:['Colpisci forte con le dita di arrivo','Non sollevare le dita sulla corda'],
       tags:['hammer-on','pull-off'] },
     { title:'Scala legato 3 note per corda', diff:3, bpmSlow:60, bpmMid:90, bpmFast:120,
-      tab:'e |--------------------------------5h7h8-|--8p7p5-------------------------------|\nB |--------------------------5h6h8-------|--------8p6p5-------------------------|\nG |--------------------5h7h9-------------|--------------9p7p5-------------------|\nD |--------------5h7h9-------------------|--------------------9p7p5-------------|\nA |--------5h7h8-------------------------|--------------------------8p7p5-------|\nE |--5h7h8-------------------------------|--------------------------------8p7p5-|',
+      tab:'e |---------------------------------7h8h10-|--10p8p7--------------------------------|\nB |--------------------------6h8h10--------|---------10p8p6-------------------------|\nG |--------------------5h7h9---------------|----------------9p7p5-------------------|\nD |--------------5h7h9---------------------|----------------------9p7p5-------------|\nA |--------5h7h8---------------------------|----------------------------8p7p5-------|\nE |--5h7h8---------------------------------|----------------------------------8p7p5-|',
       tips:['Primo pizzico per ogni corda','Massima efficienza mano sinistra'],
       tags:['scale','legato'] },
     { title:'Legato con hammer-on da vuoto', diff:2, bpmSlow:60, bpmMid:95, bpmFast:125,
@@ -12842,6 +12842,14 @@ function playEqBox(which) {
 
   // Ordina: dalla 6ª corda (low E = string 5) all'1ª, per ogni corda dal fret più basso al più alto
   pool.sort((a, b) => (b.string - a.string) || (a.fret - b.fret));
+  if (which === 'full') {
+    // Due box insieme: in ordine di altezza e senza ripetere la stessa nota presa su
+    // due corde (es. Re al 10° della 6ª e al 5° della 5ª): nello schema restano entrambe.
+    const pitch = n => TECH_OPEN_MIDI[n.string] + n.fret;
+    const seen = new Set();
+    pool = pool.slice().sort((a, b) => pitch(a) - pitch(b) || b.string - a.string)
+      .filter(n => !seen.has(pitch(n)) && seen.add(pitch(n)));
+  }
 
   const wrap = document.getElementById('eq-fretboard-wrap');
   pool.forEach((n, i) => {
@@ -13126,7 +13134,10 @@ function playEj(mode) {
     return;
   }
   const v = buildEjView(keyIdx, EJ_STATE.colour, EJ_STATE.pos);
-  const asc = [...v.notes].sort(order);
+  // su tutto il manico la stessa nota compare su più corde: si suona una volta sola
+  const seenP = new Set();
+  const asc = [...v.notes].sort((a, b) => order(a, b) || b.string - a.string)
+    .filter(n => { const m = TECH_OPEN_MIDI[n.string] + n.fret; return !seenP.has(m) && seenP.add(m); });
   if (mode === 'chord') chordAt();
   playSeq(v, asc.concat(asc.slice(0, -1).reverse()));
 }
