@@ -11021,11 +11021,12 @@ window.addEventListener('DOMContentLoaded', function() {
   <!-- ERIC JOHNSON: pentatoniche sovrapposte sull'accordo di dominante -->
   <div id="tp-ejohnson" class="tech-panel">
     <div class="notice">
-      <strong>Pentatoniche ibride su accordo di dominante (alla Eric Johnson):</strong> sopra <em>un solo</em> accordo non
+      <strong>Pentatoniche dominanti (Eric Johnson, John McLaughlin):</strong> sopra <em>un solo</em> accordo non
       usare una sola pentatonica. Eric Johnson sovrappone più pentatoniche allo stesso accordo e le
       <em>incardina</em> una nell'altra: ognuna mette in luce note diverse dell'accordo. Su un X7 restano tutte dentro la
       misolidia, tranne la pentatonica minore (per il colore blues). La <strong>pentatonica dominante</strong> (1 3 4 5 ♭7)
-      è la più "ibrida": ha la 3 maggiore e la ♭7 insieme.
+      è la più "ibrida": ha la 3 maggiore e la ♭7 insieme; John McLaughlin la usa spesso nella Mahavishnu Orchestra.
+      Studiala nelle <strong>5 posizioni</strong> (2 note per corda) e poi su tutto il manico.
     </div>
 
     <div class="controls" style="margin-bottom:12px">
@@ -11038,12 +11039,9 @@ window.addEventListener('DOMContentLoaded', function() {
           <option value="9" selected>A7</option><option value="10">A#7</option><option value="11">B7</option>
         </select>
       </div>
-      <div class="ctrl-group">
-        <div class="ctrl-label">Tonica sulla</div>
-        <div style="display:flex;gap:4px;margin-top:2px">
-          <button class="pos-btn active" id="ej-pos6" onclick="setEjPos(6)">6ª corda</button>
-          <button class="pos-btn" id="ej-pos5" onclick="setEjPos(5)">5ª corda</button>
-        </div>
+      <div class="ctrl-group" style="flex:1 1 100%">
+        <div class="ctrl-label">Posizione (2 note per corda) o tutto il manico</div>
+        <div id="ej-pos-btns" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px"></div>
       </div>
       <div class="ctrl-group" style="flex:1 1 100%">
         <div class="ctrl-label">Pentatonica sopra l'accordo</div>
@@ -12568,7 +12566,7 @@ function initTechPage() {
     { id:'legato-phrasing', label:'Legato Phrasing' },
     { id:'equator',   label:'Equator Trick (Mayer)' },
     { id:'doublestops', label:'Double Stops' },
-    { id:'ejohnson',  label:'Eric Johnson' },
+    { id:'ejohnson',  label:'Pentatoniche dominanti' },
     { id:'masters',   label:'I Maestri' },
   ];
   const tabsEl = document.getElementById('tech-tabs');
@@ -12979,7 +12977,7 @@ function playEqBlendCross() {
 const EJ_IV_NAME = { 0:'1', 1:'♭9', 2:'9', 3:'♭3', 4:'3', 5:'11', 6:'♯11', 7:'5', 8:'♭13', 9:'13', 10:'♭7', 11:'7' };
 const EJ_COLOURS = [
   { id:'dom',  name:'Pentatonica dominante', from:0, ivs:[0,4,5,7,10], color:'#06b6d4',
-    info:'1 · 3 · 4 · 5 · ♭7 — contiene 3 e ♭7 insieme: è la pentatonica "ibrida" che suona già come un X7.' },
+    info:'1 · 3 · 4 (=11) · 5 · ♭7 — contiene 3 e ♭7 insieme: è la pentatonica "ibrida" che suona già come un X7(11).' },
   { id:'maj',  name:'Maggiore dalla radice', from:0, ivs:[0,2,4,7,9], color:'#22c55e',
     info:'1 · 9 · 3 · 5 · 13 — il colore "country/aperto". È la stessa forma della minore 3 tasti sotto.' },
   { id:'min2', name:'Minore dalla 2ª', from:2, ivs:[2,5,7,9,0], color:'#3b82f6',
@@ -12990,56 +12988,71 @@ const EJ_COLOURS = [
     info:'1 · ♭3 · 4 · 5 · ♭7 — il contrasto blues: piega la ♭3 verso la 3 dell\'accordo.' },
 ];
 const EJ_HINGE = ['maj', 'min2', 'min5', 'dom'];   // la "catena": stesso accordo, colori in sequenza
-const EJ_STATE = { colour: 'dom', rootString: 6 };
+const EJ_STATE = { colour: 'dom', pos: 1 };   // pos 1–5 = posizioni, 0 = tutto il manico
 
-function setEjPos(str) {
-  EJ_STATE.rootString = str;
-  document.getElementById('ej-pos6').classList.toggle('active', str === 6);
-  document.getElementById('ej-pos5').classList.toggle('active', str === 5);
-  renderEjView();
-}
+function setEjPos(pos) { EJ_STATE.pos = pos; renderEjView(); }
 function setEjColour(id) { EJ_STATE.colour = id; renderEjView(); }
 
-// Note della pentatonica in una posizione: finestra di 6 tasti attorno alla tonica
-// sulla corda scelta. string index 0 = cantino (e), 5 = 6ª corda (E grave).
-function buildEjView(keyIdx, colourId, rootString) {
+// Note della pentatonica: pos 1–5 = posizione k a 2 note per corda (parte dal k-esimo
+// grado della pentatonica sulla 6ª corda, come i 5 box classici); pos 0 = tasti 0–15.
+// string index 0 = cantino (e), 5 = 6ª corda (E grave).
+function ejBoxStart(keyIdx, col, pos) {
+  const pc0 = (keyIdx + col.ivs[0]) % 12;
+  let base = ((pc0 - TECH_OPEN_MIDI[5]) % 12 + 12) % 12;
+  if (base < 1) base += 12;
+  let start = base + ((col.ivs[pos - 1] - col.ivs[0]) % 12 + 12) % 12;
+  if (start > 14) start -= 12;
+  return start;
+}
+function buildEjView(keyIdx, colourId, pos) {
   const col = EJ_COLOURS.find(c => c.id === colourId) || EJ_COLOURS[0];
-  const sIdx = rootString === 5 ? 4 : 5;
-  let rootFret = ((keyIdx - TECH_OPEN_MIDI[sIdx]) % 12 + 12) % 12;
-  if (rootFret < 2) rootFret += 12;
-  const lo = rootFret - 1, hi = rootFret + 4;
   const pcs = new Set(col.ivs.map(iv => (keyIdx + iv) % 12));
   const chordIvs = new Set([0, 4, 7, 10]);
+  const mk = (s, f) => {
+    const iv = ((TECH_OPEN_MIDI[s] + f - keyIdx) % 12 + 12) % 12;
+    return { string: s, fret: f, iv, isRoot: iv === 0, isChord: chordIvs.has(iv) };
+  };
   const notes = [];
-  for (let s = 0; s < 6; s++) {
-    for (let f = lo; f <= hi; f++) {
-      const pc = (TECH_OPEN_MIDI[s] + f) % 12;
-      if (!pcs.has(pc)) continue;
-      const iv = ((pc - keyIdx) % 12 + 12) % 12;
-      notes.push({ string: s, fret: f, iv, isRoot: iv === 0, isChord: chordIvs.has(iv) });
+  if (!pos) {
+    for (let s = 0; s < 6; s++) for (let f = 0; f <= 15; f++)
+      if (pcs.has((TECH_OPEN_MIDI[s] + f) % 12)) notes.push(mk(s, f));
+    return { col, notes, minFret: 0, maxFret: 16, pos };
+  }
+  const above = m => { let q = m + 1; while (!pcs.has(q % 12)) q++; return q; };
+  let pitch = TECH_OPEN_MIDI[5] + ejBoxStart(keyIdx, col, pos);
+  const pts = [];
+  for (let s = 5; s >= 0; s--) {
+    for (let k = 0; k < 2; k++) {
+      if (pts.length) pitch = above(pitch);
+      pts.push([s, pitch - TECH_OPEN_MIDI[s]]);
     }
   }
-  return { col, notes, minFret: lo - 1, maxFret: hi + 1 };
+  const shift = Math.min(...pts.map(p => p[1])) < 0 ? 12 : 0;
+  pts.forEach(([s, f]) => notes.push(mk(s, f + shift)));
+  const frets = notes.map(n => n.fret);
+  return { col, notes, minFret: Math.max(0, Math.min(...frets) - 1), maxFret: Math.max(...frets) + 1, pos };
 }
 
 function drawEjSvg(view) {
   const sNames = ['e','B','G','D','A','E'];
   const { col, notes, minFret, maxFret } = view;
   const span = maxFret - minFret;
-  const cellW = 40, cellH = 28, leftPad = 30, topPad = 18, dotR = 12;
+  const open = minFret === 0;   // tutto il manico: le corde a vuoto stanno a sinistra del capotasto
+  const cellW = 40, cellH = 28, leftPad = open ? 58 : 30, topPad = 18, dotR = 12;
   const W = leftPad + span * cellW + 16, H = topPad + 5 * cellH + 28;
   let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:${W}px" role="img" aria-label="${col.name} sul manico">`;
   svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="10"/>`;
   for (let f = 0; f <= span; f++) {
     const x = leftPad + f * cellW;
-    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad + 5 * cellH}" stroke="#2e2e2e" stroke-width="1"/>`;
+    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad + 5 * cellH}" stroke="${open && f === 0 ? '#d4af6a' : '#2e2e2e'}" stroke-width="${open && f === 0 ? 4 : 1}"/>`;
+    if ([3, 5, 7, 9, 15].includes(minFret + f) || minFret + f === 12) svg += `<circle cx="${x - cellW / 2}" cy="${topPad + 2.5 * cellH}" r="${minFret + f === 12 ? 4 : 3}" fill="#2a2a2a"/>`;
     const fn = minFret + f;
     if (f > 0 && fn > 0) svg += `<text x="${x - cellW / 2}" y="${H - 5}" text-anchor="middle" font-size="10" fill="#8a8a8a" font-family="'Space Mono',monospace">${fn}</text>`;
   }
   for (let s = 0; s < 6; s++) {
     const y = topPad + s * cellH;
     svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + span * cellW}" y2="${y}" stroke="#555" stroke-width="${s === 0 ? 0.7 : s === 5 ? 1.6 : 1}"/>`;
-    svg += `<text x="${leftPad - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#888" font-family="'Space Mono',monospace">${sNames[s]}</text>`;
+    svg += `<text x="${open ? 10 : leftPad - 8}" y="${y + 4}" text-anchor="${open ? 'start' : 'end'}" font-size="10" fill="#888" font-family="'Space Mono',monospace">${sNames[s]}</text>`;
   }
   notes.forEach(n => {
     const x = leftPad + (n.fret - minFret) * cellW - cellW / 2;
@@ -13063,7 +13076,13 @@ function renderEjView() {
     const lbl = c.id === 'dom' ? `${NOTES_TECH[keyIdx]} dominante` : c.id === 'maj' ? `${from} maggiore` : `${from}m`;
     return `<button class="pos-btn${c.id === EJ_STATE.colour ? ' active' : ''}" style="border-color:${c.color}" onclick="setEjColour('${c.id}')">${lbl}</button>`;
   }).join('');
-  const view = buildEjView(keyIdx, EJ_STATE.colour, EJ_STATE.rootString);
+  const posBtns = document.getElementById('ej-pos-btns');
+  const colNow = EJ_COLOURS.find(c => c.id === EJ_STATE.colour) || EJ_COLOURS[0];
+  posBtns.innerHTML = [1, 2, 3, 4, 5].map(k => {
+    const fr = buildEjView(keyIdx, colNow.id, k).notes.map(n => n.fret);
+    return `<button class="pos-btn${EJ_STATE.pos === k ? ' active' : ''}" onclick="setEjPos(${k})">${k} · tasti ${Math.min(...fr)}–${Math.max(...fr)}</button>`;
+  }).join('') + `<button class="pos-btn${EJ_STATE.pos === 0 ? ' active' : ''}" onclick="setEjPos(0)">Tutto il manico</button>`;
+  const view = buildEjView(keyIdx, EJ_STATE.colour, EJ_STATE.pos);
   document.getElementById('ej-colour-info').innerHTML = `<strong style="color:${view.col.color}">${view.col.name}</strong> su ${NOTES_TECH[keyIdx]}7: ${view.col.info}`;
   document.getElementById('ej-legend-colour').style.background = view.col.color;
   document.getElementById('ej-fretboard-wrap').innerHTML = drawEjSvg(view);
@@ -13096,7 +13115,7 @@ function playEj(mode) {
   };
   if (mode === 'hinge') {
     EJ_HINGE.forEach(id => {
-      const v = buildEjView(keyIdx, id, EJ_STATE.rootString);
+      const v = buildEjView(keyIdx, id, EJ_STATE.pos || 1);
       const asc = [...v.notes].sort(order).slice(0, 6);
       // il diagramma segue il colore che sta suonando
       const delay = (t - ctx.currentTime) * 1000;
@@ -13106,7 +13125,7 @@ function playEj(mode) {
     });
     return;
   }
-  const v = buildEjView(keyIdx, EJ_STATE.colour, EJ_STATE.rootString);
+  const v = buildEjView(keyIdx, EJ_STATE.colour, EJ_STATE.pos);
   const asc = [...v.notes].sort(order);
   if (mode === 'chord') chordAt();
   playSeq(v, asc.concat(asc.slice(0, -1).reverse()));
