@@ -3362,6 +3362,12 @@
   .fold-body { padding: 0 12px 12px; }
   .fold-body > .custom-chords-panel, .fold-body > .metro-panel, .fold-body > .pitch-panel { margin: 0; border: none; background: none; }
   .micfb-start { min-height: var(--tap); font-size: 15px; }
+  .fold-inline { margin: 12px 0 0; background: var(--bg2); }
+  .looper-sync-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 12px; }
+  .looper-sync { display: flex; align-items: center; gap: 8px; min-height: var(--tap); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); cursor: pointer; }
+  .looper-sync input { width: 22px; height: 22px; accent-color: var(--amber); }
+  .looper-sync-hint { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-dim); }
+  .looper-lat-help { font-size: 13px; line-height: 1.5; color: var(--text-mid); margin: 8px 0 0; }
   .fb-options-toggles { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 0 16px 12px; }
   @media (max-width: 900px) {
     header > nav { display: none; }                       /* via la nav a 10 voci: resta la bottom-nav */
@@ -3377,7 +3383,13 @@
       font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; white-space: nowrap;
     }
     #page-jam > .cpage-tabs { display: none; }   /* le sotto-pagine sono già nelle schede hub */
-    #page-jam .cpage-view > h2, #page-audio > h2 { display: none; }   /* il titolo è già la scheda attiva */
+    #page-jam .cpage-view > h2, #page-audio > h2 { display: none; }
+    #page-jam .loop-info, #page-jam .vol-lbl, #page-jam .bpm-lbl, #page-jam .jam-fb-legend span, #page-jam .lg-hint,
+    #page-jam .looper-stat-lbl, #page-jam .looper-status, #page-jam .looper-btn-lbl, #page-jam .tap-btn,
+    #page-jam .mode-info-panel .msect-lbl, #page-jam .tuner-freq, #page-jam .tuner-cents, #page-jam .micfb-meta {
+      font-family: 'DM Sans', sans-serif; letter-spacing: 0; text-transform: none; font-size: 13px;
+    }
+    #page-jam .looper-btn-lbl, #page-jam .tap-btn { font-weight: 700; font-size: 14px; }   /* il titolo è già la scheda attiva */
     /* Basi: Play → manico → info modo → progressione/metronomo */
     #bpage-basi.active { display: flex; flex-direction: column; }
     #bpage-basi .jam-main { display: contents; }
@@ -6195,6 +6207,17 @@ function btScheduleNote(absStep, time) {
   }
 }
 
+// Griglia delle battute della base (16 sedicesimi = 1 battuta in 4/4).
+// Calcolata dallo stato dello scheduler, quindi resta giusta anche dopo un cambio di BPM.
+function btStepDur() { return (60 / BT.bpm) / 4; }
+function btBarDur() { return btStepDur() * 16; }
+function btBarTime(t, mode) {           // mode: 'ceil' (prossima) | 'round' (più vicina)
+  const sd = btStepDur();
+  const k = BT.absoluteStep + (t - BT.nextNoteTime) / sd;
+  const bar = mode === 'round' ? Math.round(k / 16) : Math.ceil(k / 16 - 1e-6);
+  return BT.nextNoteTime + (bar * 16 - BT.absoluteStep) * sd;
+}
+
 function btSchedulerLoop() {
   const ctx = BT.ctx;
   while (BT.nextNoteTime < ctx.currentTime + BT.scheduleAhead) {
@@ -6275,13 +6298,17 @@ function jamTogglePlay() {
     BT.absoluteStep = 0;
     BT.nextNoteTime = BT.ctx.currentTime + 0.05;
     BT.notesInQueue = [];
+    const firstBeat = BT.nextNoteTime;   // prima battuta, prima che lo scheduler avanzi
     btSchedulerLoop();
+    // looper agganciato: riparte insieme alla prima battuta della base
+    if (typeof looperOnBaseStart === 'function') looperOnBaseStart(firstBeat);
     requestAnimationFrame(btVisualLoop);
     btn.textContent = '■';
     btn.classList.add('playing');
   }
   // stato "sta suonando: <canzone>" visibile da entrambe le viste (B-13)
   if (typeof jamSyncSongBanner === 'function') { jamSyncSongBanner(); setlistRenderAll(); }
+  if (typeof looperUI === 'function') looperUI(null, null);
 }
 
 function jamUpdateSettings() {
@@ -10434,19 +10461,21 @@ window.addEventListener('DOMContentLoaded', function() {
 
       <!-- Beat LEDs -->
       <div class="loop-info">
-        <span>BEAT INDICATOR</span>
+        <span>Battute</span>
         <span class="loop-tag" id="loop-tag">— bar</span>
       </div>
       <div class="beat-row" id="beat-leds"></div>
 
       <!-- Chord display -->
       <div class="loop-info">
-        <span>PROGRESSIONE</span>
+        <span>Progressione</span>
       </div>
       <div class="chord-display" id="chord-display"></div>
 
       <!-- Mix -->
-      <div class="vol-lbl" style="margin-bottom:8px">MIX</div>
+      <details class="fold fold-inline" id="jam-fold-mix">
+      <summary class="fold-sum">🎚 Mix <span class="fold-hint">master · batteria · basso · accordi</span></summary>
+      <div class="fold-body">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
         <span class="vol-lbl" style="white-space:nowrap">🔊 Master</span>
         <input type="range" min="0" max="1" step="0.01" value="0.7" id="vol-master"
@@ -10454,21 +10483,23 @@ window.addEventListener('DOMContentLoaded', function() {
       </div>
       <div class="mix-row">
         <div class="mix-slot">
-          <div class="vol-lbl">🥁 Drums</div>
+          <div class="vol-lbl">🥁 Batteria</div>
           <input type="range" min="0" max="1" step="0.01" value="0.75" id="vol-drums"
                  oninput="jamSetDrumVol(this.value)">
         </div>
         <div class="mix-slot">
-          <div class="vol-lbl">🎸 Bass</div>
+          <div class="vol-lbl">🎸 Basso</div>
           <input type="range" min="0" max="1" step="0.01" value="0.65" id="vol-bass"
                  oninput="jamSetBassVol(this.value)">
         </div>
         <div class="mix-slot">
-          <div class="vol-lbl">🎹 Chords</div>
+          <div class="vol-lbl">🎹 Accordi</div>
           <input type="range" min="0" max="1" step="0.01" value="0.45" id="vol-chords"
                  oninput="jamSetChordVol(this.value)">
         </div>
       </div>
+      </div>
+      </details>
     </div>
 
     <!-- ── RIGHT: Mode info ── -->
@@ -10668,16 +10699,20 @@ window.addEventListener('DOMContentLoaded', function() {
         </button>
       </div>
 
+      <div class="looper-sync-row">
+        <label class="looper-sync"><input type="checkbox" id="loop-sync" checked onchange="looperSetSync(this.checked)"> 🔗 A tempo con la base</label>
+        <span class="looper-sync-hint" id="loop-sync-hint">avvia una base in «Basi»: REC partirà e chiuderà sulla battuta</span>
+      </div>
       <div class="looper-status-row">
         <div class="looper-led" id="loop-led"></div>
         <span class="looper-status" id="loop-status">pronto — premi REC e suona</span>
       </div>
 
       <div class="looper-info-row">
-        <div class="looper-stat"><span class="looper-stat-lbl">DURATA LOOP</span><span class="looper-stat-val" id="loop-dur">—</span></div>
-        <div class="looper-stat"><span class="looper-stat-lbl">STRATI</span><span class="looper-stat-val" id="loop-layers">0</span></div>
+        <div class="looper-stat"><span class="looper-stat-lbl">Durata loop</span><span class="looper-stat-val" id="loop-dur">—</span></div>
+        <div class="looper-stat"><span class="looper-stat-lbl">Strati</span><span class="looper-stat-val" id="loop-layers">0</span></div>
         <div class="looper-stat" style="flex:1;min-width:140px">
-          <span class="looper-stat-lbl">VOLUME LOOP</span>
+          <span class="looper-stat-lbl">Volume loop</span>
           <input type="range" min="0" max="1.5" step="0.01" value="0.9" id="loop-vol"
                  oninput="looperSetVol(this.value)" style="width:100%;accent-color:var(--amber)">
         </div>
@@ -10686,11 +10721,21 @@ window.addEventListener('DOMContentLoaded', function() {
 
     <div class="hint-box" style="font-size:12px;max-width:760px;margin-top:14px">
       <strong>Come usarlo:</strong> premi <strong>REC</strong> e suona il giro (accordi o riff) — quando lo
-      fermi riparte subito in loop. Con <strong>OVERDUB</strong> registri un altro strato sopra mentre il loop
+      fermi riparte subito in loop. Con <strong>🔗 A tempo con la base</strong> e una base che suona, REC parte
+      alla battuta successiva e chiude sulla battuta più vicina: il giro dura un numero intero di battute e resta
+      a tempo con batteria e basso. Se senti il loop in ritardo o in anticipo, regola la
+      <strong>compensazione latenza</strong> qui sotto. Con <strong>OVERDUB</strong> registri un altro strato sopra mentre il loop
       suona: per l'overdub usa le <strong>cuffie</strong>, altrimenti il microfono ricattura anche il loop
       dagli altoparlanti. La fine dell'overdub viene "avvolta" sulla durata del giro base, come in un
       loop-station vero.
     </div>
+    <details class="fold">
+      <summary class="fold-sum">⏱ Compensazione latenza <span class="fold-hint"><span id="loop-lat-val">80</span> ms</span></summary>
+      <div class="fold-body">
+        <input type="range" min="0" max="300" step="5" value="80" id="loop-lat" oninput="looperSetLatency(this.value)" style="width:100%;accent-color:var(--amber)" aria-label="Compensazione latenza in millisecondi">
+        <p class="looper-lat-help">Il tempo tra quando suoni e quando il telefono registra (microfono + altoparlante/cuffie). Se il giro registrato suona <em>in ritardo</em> rispetto alla base, alza il valore; se suona <em>in anticipo</em>, abbassalo. Tipico: 40–120 ms con le cuffie, di più col Bluetooth. Vale per i nuovi giri.</p>
+      </div>
+    </details>
   </div><!-- /bpage-looper -->
 </div>
 
@@ -12088,7 +12133,27 @@ const LOOPER = {
   layers: 0,
   startedAt: 0,          // ctx.currentTime a cui è partita la riproduzione (fase 0)
   dubPhase: 0,           // fase del loop (in secondi) quando è partito l'overdub
+  sync: true,            // aggancia alla base: REC e loop a battute intere
+  synced: false,         // il loop attuale è lungo N battute della base
+  bars: 0,
+  recStartCtx: 0,        // ctx.currentTime all'avvio del MediaRecorder
+  barStart: 0, barEnd: 0,
+  latency: 0.08,         // compensazione ingresso/uscita (s), regolabile
+  _timers: [],
 };
+function looperSetSync(on) { LOOPER.sync = !!on; looperUI(null, null); }
+function looperSetLatency(ms) {
+  LOOPER.latency = Math.max(0, parseFloat(ms) || 0) / 1000;
+  const v = document.getElementById('loop-lat-val'); if (v) v.textContent = Math.round(LOOPER.latency * 1000);
+  try { localStorage.setItem('looperLatencyMs', String(Math.round(LOOPER.latency * 1000))); } catch (e) {}
+}
+function _looperClearTimers() { LOOPER._timers.forEach(clearTimeout); LOOPER._timers = []; }
+function _looperBaseOn() { return !!(LOOPER.sync && typeof BT !== 'undefined' && BT.playing && BT.ctx); }
+// la base è ripartita: il loop agganciato riparte con lei, dalla prima battuta
+function looperOnBaseStart(t0) {
+  if (!LOOPER.synced || !LOOPER.playing || !LOOPER.buffer) return;
+  _looperStartSource(0, t0);
+}
 
 function looperGain() {
   const ctx = getAudioCtx();
@@ -12113,7 +12178,7 @@ function looperUI(status, ledClass) {
   const st = document.getElementById('loop-status');
   const led = document.getElementById('loop-led');
   if (st && status != null) st.textContent = status;
-  if (led) led.className = 'looper-led' + (ledClass ? ' ' + ledClass : '');
+  if (led && ledClass !== null) led.className = 'looper-led' + (ledClass ? ' ' + ledClass : '');
   const has = !!LOOPER.buffer;
   const btn = (id, dis) => { const b = document.getElementById(id); if (b) b.disabled = dis; };
   btn('loop-rec-btn', LOOPER.overdubbing); // REC bloccato solo durante un overdub
@@ -12134,7 +12199,13 @@ function looperUI(status, ledClass) {
     if (lb) lb.textContent = LOOPER.playing ? 'STOP' : 'PLAY';
   }
   const dur = document.getElementById('loop-dur');
-  if (dur) dur.textContent = LOOPER.buffer ? LOOPER.buffer.duration.toFixed(1) + 's' : '—';
+  if (dur) dur.textContent = LOOPER.buffer ? LOOPER.buffer.duration.toFixed(1) + 's' + (LOOPER.synced && LOOPER.bars ? ` · ${LOOPER.bars} batt.` : '') : '—';
+  const sw = document.getElementById('loop-sync');
+  if (sw) sw.checked = LOOPER.sync;
+  const hint = document.getElementById('loop-sync-hint');
+  if (hint) hint.textContent = !LOOPER.sync ? 'libero: il giro dura quanto lo registri'
+    : (typeof BT !== 'undefined' && BT.playing) ? `la base suona a ${BT.bpm} BPM: REC parte e chiude sulla battuta`
+    : 'avvia una base in «Basi»: REC partirà e chiuderà sulla battuta';
   const lay = document.getElementById('loop-layers');
   if (lay) lay.textContent = LOOPER.layers;
 }
@@ -12166,46 +12237,99 @@ function _looperTrim(ctx, buf) {
   return out;
 }
 
-function _looperStartSource(phaseSec = 0) {
+function _looperStartSource(phaseSec = 0, when = 0) {
   const ctx = getAudioCtx();
   if (LOOPER.source) { try { LOOPER.source.stop(); LOOPER.source.disconnect(); } catch(e) {} }
   const src = ctx.createBufferSource();
   src.buffer = LOOPER.buffer;
   src.loop = true;
   src.connect(looperGain());
-  src.start(0, phaseSec % LOOPER.buffer.duration);
+  const at = Math.max(ctx.currentTime, when || 0);
+  src.start(at, phaseSec % LOOPER.buffer.duration);
   LOOPER.source = src;
-  LOOPER.startedAt = ctx.currentTime - phaseSec;
+  LOOPER.startedAt = at - phaseSec;
   LOOPER.playing = true;
+}
+// Ritaglia [from, from+len) secondi da un buffer registrato (zeri se manca coda)
+function _looperSlice(ctx, buf, fromSec, lenSec) {
+  const sr = buf.sampleRate, from = Math.max(0, Math.round(fromSec * sr)), n = Math.max(1, Math.round(lenSec * sr));
+  const out = ctx.createBuffer(buf.numberOfChannels, n, sr);
+  for (let ch = 0; ch < buf.numberOfChannels; ch++) {
+    const src = buf.getChannelData(ch).subarray(from, Math.min(buf.length, from + n));
+    out.getChannelData(ch).set(src);
+  }
+  return out;
 }
 
 function _looperPhase() {
   const ctx = getAudioCtx();
   if (!LOOPER.playing || !LOOPER.buffer) return 0;
-  return (ctx.currentTime - LOOPER.startedAt) % LOOPER.buffer.duration;
+  return ((ctx.currentTime - LOOPER.startedAt) % LOOPER.buffer.duration + LOOPER.buffer.duration) % LOOPER.buffer.duration;
 }
 
 async function looperRec() {
   if (LOOPER.overdubbing) return;
   const ctx = getAudioCtx();
-  if (LOOPER.recording) { LOOPER.recorder.stop(); return; }
+  if (LOOPER.recording) {
+    // Agganciato: chiude sulla battuta più vicina (almeno 1 battuta), poi taglia esatto
+    if (LOOPER.synced && LOOPER.barStart) {
+      const now = ctx.currentTime;
+      let end = btBarTime(now, 'round');
+      if (end < LOOPER.barStart + btBarDur() - 0.01) end = LOOPER.barStart + btBarDur();
+      LOOPER.barEnd = end;
+      LOOPER.bars = Math.max(1, Math.round((end - LOOPER.barStart) / btBarDur()));
+      const wait = Math.max(0, (end + LOOPER.latency + 0.12 - now) * 1000);
+      looperUI(`● chiudo il giro a ${LOOPER.bars} battut${LOOPER.bars === 1 ? 'a' : 'e'}…`, 'rec');
+      LOOPER._timers.push(setTimeout(() => { if (LOOPER.recorder && LOOPER.recorder.state === 'recording') LOOPER.recorder.stop(); }, wait));
+      return;
+    }
+    LOOPER.recorder.stop(); return;
+  }
   try {
     const stream = await looperMic();
+    _looperClearTimers();
+    const sync = _looperBaseOn();
+    LOOPER.synced = sync;
+    LOOPER.barStart = 0; LOOPER.barEnd = 0; LOOPER.bars = 0;
     LOOPER.chunks = [];
     LOOPER.recorder = new MediaRecorder(stream);
     LOOPER.recorder.ondataavailable = e => { if (e.data.size) LOOPER.chunks.push(e.data); };
+    LOOPER.recorder.onstart = () => {
+      LOOPER.recStartCtx = ctx.currentTime;
+      if (sync) {
+        // parte alla prossima battuta (se è troppo vicina, a quella dopo)
+        let t0 = btBarTime(ctx.currentTime + 0.12, 'ceil');
+        LOOPER.barStart = t0;
+        const ms = Math.max(0, (t0 - ctx.currentTime) * 1000);
+        looperUI('● pronto: parte alla prossima battuta…', 'rec');
+        LOOPER._timers.push(setTimeout(() => looperUI('● REC agganciato alla base — premi REC per chiudere (sulla battuta)', 'rec'), ms));
+      }
+    };
     LOOPER.recorder.onstop = async () => {
       LOOPER.recording = false;
       looperUI('elaboro la registrazione…', '');
       try {
         const ab = await new Blob(LOOPER.chunks).arrayBuffer();
         let buf = await ctx.decodeAudioData(ab);
-        buf = _looperTrim(ctx, buf);
-        _looperFadeEdges(buf);
-        LOOPER.buffer = buf;
-        LOOPER.layers = 1;
-        _looperStartSource(0);
-        looperUI('in loop — suonaci sopra, o aggiungi uno strato con OVERDUB', 'play');
+        if (LOOPER.synced && LOOPER.barStart && LOOPER.barEnd) {
+          // giro di N battute esatte: da barStart (+ latenza) per N × durata battuta
+          const from = LOOPER.barStart - LOOPER.recStartCtx + LOOPER.latency;
+          buf = _looperSlice(ctx, buf, from, LOOPER.barEnd - LOOPER.barStart);
+          _looperFadeEdges(buf);
+          LOOPER.buffer = buf; LOOPER.layers = 1;
+          // riparte sulla prossima battuta della base, se suona ancora
+          const when = (typeof BT !== 'undefined' && BT.playing) ? btBarTime(ctx.currentTime + 0.05, 'ceil') : 0;
+          _looperStartSource(0, when);
+          looperUI(`in loop · ${LOOPER.bars} battut${LOOPER.bars === 1 ? 'a' : 'e'} a tempo con la base — OVERDUB per aggiungere uno strato`, 'play');
+        } else {
+          LOOPER.synced = false;
+          buf = _looperTrim(ctx, buf);
+          _looperFadeEdges(buf);
+          LOOPER.buffer = buf;
+          LOOPER.layers = 1;
+          _looperStartSource(0);
+          looperUI('in loop — suonaci sopra, o aggiungi uno strato con OVERDUB', 'play');
+        }
       } catch (e) {
         looperUI('⚠ errore di decodifica: ' + (e.message || e.name), '');
       }
@@ -12242,7 +12366,7 @@ async function looperOverdub() {
     LOOPER.chunks = [];
     LOOPER.recorder = new MediaRecorder(stream);
     LOOPER.recorder.ondataavailable = e => { if (e.data.size) LOOPER.chunks.push(e.data); };
-    LOOPER.recorder.onstart = () => { LOOPER.dubPhase = _looperPhase(); };
+    LOOPER.recorder.onstart = () => { LOOPER.dubPhase = _looperPhase() - (LOOPER.synced ? LOOPER.latency : 0); };
     LOOPER.recorder.onstop = async () => {
       LOOPER.overdubbing = false; LOOPER.recording = false;
       looperUI('mixo lo strato…', 'play');
@@ -12251,7 +12375,7 @@ async function looperOverdub() {
         const dub = await ctx.decodeAudioData(ab);
         const base = LOOPER.buffer;
         // somma il nuovo strato sul giro base, avvolgendolo sulla durata del loop
-        const off = Math.floor(LOOPER.dubPhase * base.sampleRate);
+        const off = ((Math.floor(LOOPER.dubPhase * base.sampleRate) % base.length) + base.length) % base.length;
         for (let ch = 0; ch < base.numberOfChannels; ch++) {
           const bd = base.getChannelData(ch);
           const dd = dub.getChannelData(Math.min(ch, dub.numberOfChannels - 1));
@@ -12278,9 +12402,10 @@ async function looperOverdub() {
 }
 
 function looperClear() {
+  _looperClearTimers();
   if (LOOPER.playing) { try { LOOPER.source.stop(); LOOPER.source.disconnect(); } catch(e) {} }
   LOOPER.source = null; LOOPER.buffer = null;
-  LOOPER.playing = false; LOOPER.layers = 0;
+  LOOPER.playing = false; LOOPER.layers = 0; LOOPER.synced = false; LOOPER.bars = 0;
   looperUI('pronto — premi REC e suona', '');
 }
 
@@ -14008,6 +14133,7 @@ function showBasiSubpage(tab) {
     v.classList.toggle('active', v.id==='bpage-'+tab));
   // le schede hub (mobile) seguono la sotto-pagina, anche quando ci si arriva da un link interno
   if (document.getElementById('page-jam').classList.contains('active') && typeof navRenderHubTabs === 'function') navRenderHubTabs('jam');
+  if (tab === 'looper' && typeof looperUI === 'function') looperUI(null, null);   // stato della base aggiornato
 }
 function showTechSubpage(tab) {
   if (tab === 'tecnica' && typeof initTechPage === 'function') initTechPage();
@@ -14731,6 +14857,7 @@ window.addEventListener('DOMContentLoaded', function () {
   // Pannello opzioni del manico: aperto su desktop, chiuso su mobile (il manico resta in vista)
   const fbo = document.getElementById('fb-options');
   if (fbo && window.matchMedia && window.matchMedia('(min-width: 901px)').matches) fbo.open = true;
+  try { const lm = localStorage.getItem('looperLatencyMs'); if (lm != null) { looperSetLatency(lm); const r = document.getElementById('loop-lat'); if (r) r.value = lm; } } catch (e) {}
   // pannelli richiudibili delle pagine Suona: aperti su desktop, chiusi su mobile
   if (window.matchMedia && window.matchMedia('(min-width: 901px)').matches) document.querySelectorAll('details.fold').forEach(d => { d.open = true; });
   if (hadCtx) {
