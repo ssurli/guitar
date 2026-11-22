@@ -1308,7 +1308,7 @@
   .mdx-deg-play { display:flex; flex-direction:column; gap:6px; }
 
   .mdx-sets-grid {
-    display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));
     gap:16px; margin-bottom:24px;
   }
   .mdx-set-card {
@@ -2386,7 +2386,7 @@
   /* Mini fretboard grid */
   .triad-shapes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
     gap: 12px;
   }
 
@@ -2863,7 +2863,7 @@
     font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim);
     text-align: center;
   }
-  .cs-pos-block .mini-fb { width: 190px; height: auto; border-radius: 6px; }
+  .cs-pos-block .mini-fb { width: 250px; max-width: 100%; height: auto; border-radius: 6px; }
 
   .cs-3nps-block {
     width: 100%;
@@ -2894,7 +2894,7 @@
   .cm-circle-wrap{width:min(300px,95%);aspect-ratio:1;}
   #cm-svg{width:100%;height:100%;}
   #cm-fb-wrap{width:100%;max-width:580px;overflow-x:auto;}
-  #cm-fb-svg{min-width:320px;width:100%;height:auto;display:block;}
+  #cm-fb-svg{min-width:554px;width:100%;height:auto;display:block;}
   .cpage-tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:4px;
     flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
   .cpage-tabs::-webkit-scrollbar{display:none;}
@@ -4016,8 +4016,8 @@
     <div class="notice">
       <strong>Un solo sistema connesso:</strong> ogni forma CAGED contiene — nella <em>stessa posizione</em> del
       manico — l'accordo (triade), il suo arpeggio, la pentatonica e la scala completa. Leggi ogni riga da
-      sinistra a destra: stai solo <em>aggiungendo note</em> attorno allo stesso accordo. La tonica è marcata
-      <strong style="color:var(--amber)">R</strong>; terze in blu, quinte in verde.
+      sinistra a destra: stai solo <em>aggiungendo note</em> attorno allo stesso accordo. Nei pallini c'è il grado:
+      <strong style="color:var(--amber)">1</strong> in ambra è la tonica, le note dell'accordo (3, 5) hanno l'anello bianco, le altre note della scala sono blu.
     </div>
 
     <div class="controls" style="margin-bottom:18px">
@@ -4280,96 +4280,141 @@ function getScaleDegree(key, semitones) {
 
 // fretsPerString: array of 6 (index 0=e high, 5=E low), each array of fret numbers
 // Returns SVG string for a compact vertical guitar diagram
+// ════════════ DIAGRAMMI CONDIVISI (stesso linguaggio in tutta l'app) ════════════
+// Modello: il manico delle pentatoniche dominanti. Pallini r=12, gradi dentro (1 ♭3 5…),
+// tonica ambra con anello bianco, note dell'accordo scure con anello bianco,
+// altre note nel colore della sezione, tensioni in ciano.
+// Scale e box → manico orizzontale (fbNeckSvg); accordi → diagramma verticale (fbBoxSvg).
+const TECH_IV_NAME = { 0:'1', 1:'♭2', 2:'2', 3:'♭3', 4:'3', 5:'4', 6:'♭5', 7:'5', 8:'♭6', 9:'6', 10:'♭7', 11:'7' };
+const TECH_ROOT = '#f59e0b';
+const FB_TENSION = '#06b6d4';
+function fbDot(kind, color) {
+  if (kind === 'root')  return { fill: TECH_ROOT, ring: true, txt: '#111' };
+  if (kind === 'chord') return { fill: '#1c1c1c', ring: true, txt: '#fff' };
+  if (kind === 'tension') return { fill: FB_TENSION, ring: false, txt: '#fff' };
+  // una sezione color ambra si confonderebbe con la tonica: in quel caso le altre note vanno in blu
+  const c = !color || color.toLowerCase() === TECH_ROOT ? '#3b82f6' : color;
+  return { fill: c, ring: false, txt: '#fff' };
+}
+// gradi dell'accordo di tonica contenuti in una scala (1, la sua 3ª, la sua 5ª)
+function fbChordIvs(scaleIvs) {
+  const set = new Set([0]);
+  if (!scaleIvs) return set;
+  const third = scaleIvs.find(i => i === 3 || i === 4); if (third != null) set.add(third);
+  const fifth = scaleIvs.includes(7) ? 7 : scaleIvs.find(i => i === 6 || i === 8); if (fifth != null) set.add(fifth);
+  return set;
+}
+// funzione accordale ('R','3','♭7','9'…) → tipo di pallino
+function fbFnKind(fn) {
+  if (fn === 'R' || fn === '1') return 'root';
+  return /^(♭?3|[♭♯]?5|♭?7|𝄫7|6)$/.test(fn) ? 'chord' : 'tension';
+}
+function fbSvgOpen(W, H, { id, fluid, aria, cls }) {
+  const st = fluid ? `width:100%;max-width:${W}px;height:auto;display:block` : `display:block;min-width:${W}px`;
+  return `<svg${id ? ` id="${id}"` : ''}${cls ? ` class="${cls}"` : ''} width="${fluid ? '100%' : W}" ${fluid ? '' : `height="${H}" `}viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="${st}" role="img" aria-label="${aria || 'Diagramma sul manico'}">`;
+}
+function fbDotSvg(n, x, y) {
+  const dotR = 12;
+  let g = `<g class="tf-dot" data-tf="${n.string}:${n.fret}"${n.gid ? ` id="${n.gid}"` : ''}>`;
+  if (n.dash) g += `<circle cx="${x}" cy="${y}" r="${dotR + 4}" fill="none" stroke="${TECH_ROOT}" stroke-width="1.6" stroke-dasharray="3 2.4"/>`;
+  g += `<circle cx="${x}" cy="${y}" r="${dotR}" fill="${n.fill}" stroke="${n.ringColor || (n.ring ? '#fff' : 'none')}" stroke-width="2" opacity="${n.dim ? 0.55 : 1}"/>`;
+  if (n.label) g += `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="10" fill="${n.txt || '#fff'}" font-family="'Space Mono',monospace" font-weight="bold">${n.label}</text>`;
+  return g + '</g>';
+}
+// Manico orizzontale. notes: {string, fret, label, fill, ring, txt, ringColor?, dash?, gid?}
+// columns: [{fret,color}] colonne evidenziate · bands: [{from,to,color,label}] zone (box/forme)
+function fbNeckSvg({ minFret, maxFret, notes, columns = [], bands = [], aria, minSpan = 4, fluid = false, id, cls }) {
+  const sNames = ['e','B','G','D','A','E'];
+  const span = Math.max(maxFret - minFret, minSpan);
+  const open = minFret === 0;   // corde a vuoto a sinistra del capotasto
+  const cellW = 40, cellH = 28, leftPad = open ? 58 : 30, topPad = bands.length ? 30 : 18;
+  const W = leftPad + span * cellW + 16, H = topPad + 5 * cellH + 28;
+  const colX = f => leftPad + (f - minFret) * cellW - cellW / 2;
+  const hiFret = new Map(columns.map(c => [c.fret, c.color]));
+  let svg = fbSvgOpen(W, H, { id, fluid, aria, cls });
+  svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="10"/>`;
+  bands.forEach(b => {
+    const f1 = Math.max(b.from, minFret), f2 = Math.min(b.to, minFret + span);
+    if (f2 < f1) return;
+    const x1 = f1 === 0 ? 12 : colX(f1) - cellW / 2 + 1, x2 = colX(f2) + cellW / 2 - 1;
+    svg += `<rect x="${x1}" y="${topPad - 4}" width="${x2 - x1}" height="${5 * cellH + 8}" fill="${b.color}" opacity="0.07" rx="4"/>`;
+    if (b.label) svg += `<text x="${(x1 + x2) / 2}" y="${topPad - 12}" text-anchor="middle" font-size="10" fill="${b.color}" font-weight="bold" font-family="'Space Mono',monospace">${b.label}</text>`;
+  });
+  columns.forEach(c => {
+    svg += `<rect x="${colX(c.fret) - cellW / 2 + 2}" y="${topPad - 4}" width="${cellW - 4}" height="${5 * cellH + 8}" fill="${c.color}" opacity="0.10" stroke="${c.color}" stroke-width="1.8" stroke-opacity="0.55" rx="4"/>`;
+  });
+  for (let f = 0; f <= span; f++) {
+    const x = leftPad + f * cellW, fn = minFret + f;
+    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad + 5 * cellH}" stroke="${open && f === 0 ? '#d4af6a' : '#2e2e2e'}" stroke-width="${open && f === 0 ? 4 : 1}"/>`;
+    if (f > 0 && [3, 5, 7, 9, 12, 15, 17, 19, 21].includes(fn)) {
+      if (fn === 12 || fn === 24) {
+        svg += `<circle cx="${x - cellW / 2}" cy="${topPad + 1.5 * cellH}" r="3.5" fill="#2a2a2a"/><circle cx="${x - cellW / 2}" cy="${topPad + 3.5 * cellH}" r="3.5" fill="#2a2a2a"/>`;
+      } else svg += `<circle cx="${x - cellW / 2}" cy="${topPad + 2.5 * cellH}" r="3" fill="#2a2a2a"/>`;
+    }
+    if (f > 0 && fn > 0) {
+      const hc = hiFret.get(fn);
+      svg += `<text x="${x - cellW / 2}" y="${H - 5}" text-anchor="middle" font-size="10" fill="${hc || '#8a8a8a'}" font-weight="${hc ? 'bold' : 'normal'}" font-family="'Space Mono',monospace">${fn}</text>`;
+    }
+  }
+  for (let st = 0; st < 6; st++) {
+    const y = topPad + st * cellH;
+    svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + span * cellW}" y2="${y}" stroke="#555" stroke-width="${st === 0 ? 0.7 : st === 5 ? 1.6 : 1}"/>`;
+    svg += `<text x="${open ? 10 : leftPad - 8}" y="${y + 4}" text-anchor="${open ? 'start' : 'end'}" font-size="10" fill="#888" font-family="'Space Mono',monospace">${sNames[st]}</text>`;
+  }
+  notes.forEach(n => {
+    if (n.fret < minFret || n.fret > minFret + span) return;
+    svg += fbDotSvg(n, colX(n.fret), topPad + n.string * cellH);
+  });
+  return svg + '</svg>';
+}
+// Diagramma d'accordo verticale: corde E→e da sinistra a destra, tasti dall'alto.
+// start: 0 = posizione aperta (capotasto), altrimenti primo tasto mostrato. rows = tasti mostrati.
+// muted: corde con ×. barre: {fret, from, to} (corde, 5=E grave … 0=e).
+function fbBoxSvg({ start, rows, notes, muted = [], barre = null, aria, fluid = true, id, cls }) {
+  const SW = 28, FH = 36, SX = 44, SY = 32;
+  const open = start === 0, first = open ? 1 : start;
+  rows = Math.max(rows || 4, 4);
+  const W = SX + 5 * SW + 28, H = SY + rows * FH + 24;
+  const xOf = st => SX + (5 - st) * SW;
+  const yOf = f => f === 0 ? SY - 15 : SY + (f - first + 0.5) * FH;
+  let svg = fbSvgOpen(W, H, { id, fluid, aria, cls });
+  svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="10"/>`;
+  for (let r = 0; r <= rows; r++) {
+    const y = SY + r * FH;
+    svg += `<line x1="${SX}" y1="${y}" x2="${SX + 5 * SW}" y2="${y}" stroke="${open && r === 0 ? '#d4af6a' : '#2e2e2e'}" stroke-width="${open && r === 0 ? 4 : 1}"/>`;
+  }
+  if (!open) svg += `<text x="${SX - 18}" y="${SY + FH / 2 + 4}" text-anchor="end" font-size="10" fill="#8a8a8a" font-weight="bold" font-family="'Space Mono',monospace">${first}</text>`;
+  ['E','A','D','G','B','e'].forEach((nm, i) => {
+    const x = SX + i * SW;
+    svg += `<line x1="${x}" y1="${SY}" x2="${x}" y2="${SY + rows * FH}" stroke="#555" stroke-width="${i === 0 ? 1.6 : i === 5 ? 0.7 : 1}"/>`;
+    svg += `<text x="${x}" y="${H - 6}" text-anchor="middle" font-size="10" fill="#888" font-family="'Space Mono',monospace">${nm}</text>`;
+  });
+  muted.forEach(st => { svg += `<text x="${xOf(st)}" y="${SY - 10}" text-anchor="middle" font-size="12" fill="#8a8a8a" font-family="'Space Mono',monospace">×</text>`; });
+  if (barre) {
+    const xa = xOf(barre.from), xb = xOf(barre.to), y = yOf(barre.fret);
+    svg += `<rect x="${Math.min(xa, xb) - 13}" y="${y - 13}" width="${Math.abs(xb - xa) + 26}" height="26" rx="13" fill="${TECH_ROOT}" opacity="0.18"/>`;
+  }
+  notes.forEach(n => { svg += fbDotSvg(n, xOf(n.string), yOf(n.fret)); });
+  return svg + '</svg>';
+}
+// compatibilità col nome usato in Tecnica avanzata
+function techFretSvg(o) { return fbNeckSvg(o); }
+
 function drawMiniDiagram(fretsPerString, rootColor = '#f59e0b', noteColor = '#3b82f6',
                           rootNote = -1, keyIdx = -1, scaleIntervals = null,
                           title = '', showFretNum = true) {
-  // Layout constants
-  const nStrings = 6;
-  const SX = 14;            // left pad
-  const SY = 18;            // top pad (space for fret number)
-  const SW = 13;            // string spacing
-  const SH = 14;            // fret height
-  const W = SX + (nStrings-1)*SW + 14;
-
-  // Find visible fret range
   const allFrets = fretsPerString.flat().filter(f => f >= 0);
   if (!allFrets.length) return '<svg width="100" height="80"></svg>';
-  const minF = Math.max(0, Math.min(...allFrets));
-  const maxF = Math.max(...allFrets);
-  const displayStart = minF === 0 ? 0 : minF;
-  const nFrets = Math.max(4, maxF - displayStart + 1);
-  const H = SY + nFrets * SH + 10;
-
-  // Build scale set for interval coloring
-  const scaleSet = scaleIntervals
-    ? new Set(scaleIntervals.map(iv => (keyIdx + iv + 12) % 12))
-    : null;
-
-  // Interval color lookup
-  function getNoteColor(stringIdx, fret) {
-    if (!scaleIntervals || keyIdx < 0) return noteColor;
-    const noteIdx = (OPEN_STRINGS[stringIdx] + fret) % 12;
-    const interval = (noteIdx - keyIdx + 12) % 12;
-    if (interval === 0) return '#f59e0b';          // root - amber
-    if (interval === scaleIntervals[2]) return '#3b82f6';  // 3rd - blue
-    if (interval === scaleIntervals[4]) return '#22c55e';  // 5th - green
-    if (scaleIntervals.length >= 7 && interval === scaleIntervals[6]) return '#a855f7'; // 7th
-    return '#6b7280';  // other
-  }
-
-  // Chord diagram: strings go left=low E (s=5), right=high e (s=0)
-  const strOrder = [5,4,3,2,1,0]; // left to right
-
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block">`;
-  svg += `<rect width="${W}" height="${H}" fill="#141414" rx="5"/>`;
-
-  // Fret number label (top-left)
-  if (showFretNum && displayStart > 0) {
-    svg += `<text x="2" y="${SY+SH/2+3}" font-size="7" fill="${rootColor}" font-family="monospace" font-weight="bold">${displayStart}fr</text>`;
-  }
-
-  // Nut (only if starts at 0)
-  if (displayStart === 0) {
-    svg += `<rect x="${SX}" y="${SY}" width="${(nStrings-1)*SW}" height="3" fill="#d4af6a" rx="1"/>`;
-  }
-
-  // Fret lines
-  for (let fi = 0; fi <= nFrets; fi++) {
-    const y = SY + fi * SH + (displayStart === 0 ? 3 : 0);
-    svg += `<line x1="${SX}" y1="${y}" x2="${SX+(nStrings-1)*SW}" y2="${y}" stroke="#2a2a2a" stroke-width="0.8"/>`;
-  }
-
-  // String lines
-  for (let i = 0; i < nStrings; i++) {
-    const x = SX + i * SW;
-    const topY = SY + (displayStart === 0 ? 3 : 0);
-    svg += `<line x1="${x}" y1="${topY}" x2="${x}" y2="${SY+nFrets*SH+(displayStart===0?3:0)}" stroke="#3a3020" stroke-width="0.8"/>`;
-  }
-
-  // Note dots
-  for (let i = 0; i < nStrings; i++) {
-    const strIdx = strOrder[i];
-    const frets = fretsPerString[strIdx] || [];
-    const x = SX + i * SW;
-
-    frets.forEach(fret => {
-      if (fret < displayStart || fret > displayStart + nFrets) return;
-      const fretRel = fret - displayStart;
-      const y = SY + fretRel * SH - SH/2 + (displayStart === 0 ? 3 : 0);
-      const col = getNoteColor(strIdx, fret);
-      const r = 5;
-      svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="${col}" opacity="0.92"/>`;
-      // Show root 'R' label
-      const noteIdx = (OPEN_STRINGS[strIdx] + fret) % 12;
-      const interval = keyIdx >= 0 ? (noteIdx - keyIdx + 12) % 12 : -1;
-      if (interval === 0) {
-        svg += `<text x="${x}" y="${y+2.5}" text-anchor="middle" font-size="5" fill="#000" font-weight="bold" font-family="monospace">R</text>`;
-      }
-    });
-  }
-
-  svg += '</svg>';
-  return svg;
+  const minF = Math.min(...allFrets), maxF = Math.max(...allFrets);
+  const chordIvs = fbChordIvs(scaleIntervals);
+  const notes = [];
+  fretsPerString.forEach((frets, st) => (frets || []).forEach(f => {
+    if (f < 0) return;
+    const iv = keyIdx >= 0 ? ((OPEN_STRINGS[st] + f) % 12 - keyIdx + 12) % 12 : -1;
+    const kind = iv === 0 ? 'root' : chordIvs.has(iv) ? 'chord' : 'other';
+    notes.push({ string: st, fret: f, label: iv >= 0 ? TECH_IV_NAME[iv] : '', ...fbDot(kind, noteColor) });
+  }));
+  return fbNeckSvg({ minFret: Math.max(0, minF - 1), maxFret: maxF, notes, fluid: true, aria: title || 'Box della scala' });
 }
 
 // Compute fretsPerString for a scale box from offset data
@@ -5948,14 +5993,14 @@ const DRUM_PATTERNS = {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Color coding costante per FUNZIONE (uguale ovunque: manico, grip, chart):
-// Tonica=ambra · 3ª=blu · 5ª=verde · 7ª=viola · 9ª/estensioni=rosa · sus=ciano
-const FN_COLORS = {
+// Tonica=ambra · note dell'accordo=bianco · tensioni (9, sus)=ciano
+const FN_COLORS = {   // come i pallini dei diagrammi: tonica ambra, note dell'accordo bianche, tensioni ciano
   'R':'#f59e0b',
-  '3':'#3b82f6', '♭3':'#3b82f6',
-  '5':'#22c55e', '♭5':'#22c55e', '♯5':'#22c55e',
-  '7':'#a855f7', '♭7':'#a855f7', '𝄫7':'#a855f7',
-  '9':'#ec4899', '♭9':'#ec4899', '♯9':'#ec4899',
-  '2':'#ec4899', '4':'#06b6d4',
+  '3':'#e5e5e5', '♭3':'#e5e5e5',
+  '5':'#e5e5e5', '♭5':'#e5e5e5', '♯5':'#e5e5e5',
+  '7':'#e5e5e5', '♭7':'#e5e5e5', '𝄫7':'#e5e5e5', '6':'#e5e5e5',
+  '9':'#06b6d4', '♭9':'#06b6d4', '♯9':'#06b6d4',
+  '2':'#06b6d4', '4':'#06b6d4',
 };
 function chordFnColor(fn) { return FN_COLORS[fn] || '#888'; }
 // Guide tone = 3ª e 7ª: definiscono la qualità dell'accordo e sono gli appigli
@@ -7733,12 +7778,10 @@ function songOpenChord(sym, flatIdx) {
     </div>
     <div class="scl-fb-wrap"><svg id="scl-fb-svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
     <div class="scl-fb-legend">
-      <span><i style="background:#f59e0b"></i>R</span>
-      <span><i style="background:#3b82f6"></i>3ª</span>
-      <span><i style="background:#22c55e"></i>5ª</span>
-      <span><i style="background:#a855f7"></i>7ª</span>
-      <span><i style="background:#ec4899"></i>9ª</span>
-      <span><i style="background:transparent;box-shadow:0 0 0 2px rgba(255,255,255,0.85)"></i>guide tone</span>
+      <span><i style="background:#f59e0b;box-shadow:0 0 0 2px #fff"></i>Tonica (1)</span>
+      <span><i style="background:#1c1c1c;box-shadow:0 0 0 2px #fff"></i>Note dell'accordo (3 · 5 · 7)</span>
+      <span><i style="background:#06b6d4"></i>Tensioni (9 · sus)</span>
+      <span><i style="background:#3b82f6;opacity:.6"></i>Altre note della scala (nel suo colore)</span>
       <span><i style="background:transparent;box-shadow:0 0 0 2px var(--amber);opacity:.8"></i>grip (tratteggio)</span>
     </div>
     <div class="msect-lbl" style="margin-top:12px">Voicing (tap = ascolta e mostra sul manico · guide tone cerchiate)</div>
@@ -7787,50 +7830,22 @@ function sclDrawFretboard() {
   const gripPos = new Set();
   if (SCL_FB.showGrip && grip) chordGripAbs(sel.rootPc, grip).forEach(g => gripPos.add(g.str + ':' + g.fret));
 
-  const ML = 26, MT = 14, FW = 38, SH = 21, FRETS = 21;
-  const W = ML + FRETS * FW + 8, H = MT + 5 * SH + 18;
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  let out = '';
-  // capotasto + tasti
-  out += `<line x1="${ML}" y1="${MT}" x2="${ML}" y2="${MT + 5 * SH}" stroke="#d4af6a" stroke-width="3"/>`;
-  for (let f = 1; f <= FRETS; f++) {
-    const x = ML + f * FW;
-    out += `<line x1="${x}" y1="${MT}" x2="${x}" y2="${MT + 5 * SH}" stroke="#3d3020" stroke-width="1.5"/>`;
-  }
-  // segnatasti
-  [3,5,7,9,15,17,19,21].forEach(f => { out += `<circle cx="${ML + (f - 0.5) * FW}" cy="${MT + 2.5 * SH}" r="3" fill="#222"/>`; });
-  out += `<circle cx="${ML + 11.5 * FW}" cy="${MT + 1.5 * SH}" r="3" fill="#222"/><circle cx="${ML + 11.5 * FW}" cy="${MT + 3.5 * SH}" r="3" fill="#222"/>`;
-  // corde + note
-  for (let s = 0; s < 6; s++) {
-    const y = MT + s * SH;
-    out += `<line x1="${ML}" y1="${y}" x2="${ML + FRETS * FW}" y2="${y}" stroke="#c8a84b" stroke-width="${s < 3 ? 1 : 1.5}" opacity="0.7"/>`;
-    out += `<text x="${ML - 16}" y="${y + 3}" font-size="8" fill="#8a8a8a" font-family="monospace">${STRING_NAMES[s]}</text>`;
-    for (let f = 0; f <= FRETS; f++) {
-      const pc = (OPEN_STRINGS[s] + f) % 12;
-      const fn = toneMap[pc];
-      const inScale = scaleSet.has(pc);
-      const cx = f === 0 ? ML - 8 : ML + (f - 0.5) * FW;
-      const isChordDot = SCL_FB.showArp && fn !== undefined;
-      const isScaleDot = !isChordDot && SCL_FB.showScale && inScale;
-      if (isChordDot) {
-        const col = chordFnColor(fn);
-        if (isGuideTone(fn)) out += `<circle cx="${cx}" cy="${y}" r="9.5" fill="none" stroke="#fff" stroke-width="1.6" opacity="0.9"/>`;
-        out += `<circle cx="${cx}" cy="${y}" r="7.5" fill="${col}"/>`;
-        out += `<text x="${cx}" y="${y + 2.8}" text-anchor="middle" font-size="7" font-weight="bold" fill="#000" font-family="monospace">${fn}</text>`;
-      } else if (isScaleDot) {
-        out += `<circle cx="${cx}" cy="${y}" r="6" fill="#191919" stroke="${sc ? sc.color : '#666'}" stroke-width="1" opacity="0.75"/>`;
-        out += `<text x="${cx}" y="${y + 2.5}" text-anchor="middle" font-size="6" fill="#777" font-family="monospace">${NOTES[pc]}</text>`;
-      }
-      if (gripPos.has(s + ':' + f)) {
-        out += `<circle cx="${cx}" cy="${y}" r="11.5" fill="none" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="3 2.4" opacity="0.95"/>`;
-      }
+  // stesso manico degli altri diagrammi: accordo = gradi (tonica ambra, note dell'accordo con anello,
+  // tensioni ciano), scala = colore della scala, voicing scelto = anello tratteggiato
+  const FRETS = 21, notes = [];
+  for (let st = 0; st < 6; st++) for (let f = 0; f <= FRETS; f++) {
+    const pc = (OPEN_STRINGS[st] + f) % 12, fn = toneMap[pc];
+    const dash = gripPos.has(st + ':' + f);
+    if (SCL_FB.showArp && fn !== undefined) {
+      notes.push({ string: st, fret: f, label: fn === 'R' ? '1' : fn, dash, ...fbDot(fbFnKind(fn)) });
+    } else if (SCL_FB.showScale && scaleSet.has(pc)) {
+      const iv = (pc - sel.rootPc + 12) % 12;
+      notes.push({ string: st, fret: f, label: TECH_IV_NAME[iv], dash, ...fbDot('other', sc ? sc.color : '#3b82f6'), dim: true });
+    } else if (dash) {
+      notes.push({ string: st, fret: f, label: '', dash, fill: 'none' });
     }
   }
-  // numeri tasto
-  for (let f = 0; f <= FRETS; f++) {
-    out += `<text x="${f === 0 ? ML - 8 : ML + (f - 0.5) * FW}" y="${MT + 5 * SH + 13}" text-anchor="middle" font-size="7.5" fill="#8a8a8a" font-family="monospace">${f}</text>`;
-  }
-  svg.innerHTML = out;
+  svg.outerHTML = fbNeckSvg({ minFret: 0, maxFret: FRETS, notes, fluid: true, id: 'scl-fb-svg', aria: 'Accordo e scala sul manico' });
 }
 
 // Pagina di studio corrispondente al tipo di accordo (triadi / 7ª / 9ª)
@@ -8024,73 +8039,23 @@ function findTriadShapes(rootMidi, typeKey, inversion, stringIndices) {
 
 function drawTriadSVG(frets, stringIndices, rootMidi, typeKey, inversion) {
   const tt = TRIAD_TYPES[typeKey];
-  const invertedStrings = [...stringIndices].reverse();
-  const targetNotes = triadNotes(rootMidi, typeKey, inversion).map(n => n % 12);
-  // map: which note role (0=root,1=3rd,2=5th) is on which string?
-  const noteRoleMap = {};
-  invertedStrings.forEach((si, i) => { noteRoleMap[si] = i; });
-
-  const degreeColors = [tt.color, '#3b82f6', '#22c55e'];
-
-  const nonZeroFrets = frets.filter(f => f > 0);
-  const minF = nonZeroFrets.length ? Math.min(...nonZeroFrets) : 0;
-  const maxF = Math.max(...frets);
-  const displayStart = frets.some(f=>f===0) ? 0 : Math.max(0, minF - 1);
-  const displayEnd = Math.max(maxF + 1, displayStart + 4);
-  const nFrets = displayEnd - displayStart + 1;
-
-  const W = 190, cellW = (W - 32) / nFrets;
-  const nStrings = stringIndices.length;
-  const cellH = 30;
-  const H = nStrings * cellH + 16;
-  const sNames = ['e','B','G','D','A','E'];
-
-  let svg = `<svg class="mini-fb" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  svg += `<rect width="${W}" height="${H}" fill="#141414" rx="6"/>`;
-
-  // Fret numbers
-  for (let f = displayStart; f <= displayEnd; f++) {
-    const x = 28 + (f - displayStart) * cellW + cellW / 2;
-    svg += `<text x="${x}" y="9" text-anchor="middle" font-size="7" fill="#8a8a8a" font-family="monospace">${f === 0 ? '' : f}</text>`;
-  }
-
-  // Nut
-  if (displayStart === 0) {
-    const nutX = 28 + cellW;
-    svg += `<rect x="${nutX-1.5}" y="11" width="3" height="${nStrings*cellH}" fill="#d4af6a" rx="1"/>`;
-  }
-
-  // Grid
-  for (let s = 0; s < nStrings; s++) {
-    const y = 11 + s * cellH + cellH / 2;
-    svg += `<line x1="26" y1="${y}" x2="${W-4}" y2="${y}" stroke="#c8a84b" stroke-width="0.8" opacity="0.45"/>`;
-  }
-  for (let f = displayStart; f <= displayEnd; f++) {
-    const x = 28 + (f - displayStart) * cellW;
-    svg += `<line x1="${x}" y1="11" x2="${x}" y2="${11+nStrings*cellH}" stroke="#3d3020" stroke-width="1"/>`;
-  }
-
-  // String names
-  for (let s = 0; s < nStrings; s++) {
-    const y = 11 + s * cellH + cellH / 2 + 4;
-    svg += `<text x="20" y="${y}" text-anchor="middle" font-size="8" fill="#c8a84b" font-family="monospace">${sNames[stringIndices[s]]}</text>`;
-  }
-
-  // Note dots
-  for (let s = 0; s < nStrings; s++) {
-    const fret = frets[s];
-    const x = 28 + (fret - displayStart) * cellW + cellW / 2;
-    const y = 11 + s * cellH + cellH / 2;
-    const si = stringIndices[s];
-    const role = noteRoleMap[si];
-    const col = degreeColors[role] ?? '#888';
-    const noteName = NOTES[(OPEN_MIDI[si] + fret) % 12];
-    svg += `<circle cx="${x}" cy="${y}" r="${cellH/2-4}" fill="${col}" opacity="0.9"/>`;
-    svg += `<text x="${x}" y="${y+3.5}" text-anchor="middle" font-size="7.5" fill="#000" font-weight="bold" font-family="monospace">${noteName}</text>`;
-  }
-
-  svg += '</svg>';
-  return svg;
+  const labels = tt.formula.split('–').map(x => x.trim());
+  const rootPc = rootMidi % 12;
+  const notes = stringIndices.map((si, j) => {
+    const pc = (OPEN_MIDI[si] + frets[j]) % 12;
+    const role = tt.intervals.findIndex(iv => (rootPc + iv) % 12 === pc);
+    return { string: si, fret: frets[j], label: labels[role] || '', ...fbDot(role === 0 ? 'root' : 'chord') };
+  });
+  return fbChordBox(notes, { aria: `Triade ${tt.name}` });
+}
+// box verticale attorno alle note date (sceglie da solo posizione aperta o primo tasto)
+function fbChordBox(notes, { muted = [], aria, barre = null } = {}) {
+  const fr = notes.map(n => n.fret), played = fr.filter(f => f > 0);
+  const open = fr.some(f => f === 0) || !played.length;
+  const lo = played.length ? Math.min(...played) : 1, hi = played.length ? Math.max(...played) : 1;
+  const start = open ? 0 : lo;
+  const rows = open ? Math.max(4, hi) : Math.max(4, hi - lo + 1);
+  return fbBoxSvg({ start, rows, notes, muted, aria, barre, cls: 'mini-fb' });
 }
 
 function renderTriads() {
@@ -8101,7 +8066,7 @@ function renderTriads() {
   // Info column
   const infoCol = document.getElementById('triad-info-col');
   const noteNames = tt.intervals.map(iv => NOTES[(TR_STATE.keyIdx + iv) % 12]);
-  const degCols = [tt.color, '#3b82f6', '#22c55e'];
+  const degCols = ['#f59e0b', '#e5e5e5', '#e5e5e5'];   // come i pallini: tonica ambra, note dell'accordo bianche
   const degLabels = ['Tonica', 'Terza', 'Quinta'];
   const degreesHTML = noteNames.map((n, i) =>
     `<span class="tdeg" style="color:${degCols[i]};border-color:${degCols[i]};background:${degCols[i]}18">${degLabels[i]}: <strong>${n}</strong></span>`
@@ -8337,53 +8302,14 @@ function findSeventhShapes(rootMidi, typeKey, inversion, stringIndices) {
 
 function drawSeventhSVG(frets, stringIndices, rootMidi, typeKey, inversion) {
   const ct = SEVENTH_CHORD_TYPES[typeKey];
-  const baseNotes = ct.intervals.map(iv => (rootMidi + iv) % 12);
-  const noteRoleMap = {};
-  stringIndices.forEach((si, j) => {
+  const labels = ct.formula.split('–').map(x => x.trim());
+  const rootPc = rootMidi % 12;
+  const notes = stringIndices.map((si, j) => {
     const pc = (OPEN_MIDI[si] + frets[j]) % 12;
-    noteRoleMap[si] = baseNotes.indexOf(pc);
+    const role = ct.intervals.findIndex(iv => (rootPc + iv) % 12 === pc);
+    return { string: si, fret: frets[j], label: labels[role] || '', ...fbDot(role === 0 ? 'root' : 'chord') };
   });
-  const degColors = [ct.color, '#3b82f6', '#22c55e', '#a855f7'];
-
-  const nonZeroFrets = frets.filter(f => f > 0);
-  const minF = nonZeroFrets.length ? Math.min(...nonZeroFrets) : 0;
-  const maxF = Math.max(...frets);
-  const displayStart = frets.some(f => f === 0) ? 0 : Math.max(0, minF - 1);
-  const displayEnd = Math.max(maxF + 1, displayStart + 4);
-  const nFrets = displayEnd - displayStart + 1;
-
-  const W = 190, cellW = (W - 32) / nFrets;
-  const nStrings = stringIndices.length;
-  const cellH = 30;
-  const H = nStrings * cellH + 16;
-  const sNames = ['e','B','G','D','A','E'];
-
-  let svg = `<svg class="mini-fb" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  svg += `<rect width="${W}" height="${H}" fill="#141414" rx="6"/>`;
-
-  for (let f = displayStart; f <= displayEnd; f++) {
-    const x = 28 + (f - displayStart) * cellW + cellW / 2;
-    svg += `<text x="${x}" y="9" text-anchor="middle" font-size="7" fill="#8a8a8a" font-family="monospace">${f === 0 ? '' : f}</text>`;
-  }
-  if (displayStart === 0) {
-    const nutX = 28 + cellW;
-    svg += `<rect x="${nutX-1.5}" y="11" width="3" height="${nStrings*cellH}" fill="#d4af6a" rx="1"/>`;
-  }
-  for (let si = 0; si < stringIndices.length; si++) {
-    const strIdx = stringIndices[si];
-    const y = 11 + si * cellH + cellH / 2;
-    svg += `<line x1="28" y1="${y}" x2="${W-4}" y2="${y}" stroke="#2a2a2a" stroke-width="1.5"/>`;
-    svg += `<text x="14" y="${y+4}" text-anchor="middle" font-size="8" fill="#8a8a8a" font-family="monospace">${sNames[strIdx]}</text>`;
-
-    const f = frets[si];
-    const role = noteRoleMap[strIdx];
-    const col = degColors[role];
-    const noteX = 28 + (f - displayStart) * cellW + cellW / 2;
-    svg += `<circle cx="${noteX}" cy="${y}" r="9" fill="${col}" opacity="0.9"/>`;
-    svg += `<text x="${noteX}" y="${y+4}" text-anchor="middle" font-size="8" fill="#000" font-weight="bold" font-family="monospace">${NOTES[(OPEN_MIDI[strIdx] + f) % 12]}</text>`;
-  }
-  svg += '</svg>';
-  return svg;
+  return fbChordBox(notes, { aria: `Accordo ${ct.name}` });
 }
 
 function renderSeventh() {
@@ -8393,7 +8319,7 @@ function renderSeventh() {
 
   const infoCol = document.getElementById('s7-info-col');
   const noteNames = ct.intervals.map(iv => NOTES[(S7_STATE.keyIdx + iv) % 12]);
-  const degCols = [ct.color, '#3b82f6', '#22c55e', '#a855f7'];
+  const degCols = ['#f59e0b', '#e5e5e5', '#e5e5e5', '#e5e5e5'];
   const degLabels = ['Tonica', 'Terza', 'Quinta', 'Settima'];
   const degreesHTML = noteNames.map((n, i) =>
     `<span class="tdeg" style="color:${degCols[i]};border-color:${degCols[i]};background:${degCols[i]}18">${degLabels[i]}: <strong>${n}</strong></span>`
@@ -8431,7 +8357,7 @@ function renderSeventh() {
     return;
   }
 
-  const degCols2 = [ct.color, '#3b82f6', '#22c55e', '#a855f7'];
+  const degCols2 = ['#f59e0b', '#e5e5e5', '#e5e5e5', '#e5e5e5'];
   const baseNotes2 = ct.intervals.map(iv => (S7_STATE.keyIdx + iv) % 12);
 
   shapes.forEach(shape => {
@@ -8513,48 +8439,9 @@ const N9_STATE = { type:'dom9', keyIdx:0 };
 // Diagramma SVG generico di un grip su 6 corde (orizzontale, cantino in alto).
 // gripAbs = [{str, fret, fn}] con tasti assoluti; le corde assenti sono mute (×).
 function drawGripSVG(gripAbs) {
-  const byStr = {};
-  gripAbs.forEach(g => { byStr[g.str] = g; });
-  const frets = gripAbs.map(g => g.fret);
-  const minF = Math.min(...frets), maxF = Math.max(...frets);
-  const displayStart = Math.max(0, minF - 1);
-  const displayEnd = Math.max(maxF + 1, displayStart + 4);
-  const nFrets = displayEnd - displayStart + 1;
-
-  const W = 190, cellW = (W - 32) / nFrets, cellH = 22;
-  const H = 6 * cellH + 16;
-  const sNames = ['e','B','G','D','A','E'];
-
-  let svg = `<svg class="mini-fb" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  svg += `<rect width="${W}" height="${H}" fill="#141414" rx="6"/>`;
-  for (let f = displayStart; f <= displayEnd; f++) {
-    const x = 28 + (f - displayStart) * cellW + cellW / 2;
-    svg += `<text x="${x}" y="9" text-anchor="middle" font-size="7" fill="#8a8a8a" font-family="monospace">${f === 0 ? '' : f}</text>`;
-  }
-  if (displayStart === 0) {
-    svg += `<rect x="${28 + cellW - 1.5}" y="11" width="3" height="${6 * cellH}" fill="#d4af6a" rx="1"/>`;
-  }
-  for (let f = displayStart; f <= displayEnd; f++) {
-    const x = 28 + (f - displayStart) * cellW;
-    svg += `<line x1="${x}" y1="11" x2="${x}" y2="${11 + 6 * cellH}" stroke="#3d3020" stroke-width="1"/>`;
-  }
-  for (let s = 0; s < 6; s++) {
-    const y = 11 + s * cellH + cellH / 2;
-    svg += `<line x1="26" y1="${y}" x2="${W - 4}" y2="${y}" stroke="#c8a84b" stroke-width="0.8" opacity="0.45"/>`;
-    svg += `<text x="20" y="${y + 3}" text-anchor="middle" font-size="8" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
-    const g = byStr[s];
-    if (!g) {
-      svg += `<text x="${28 + cellW / 2}" y="${y + 3}" text-anchor="middle" font-size="8" fill="#8a8a8a" font-family="monospace">×</text>`;
-      continue;
-    }
-    const x = 28 + (g.fret - displayStart) * cellW + cellW / 2;
-    const col = chordFnColor(g.fn);
-    if (isGuideTone(g.fn)) svg += `<circle cx="${x}" cy="${y}" r="${cellH / 2 - 1.5}" fill="none" stroke="#fff" stroke-width="1.2" opacity="0.85"/>`;
-    svg += `<circle cx="${x}" cy="${y}" r="${cellH / 2 - 3.5}" fill="${col}" opacity="0.92"/>`;
-    svg += `<text x="${x}" y="${y + 3}" text-anchor="middle" font-size="7" fill="#000" font-weight="bold" font-family="monospace">${g.fn}</text>`;
-  }
-  svg += '</svg>';
-  return svg;
+  const used = new Set(gripAbs.map(g => g.str));
+  const notes = gripAbs.map(g => ({ string: g.str, fret: g.fret, label: g.fn === 'R' ? '1' : g.fn, ...fbDot(fbFnKind(g.fn)) }));
+  return fbChordBox(notes, { muted: [0,1,2,3,4,5].filter(st => !used.has(st)), aria: 'Diteggiatura accordo' });
 }
 
 function playGripNotes(gripAbs) {
@@ -8723,7 +8610,8 @@ function cagedFrets(shapeName, rootNote, quality) {
 }
 
 // Interval display color
-const IV_COLORS = { 0:'#f59e0b', 3:'#3b82f6', 4:'#3b82f6', 7:'#22c55e' };
+// stesso schema dei diagrammi: tonica ambra, note dell'accordo bianche
+const IV_COLORS = { 0:'#f59e0b', 3:'#e5e5e5', 4:'#e5e5e5', 7:'#e5e5e5' };
 const IV_LABELS = { 0:'R', 3:'♭3', 4:'3', 7:'5' };
 
 // ─── SISTEMA CONNESSO: accordo → arpeggio → pentatonica → scala nella stessa
@@ -8750,67 +8638,27 @@ function csysTargetIvs(scaleSel, kind) {
 
 function csysDotColor(iv) {
   if (iv === 0) return '#f59e0b';
-  if (iv === 3 || iv === 4) return '#3b82f6';
-  if (iv === 7) return '#22c55e';
-  return '#d4d4d4';
+  if (iv === 3 || iv === 4 || iv === 7) return '#e5e5e5';
+  return '#3b82f6';
 }
 
 function drawCsysCell(shapeName, rootNote, scaleSel, kind) {
   const quality = CSYS_MAJORISH.has(scaleSel) ? 'major' : 'minor';
   const win = csysWindow(shapeName, rootNote, quality);
   const openPos = win.start === 0;
-  const spaces = openPos ? win.end : (win.end - win.start + 1); // righe fra le linee
-  const SX = 26, SY = 24, SH = 24, SW = 22;
-  const W = SX + 5 * SW + 14, H = SY + spaces * SH + 10;
-  const strOrder = [5,4,3,2,1,0]; // E grave a sinistra → e acuta a destra
-
-  // y del pallino per un tasto della finestra
-  const yFor = f => {
-    if (openPos && f === 0) return SY - 9;              // corda a vuoto: sopra il capotasto
-    const idx = openPos ? f - 1 : f - win.start;
-    return SY + idx * SH + SH / 2;
-  };
-
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  svg += `<rect width="${W}" height="${H}" fill="#141414" rx="8"/>`;
-  if (openPos) svg += `<rect x="${SX}" y="${SY-3}" width="${5*SW}" height="3.5" fill="#d4af6a" rx="1"/>`;
-  else svg += `<text x="${SX-5}" y="${SY+SH/2+3}" text-anchor="end" font-size="9" fill="#8a8a8a" font-family="monospace" font-weight="bold">${win.start}</text>`;
-
-  for (let i = 0; i <= spaces; i++) {
-    const y = SY + i * SH;
-    svg += `<line x1="${SX}" y1="${y}" x2="${SX+5*SW}" y2="${y}" stroke="#2a2a2a" stroke-width="1"/>`;
-  }
-  for (let c = 0; c < 6; c++) {
-    const x = SX + c * SW;
-    svg += `<line x1="${x}" y1="${SY}" x2="${x}" y2="${SY+spaces*SH}" stroke="#3a3a3a" stroke-width="1"/>`;
-  }
-
-  const dot = (s, f, iv) => {
-    const x = SX + strOrder.indexOf(s) * SW;
-    const y = yFor(f);
-    const col = csysDotColor(iv);
-    const r = (openPos && f === 0) ? 5.5 : 7;
-    let out = `<circle cx="${x}" cy="${y}" r="${r}" fill="${col}"${iv===0?'':' opacity="0.92"'}/>`;
-    if (iv === 0) out += `<text x="${x}" y="${y+3}" text-anchor="middle" font-size="8" font-weight="bold" fill="#000" font-family="monospace">R</text>`;
-    return out;
-  };
-
+  const chordIvs = new Set([0, quality === 'major' ? 4 : 3, 7]);
+  const dot = (st, f, iv) => ({ string: st, fret: f, label: TECH_IV_NAME[iv], ...fbDot(iv === 0 ? 'root' : chordIvs.has(iv) ? 'chord' : 'other') });
+  const notes = [], muted = [];
   if (kind === 'chord') {
-    cagedFrets(shapeName, rootNote, quality).forEach(n => {
-      const x = SX + strOrder.indexOf(n.s) * SW;
-      if (n.muted) svg += `<text x="${x}" y="${SY-8}" text-anchor="middle" font-size="9" fill="#6b6b6b" font-family="monospace">✕</text>`;
-      else svg += dot(n.s, n.fret, n.iv);
-    });
+    cagedFrets(shapeName, rootNote, quality).forEach(n => { if (n.muted) muted.push(n.s); else notes.push(dot(n.s, n.fret, n.iv)); });
   } else {
     const target = csysTargetIvs(scaleSel, kind);
-    for (let s = 0; s < 6; s++) {
-      for (let f = win.start; f <= win.end; f++) {
-        const iv = (OPEN_STRINGS[s] + f - rootNote + 24) % 12;
-        if (target.has(iv)) svg += dot(s, f, iv);
-      }
+    for (let st = 0; st < 6; st++) for (let f = win.start; f <= win.end; f++) {
+      const iv = (OPEN_STRINGS[st] + f - rootNote + 24) % 12;
+      if (target.has(iv)) notes.push(dot(st, f, iv));
     }
   }
-  return svg + '</svg>';
+  return fbBoxSvg({ start: openPos ? 0 : win.start, rows: openPos ? win.end : win.end - win.start + 1, notes, muted, aria: `Forma ${shapeName}` });
 }
 
 // Note MIDI di una cella (per il click-to-play, dal basso verso l'alto)
@@ -8886,189 +8734,33 @@ function renderCagedSystem() {
 
 // Draw a vertical chord diagram SVG
 function drawChordDiagram(shapeName, rootNote, quality, highlight) {
-  const def = CAGED_DEFS[shapeName];
   const frets = cagedFrets(shapeName, rootNote, quality);
   const capo = cagedCapo(shapeName, rootNote);
-  const color = def.color;
-
-  const playedFrets = frets.filter(n => !n.muted).map(n => n.fret);
-  const minF = playedFrets.length ? Math.min(...playedFrets) : 0;
-  const maxF = playedFrets.length ? Math.max(...playedFrets) : 4;
-  const displayStart = capo === 0 ? 0 : Math.max(0, minF - 1);
-  const displayEnd = Math.max(displayStart + 4, maxF);
-  const nFrets = displayEnd - displayStart + 1;
-
-  const SX = 22; // left margin
-  const SY = 30; // top (for nut/capo number)
-  const SH = 32; // fret height
-  const SW = 24; // string spacing
-  const W = SX + 5 * SW + 20;
-  const H = SY + nFrets * SH + 14;
-
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:160px">`;
-  svg += `<rect width="${W}" height="${H}" fill="#141414" rx="8"/>`;
-
-  // Nut or capo indicator
-  if (displayStart === 0) {
-    svg += `<rect x="${SX}" y="${SY}" width="${5*SW}" height="4" fill="#d4af6a" rx="1"/>`;
-  } else {
-    svg += `<text x="${SX-4}" y="${SY+SH/2+4}" text-anchor="end" font-size="9" fill="${color}" font-family="monospace" font-weight="bold">${displayStart}</text>`;
-  }
-
-  // Fret lines
-  for (let f = 0; f <= nFrets; f++) {
-    const y = SY + f * SH + (displayStart === 0 ? 4 : 0);
-    svg += `<line x1="${SX}" y1="${y}" x2="${SX+5*SW}" y2="${y}" stroke="#2a2a2a" stroke-width="1"/>`;
-  }
-
-  // String lines (0=low E left, 5=high e right) — in chord diagrams strings go E→e left→right
-  const strOrder = [5,4,3,2,1,0]; // low E to high e
-  for (let i = 0; i < 6; i++) {
-    const x = SX + i * SW;
-    const topY = SY + (displayStart === 0 ? 4 : 0);
-    svg += `<line x1="${x}" y1="${topY}" x2="${x}" y2="${SY + nFrets*SH + (displayStart===0?4:0)}" stroke="#3a3020" stroke-width="1"/>`;
-  }
-
-  // String name labels at bottom
-  const sNames = ['E','A','D','G','B','e'];
-  for (let i = 0; i < 6; i++) {
-    const x = SX + i * SW;
-    svg += `<text x="${x}" y="${H-2}" text-anchor="middle" font-size="7" fill="#8a8a8a" font-family="monospace">${sNames[i]}</text>`;
-  }
-
-  // Mute / open indicators at top
-  for (let i = 0; i < 6; i++) {
-    const s = strOrder[i];
-    const x = SX + i * SW;
-    const note = frets[s];
-    if (note.muted) {
-      svg += `<text x="${x}" y="${SY-4}" text-anchor="middle" font-size="11" fill="#8a8a8a">×</text>`;
-    } else if (note.fret === 0) {
-      svg += `<circle cx="${x}" cy="${SY-7}" r="4" fill="none" stroke="${IV_COLORS[note.iv]||'#888'}" stroke-width="1.5"/>`;
-    }
-  }
-
-  // Barre indicator
-  const barreStrings = frets.filter(n => !n.muted && n.fret === capo && capo > 0);
-  if (barreStrings.length >= 4) {
-    const indices = barreStrings.map(n => strOrder.indexOf(n.s));
-    const minIdx = Math.min(...indices);
-    const maxIdx = Math.max(...indices);
-    const y = SY + (capo - displayStart) * SH - SH/2 + (displayStart===0?4:0);
-    svg += `<rect x="${SX + minIdx*SW - 6}" y="${y-5}" width="${(maxIdx-minIdx)*SW+12}" height="12" rx="6" fill="${color}" opacity="0.35"/>`;
-  }
-
-  // Note dots
-  for (let i = 0; i < 6; i++) {
-    const s = strOrder[i];
-    const note = frets[s];
-    if (note.muted || note.fret <= 0) continue;
-
-    const x = SX + i * SW;
-    const fretRelative = note.fret - displayStart;
-    const y = SY + fretRelative * SH - SH/2 + (displayStart===0?4:0);
-    const dotColor = IV_COLORS[note.iv] || '#888';
-
-    svg += `<circle cx="${x}" cy="${y}" r="9" fill="${dotColor}" opacity="0.92"/>`;
-    const label = IV_LABELS[note.iv] || '';
-    svg += `<text x="${x}" y="${y+3.5}" text-anchor="middle" font-size="7.5" fill="#000" font-weight="bold" font-family="monospace">${label}</text>`;
-  }
-
-  svg += '</svg>';
-  return svg;
+  const notes = [], muted = [];
+  frets.forEach(n => {
+    if (n.muted) { muted.push(n.s); return; }
+    notes.push({ string: n.s, fret: n.fret, label: TECH_IV_NAME[n.iv], ...fbDot(n.iv === 0 ? 'root' : 'chord') });
+  });
+  const onCapo = frets.filter(n => !n.muted && n.fret === capo && capo > 0).map(n => n.s);
+  const barre = onCapo.length >= 4 ? { fret: capo, from: Math.max(...onCapo), to: Math.min(...onCapo) } : null;
+  const played = notes.map(n => n.fret).filter(f => f > 0);
+  const start = capo === 0 ? 0 : Math.min(...played);
+  const rows = capo === 0 ? Math.max(4, ...played) : Math.max(4, Math.max(...played) - start + 1);
+  return fbBoxSvg({ start, rows, notes, muted, barre, aria: `Forma ${shapeName}` }).replace('max-width:', 'max-width:180px;--w:');
 }
 
 // Full-neck overview SVG: all 5 shapes on a single horizontal fretboard
 function drawCagedNeck(rootNote, quality) {
   const fretCount = 15;
-  const STRING_COUNT = 6;
-  const cellW = 46, cellH = 28;
-  const leftPad = 28, topPad = 20;
-  const W = leftPad + fretCount * cellW + 20;
-  const H = topPad + STRING_COUNT * cellH + 20;
-  const sNames = ['e','B','G','D','A','E'];
-
-  // Build a map: {stringIdx: {fret: {iv, shapeName}}}
-  const noteMap = {};
-  CAGED_ORDER.forEach(name => {
-    const fretArr = cagedFrets(name, rootNote, quality);
-    fretArr.forEach(n => {
-      if (n.muted || n.fret < 0) return;
-      if (!noteMap[n.s]) noteMap[n.s] = {};
-      noteMap[n.s][n.fret] = { iv: n.iv, shape: name };
-    });
-  });
-
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:600px">`;
-  svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="8"/>`;
-
-  // Fret numbers
-  for (let f = 1; f <= fretCount; f++) {
-    const x = leftPad + (f - 0.5) * cellW;
-    svg += `<text x="${x}" y="12" text-anchor="middle" font-size="9" fill="#8a8a8a" font-family="monospace">${f}</text>`;
-  }
-
-  // Nut
-  svg += `<rect x="${leftPad}" y="${topPad}" width="3" height="${STRING_COUNT*cellH}" fill="#d4af6a" rx="1"/>`;
-
-  // Grid
-  for (let s = 0; s < STRING_COUNT; s++) {
-    const y = topPad + s * cellH + cellH / 2;
-    svg += `<line x1="${leftPad}" y1="${y}" x2="${W-10}" y2="${y}" stroke="#c8a84b" stroke-width="0.7" opacity="0.4"/>`;
-    svg += `<text x="${leftPad-4}" y="${y+4}" text-anchor="end" font-size="8" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
-  }
-  for (let f = 0; f <= fretCount; f++) {
-    const x = leftPad + f * cellW;
-    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+STRING_COUNT*cellH}" stroke="#2a2a2a" stroke-width="1"/>`;
-  }
-
-  // Fret markers (3,5,7,9,12)
-  [3,5,7,9,12].forEach(f => {
-    if (f > fretCount) return;
-    const x = leftPad + (f - 0.5) * cellW;
-    const yc = topPad + STRING_COUNT * cellH + 10;
-    if (f === 12) {
-      svg += `<circle cx="${x-5}" cy="${yc}" r="3" fill="#92600a"/>`;
-      svg += `<circle cx="${x+5}" cy="${yc}" r="3" fill="#92600a"/>`;
-    } else {
-      svg += `<circle cx="${x}" cy="${yc}" r="3" fill="#3d2c10"/>`;
-    }
-  });
-
-  // Shape label bands (colored background behind each shape's capo region)
+  const seen = new Map(), bands = [];
   CAGED_ORDER.forEach(name => {
     const def = CAGED_DEFS[name];
-    const capo = cagedCapo(name, rootNote);
-    if (capo > fretCount) return;
-    const fretArr = cagedFrets(name, rootNote, quality);
-    const playedFrets = fretArr.filter(n => !n.muted).map(n => n.fret);
-    if (!playedFrets.length) return;
-    const f1 = Math.max(0, Math.min(...playedFrets));
-    const f2 = Math.min(fretCount, Math.max(...playedFrets));
-    const x1 = leftPad + f1 * cellW - (f1===0?0:0);
-    const x2 = leftPad + (f2+1) * cellW;
-    svg += `<rect x="${x1}" y="${topPad}" width="${x2-x1}" height="${STRING_COUNT*cellH}" fill="${def.color}" opacity="0.04" rx="2"/>`;
-    // Shape name label
-    svg += `<text x="${(x1+x2)/2}" y="${topPad-4}" text-anchor="middle" font-size="9" fill="${def.color}" font-family="monospace" font-weight="bold" opacity="0.7">${name}</text>`;
+    const played = cagedFrets(name, rootNote, quality).filter(n => !n.muted && n.fret >= 0 && n.fret <= fretCount);
+    played.forEach(n => seen.set(n.s + ':' + n.fret, n));
+    if (played.length) bands.push({ from: Math.min(...played.map(n => n.fret)), to: Math.max(...played.map(n => n.fret)), color: def.color, label: name });
   });
-
-  // Note dots
-  for (let s = 0; s < STRING_COUNT; s++) {
-    if (!noteMap[s]) continue;
-    Object.entries(noteMap[s]).forEach(([fStr, info]) => {
-      const f = parseInt(fStr);
-      if (f < 0 || f > fretCount) return;
-      const x = leftPad + (f === 0 ? -cellW*0.4 : (f - 0.5) * cellW);
-      const y = topPad + s * cellH + cellH / 2;
-      const col = IV_COLORS[info.iv] || '#888';
-      const shapeColor = CAGED_DEFS[info.shape]?.color || col;
-      svg += `<circle cx="${x}" cy="${y}" r="9" fill="${col}" opacity="0.88" stroke="${shapeColor}" stroke-width="1.5"/>`;
-      svg += `<text x="${x}" y="${y+3.5}" text-anchor="middle" font-size="7" fill="#000" font-weight="bold" font-family="monospace">${IV_LABELS[info.iv]||''}</text>`;
-    });
-  }
-
-  svg += '</svg>';
-  return svg;
+  const notes = [...seen.values()].map(n => ({ string: n.s, fret: n.fret, label: TECH_IV_NAME[n.iv], ...fbDot(n.iv === 0 ? 'root' : 'chord') }));
+  return fbNeckSvg({ minFret: 0, maxFret: fretCount, notes, bands, fluid: false, aria: 'Le 5 forme CAGED sul manico' });
 }
 
 function renderCaged() {
@@ -9295,185 +8987,35 @@ function p5BoxFrets(box, keyIdx) {
 
 // Draw interactive horizontal fretboard for a single box
 function drawP5Fretboard(box, keyIdx, quality) {
-  const minorIntervals = [0,3,5,7,10];
-  const majorIntervals = [0,2,4,7,9];
-  const scaleIntervals = quality === 'minor' ? minorIntervals : majorIntervals;
-  const scaleSet = new Set(scaleIntervals.map(i => (keyIdx + i) % 12));
-
+  const ivs = quality === 'minor' ? [0,3,5,7,10] : [0,2,4,7,9];
+  const chordIvs = fbChordIvs(ivs);
   const fretsByString = p5BoxFrets(box, keyIdx);
-  const allFrets = fretsByString.flat();
-  const minF = Math.max(0, Math.min(...allFrets) - 1);
-  const maxF = Math.min(22, Math.max(...allFrets) + 1);
-  const fretCount = maxF - (minF > 0 ? minF : 0);
-
-  const NOTES_ARR = NOTES;
-  const OPEN_S = OPEN_STRINGS;
-
-  const cellH = 26, cellW = 32;
-  const leftPad = 30, topPad = 18, rightPad = 12;
-  const nFrets = maxF - minF + 1;
-  const W = leftPad + nFrets * cellW + rightPad;
-  const H = topPad + 6 * cellH + 18;
-
-  const activeSet = new Set(fretsByString.flatMap((frets, s) => frets.map(f => s + ',' + f)));
-  const sNames = ['e','B','G','D','A','E'];
-
-  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:${W}px">`;
-  svg += `<rect width="${W}" height="${H}" fill="#1a1a1a" rx="8"/>`;
-
-  // Fret numbers
-  for (let f = minF; f <= maxF; f++) {
-    const x = leftPad + (f - minF) * cellW + cellW / 2;
-    svg += `<text x="${x}" y="13" text-anchor="middle" font-size="8" fill="#8a8a8a" font-family="monospace">${f === 0 ? '0' : f}</text>`;
-  }
-
-  // Nut
-  if (minF === 0) {
-    svg += `<rect x="${leftPad + cellW}" y="${topPad}" width="3" height="${6*cellH}" fill="#d4af6a" rx="1"/>`;
-  }
-
-  // Grid
-  for (let s = 0; s < 6; s++) {
-    const y = topPad + s * cellH + cellH / 2;
-    svg += `<line x1="${leftPad}" y1="${y}" x2="${W-rightPad}" y2="${y}" stroke="#c8a84b" stroke-width="${s===0||s===5?1.2:0.7}" opacity="0.4"/>`;
-    svg += `<text x="${leftPad-4}" y="${y+3}" text-anchor="end" font-size="8" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
-  }
-  for (let f = minF; f <= maxF; f++) {
-    const x = leftPad + (f - minF) * cellW;
-    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+6*cellH}" stroke="#2a2a2a" stroke-width="1"/>`;
-  }
-
-  // Fret markers
-  [3,5,7,9,12,15,17].forEach(mf => {
-    if (mf < minF || mf > maxF) return;
-    const x = leftPad + (mf - minF) * cellW + cellW / 2;
-    const y = topPad + 6 * cellH + 10;
-    if (mf === 12) {
-      svg += `<circle cx="${x-6}" cy="${y}" r="3" fill="#3d2c10"/>`;
-      svg += `<circle cx="${x+6}" cy="${y}" r="3" fill="#3d2c10"/>`;
-    } else {
-      svg += `<circle cx="${x}" cy="${y}" r="3" fill="#2a2010"/>`;
-    }
-  });
-
-  // Active notes
-  for (let s = 0; s < 6; s++) {
-    fretsByString[s].forEach(f => {
-      if (f < minF || f > maxF) return;
-      const noteIdx = (OPEN_S[s] + f) % 12;
-      const interval = (noteIdx - keyIdx + 12) % 12;
-      const isRoot = interval === 0;
-      const x = leftPad + (f - minF) * cellW + cellW / 2;
-      const y = topPad + s * cellH + cellH / 2;
-      const noteName = NOTES_ARR[noteIdx];
-      const col = isRoot ? '#f59e0b' : box.color;
-      const textCol = isRoot ? '#000' : '#fff';
-
-      svg += `<circle id="p5-note-${s}-${f}" data-root="${isRoot?1:0}" cx="${x}" cy="${y}" r="9" fill="${col}" opacity="0.95" style="transition:r 0.08s"/>`;
-      if (isRoot) svg += `<circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.5" style="pointer-events:none"/>`;
-      svg += `<text x="${x}" y="${y+3}" text-anchor="middle" font-size="7" fill="${textCol}" font-weight="bold" font-family="monospace" style="pointer-events:none">${noteName}</text>`;
-    });
-  }
-
-  svg += '</svg>';
-  return svg;
+  const all = fretsByString.flat();
+  const notes = [];
+  fretsByString.forEach((frets, st) => frets.forEach(f => {
+    const iv = ((OPEN_STRINGS[st] + f) % 12 - keyIdx + 12) % 12;
+    notes.push({ string: st, fret: f, gid: `p5-note-${st}-${f}`, label: TECH_IV_NAME[iv],
+                 ...fbDot(iv === 0 ? 'root' : chordIvs.has(iv) ? 'chord' : 'other', box.color) });
+  }));
+  return fbNeckSvg({ minFret: Math.max(0, Math.min(...all) - 1), maxFret: Math.min(22, Math.max(...all) + 1), notes, aria: 'Box della pentatonica' });
 }
 
 // Overview SVG — all 5 boxes on one long fretboard
 function drawP5Overview(keyIdx, quality) {
-  const minorIntervals = [0,3,5,7,10];
-  const majorIntervals = [0,2,4,7,9];
-  const scaleIntervals = quality === 'minor' ? minorIntervals : majorIntervals;
-  const scaleSet = new Set(scaleIntervals.map(i => (keyIdx + i) % 12));
+  const ivs = quality === 'minor' ? [0,3,5,7,10] : [0,2,4,7,9];
+  const chordIvs = fbChordIvs(ivs);
   const boxes = quality === 'minor' ? P5_MINOR_BOXES : P5_MAJOR_BOXES;
-
-  // Build note map with box color
-  const noteMap = {}; // "s,f" → {color, isRoot, boxIdx}
+  const fretCount = 17, seen = new Map(), bands = [];
   boxes.forEach((box, bi) => {
-    const frets = p5BoxFrets(box, keyIdx);
-    frets.forEach((strFrets, s) => {
-      strFrets.forEach(f => {
-        const key2 = s + ',' + f;
-        const noteIdx = (OPEN_STRINGS[s] + f) % 12;
-        const isRoot = (noteIdx - keyIdx + 12) % 12 === 0;
-        noteMap[key2] = { color: isRoot ? '#f59e0b' : box.color, isRoot, boxIdx: bi };
-      });
-    });
+    const frets = p5BoxFrets(box, keyIdx), all = frets.flat();
+    frets.forEach((sf, st) => sf.forEach(f => { if (f <= fretCount) seen.set(st + ':' + f, { st, f, color: box.color }); }));
+    bands.push({ from: Math.min(...all), to: Math.max(...all), color: box.color, label: String(bi + 1) });
   });
-
-  const fretCount = 17;
-  const cellH = 16, cellW = 18;
-  const leftPad = 22, topPad = 14;
-  const W = leftPad + (fretCount + 1) * cellW + 8;
-  const H = topPad + 6 * cellH + 16;
-  const sNames = ['e','B','G','D','A','E'];
-
-  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">`;
-  svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="8"/>`;
-
-  // Fret numbers
-  for (let f = 0; f <= fretCount; f++) {
-    const x = leftPad + f * cellW + cellW / 2;
-    svg += `<text x="${x}" y="10" text-anchor="middle" font-size="6" fill="#8a8a8a" font-family="monospace">${f}</text>`;
-  }
-
-  // Nut
-  svg += `<rect x="${leftPad + cellW}" y="${topPad}" width="2" height="${6*cellH}" fill="#d4af6a" rx="1"/>`;
-
-  // Fret markers
-  [3,5,7,9,12,15,17].forEach(mf => {
-    if (mf > fretCount) return;
-    const x = leftPad + mf * cellW + cellW / 2;
-    const y = topPad + 6 * cellH + 8;
-    if (mf === 12) {
-      svg += `<circle cx="${x-3}" cy="${y}" r="2" fill="#3d2c10"/>`;
-      svg += `<circle cx="${x+3}" cy="${y}" r="2" fill="#3d2c10"/>`;
-    } else {
-      svg += `<circle cx="${x}" cy="${y}" r="2" fill="#222"/>`;
-    }
+  const notes = [...seen.values()].map(({ st, f, color }) => {
+    const iv = ((OPEN_STRINGS[st] + f) % 12 - keyIdx + 12) % 12;
+    return { string: st, fret: f, label: TECH_IV_NAME[iv], ...fbDot(iv === 0 ? 'root' : chordIvs.has(iv) ? 'chord' : 'other', color) };
   });
-
-  // Grid
-  for (let s = 0; s < 6; s++) {
-    const y = topPad + s * cellH + cellH / 2;
-    svg += `<line x1="${leftPad}" y1="${y}" x2="${W-8}" y2="${y}" stroke="#c8a84b" stroke-width="0.5" opacity="0.35"/>`;
-    svg += `<text x="${leftPad-2}" y="${y+3}" text-anchor="end" font-size="6" fill="#c8a84b" font-family="monospace">${sNames[s]}</text>`;
-  }
-  for (let f = 0; f <= fretCount; f++) {
-    const x = leftPad + f * cellW;
-    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+6*cellH}" stroke="#222" stroke-width="1"/>`;
-  }
-
-  // Box label bands
-  boxes.forEach((box, bi) => {
-    const anchor = p5AnchorFret(box, keyIdx);
-    const frets2 = p5BoxFrets(box, keyIdx);
-    const allF = frets2.flat();
-    const f1 = Math.max(0, Math.min(...allF));
-    const f2 = Math.min(fretCount, Math.max(...allF));
-    if (f1 > fretCount) return;
-    const x1 = leftPad + f1 * cellW;
-    const x2 = leftPad + (f2 + 1) * cellW;
-    svg += `<rect x="${x1}" y="${topPad}" width="${x2-x1}" height="${6*cellH}" fill="${box.color}" opacity="0.04" rx="0"/>`;
-    const xLabel = (x1 + x2) / 2;
-    svg += `<text x="${xLabel}" y="${topPad - 3}" text-anchor="middle" font-size="8" fill="${box.color}" font-family="monospace" font-weight="bold" opacity="0.65">${bi+1}</text>`;
-  });
-
-  // Note dots
-  for (const [key2, info] of Object.entries(noteMap)) {
-    const [sStr, fStr] = key2.split(',');
-    const s = parseInt(sStr), f = parseInt(fStr);
-    if (f < 0 || f > fretCount) continue;
-    const x = leftPad + f * cellW + cellW / 2;
-    const y = topPad + s * cellH + cellH / 2;
-    svg += `<circle cx="${x}" cy="${y}" r="5" fill="${info.color}" opacity="0.9"/>`;
-    if (info.isRoot) svg += `<circle cx="${x}" cy="${y}" r="5" fill="none" stroke="#fff" stroke-width="1" opacity="0.5"/>`;
-    const noteName = NOTES[(OPEN_STRINGS[s] + f) % 12];
-    svg += `<text x="${x}" y="${y+1.5}" text-anchor="middle" font-size="4" fill="${info.isRoot?'#000':'#fff'}" font-weight="bold" font-family="monospace">${noteName}</text>`;
-  }
-
-  svg += '</svg>';
-  return svg;
+  return fbNeckSvg({ minFret: 0, maxFret: fretCount, notes, bands, fluid: false, aria: 'I 5 box sul manico' });
 }
 
 function renderPenta5() {
@@ -9590,22 +9132,14 @@ function playP5Box() {
 }
 
 function highlightP5Note(s, f) {
-  document.querySelectorAll('[id^="p5-note-"]').forEach(el => {
-    el.setAttribute('r', el.dataset.root === '1' ? '9' : '9');
-    el.style.filter = '';
-  });
+  // stesso effetto del resto dell'app: il pallino che suona si ingrandisce
+  document.querySelectorAll('[id^="p5-note-"]').forEach(el => el.classList.remove('tf-on'));
   const el = document.getElementById('p5-note-' + s + '-' + f);
-  if (el) {
-    el.setAttribute('r', '12');
-    el.style.filter = 'drop-shadow(0 0 6px rgba(255,255,255,0.9))';
-  }
+  if (el) el.classList.add('tf-on');
 }
 
 function clearP5Highlights() {
-  document.querySelectorAll('[id^="p5-note-"]').forEach(el => {
-    el.setAttribute('r', '9');
-    el.style.filter = '';
-  });
+  document.querySelectorAll('[id^="p5-note-"]').forEach(el => el.classList.remove('tf-on'));
 }
 
 function initPenta5() { renderPenta5(); }
@@ -10066,131 +9600,26 @@ function compute3NPSPattern(keyIdx, scaleIntervals) {
 function drawScale3NPS(keyIdx, scaleIntervals) {
   const pat = compute3NPSPattern(keyIdx, scaleIntervals);
   if (!pat) return '';
-  const { strings, minFret, maxFret } = pat;
-  const root = keyIdx % 12;
-  const sNames = ['e','B','G','D','A','E'];
-
-  const startFret = Math.max(1, minFret);
-  const N = maxFret - startFret + 1;
-
-  const cellW = 30, cellH = 22, padLeft = 28, padRight = 4;
-  const W = padLeft + N * cellW + padRight;
-  const H = 6 * cellH + 16;
-
-  let s = `<svg class="mini-fb" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">`;
-  s += `<rect width="${W}" height="${H}" fill="#141414" rx="6"/>`;
-
-  s += `<text x="14" y="${H/2+3.5}" text-anchor="middle" font-size="8" fill="#f59e0b" font-family="monospace">${startFret}fr</text>`;
-
-  for (let col = 0; col < N; col++) {
-    const fNum = startFret + col;
-    const x = padLeft + col * cellW + cellW / 2;
-    s += `<text x="${x}" y="9" text-anchor="middle" font-size="7" fill="#8a8a8a" font-family="monospace">${fNum}</text>`;
-  }
-  for (let col = 0; col <= N; col++) {
-    const x = padLeft + col * cellW;
-    s += `<line x1="${x}" y1="11" x2="${x}" y2="${11+6*cellH}" stroke="#3d3020" stroke-width="1"/>`;
-  }
-  for (let si = 0; si < 6; si++) {
-    const y = 11 + si * cellH + cellH / 2;
-    s += `<line x1="26" y1="${y}" x2="${W-4}" y2="${y}" stroke="#c8a84b" stroke-width="0.8" opacity="0.4"/>`;
-    s += `<text x="20" y="${y+3.5}" text-anchor="middle" font-size="8" fill="#6b5b2e" font-family="monospace">${sNames[si]}</text>`;
-  }
-
-  // Inlay dots (3, 5, 7, 9, 12, 15)
-  [3, 5, 7, 9, 12, 15].forEach(f => {
-    if (f >= startFret && f <= maxFret) {
-      const col = f - startFret;
-      const cx = padLeft + col * cellW + cellW / 2;
-      const cy = H - 4;
-      s += `<circle cx="${cx}" cy="${cy}" r="1.6" fill="#3a2e1a"/>`;
-      if (f === 12) {
-        s += `<circle cx="${cx-4}" cy="${cy}" r="1.6" fill="#3a2e1a"/>`;
-        s += `<circle cx="${cx+4}" cy="${cy}" r="1.6" fill="#3a2e1a"/>`;
-      }
-    }
-  });
-
-  strings.forEach(({ string, frets }) => {
-    frets.forEach(fret => {
-      const col = fret - startFret;
-      const x = padLeft + col * cellW + cellW / 2;
-      const y = 11 + string * cellH + cellH / 2;
-      const noteClass = (OPEN_MIDI[string] + fret) % 12;
-      const isRoot = noteClass === root;
-      const fill = isRoot ? '#f59e0b' : '#4ade80';
-      const r = cellH / 2 - 3;
-      s += `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" opacity="${isRoot ? 0.95 : 0.78}"/>`;
-      s += `<text x="${x}" y="${y+3}" text-anchor="middle" font-size="7" fill="${isRoot ? '#000' : '#052e16'}" font-weight="bold" font-family="monospace">${NOTES[noteClass]}</text>`;
-    });
-  });
-
-  s += '</svg>';
-  return s;
+  const chordIvs = fbChordIvs(scaleIntervals);
+  const notes = [];
+  pat.strings.forEach(({ string, frets }) => frets.forEach(fret => {
+    const iv = ((OPEN_MIDI[string] + fret) % 12 - keyIdx % 12 + 12) % 12;
+    notes.push({ string, fret, label: TECH_IV_NAME[iv], ...fbDot(iv === 0 ? 'root' : chordIvs.has(iv) ? 'chord' : 'other', '#22c55e') });
+  }));
+  return fbNeckSvg({ minFret: Math.max(0, pat.minFret - 1), maxFret: pat.maxFret, notes, fluid: true, cls: 'mini-fb', aria: 'Scala a 3 note per corda' });
 }
 
 function drawScalePos(keyIdx, scaleIntervals, startFret) {
   const scaleNotes = new Set(scaleIntervals.map(i => (keyIdx + i) % 12));
-  const root = keyIdx % 12;
-  const sNames = ['e','B','G','D','A','E'];
-  const N = 5; // columns (frets) to show
-
-  // Column 0 = fret startFret, column 4 = fret startFret+4
-  // When startFret=0, column 0 holds open strings, nut drawn after it (same as drawTriadSVG)
-  const W = 190, cellW = (W - 32) / N;
-  const cellH = 22;
-  const H = 6 * cellH + 16;
-
-  let s = `<svg class="mini-fb" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  s += `<rect width="${W}" height="${H}" fill="#141414" rx="6"/>`;
-
-  // Nut (thick line one column in, only when startFret=0)
-  if (startFret === 0) {
-    const nutX = 28 + cellW;
-    s += `<rect x="${nutX-1.5}" y="11" width="3" height="${6*cellH}" fill="#d4af6a" rx="1"/>`;
-  } else {
-    // Position marker
-    s += `<text x="14" y="${H/2+3.5}" text-anchor="middle" font-size="7" fill="#f59e0b" font-family="monospace">${startFret}fr</text>`;
+  const chordIvs = fbChordIvs(scaleIntervals);
+  const notes = [];
+  for (let st = 0; st < 6; st++) for (let fret = startFret; fret < startFret + 5; fret++) {
+    const pc = (OPEN_MIDI[st] + fret) % 12;
+    if (!scaleNotes.has(pc)) continue;
+    const iv = (pc - keyIdx % 12 + 12) % 12;
+    notes.push({ string: st, fret, label: TECH_IV_NAME[iv], ...fbDot(iv === 0 ? 'root' : chordIvs.has(iv) ? 'chord' : 'other', '#22c55e') });
   }
-
-  // Fret numbers (skip "0" for open column)
-  for (let col = 0; col < N; col++) {
-    const fNum = startFret + col;
-    const x = 28 + col * cellW + cellW / 2;
-    s += `<text x="${x}" y="9" text-anchor="middle" font-size="7" fill="#8a8a8a" font-family="monospace">${fNum === 0 ? '' : fNum}</text>`;
-  }
-
-  // Fret lines
-  for (let col = 0; col <= N; col++) {
-    const x = 28 + col * cellW;
-    s += `<line x1="${x}" y1="11" x2="${x}" y2="${11+6*cellH}" stroke="#3d3020" stroke-width="1"/>`;
-  }
-
-  // String lines + names
-  for (let si = 0; si < 6; si++) {
-    const y = 11 + si * cellH + cellH / 2;
-    s += `<line x1="26" y1="${y}" x2="${W-4}" y2="${y}" stroke="#c8a84b" stroke-width="0.8" opacity="0.4"/>`;
-    s += `<text x="20" y="${y+3.5}" text-anchor="middle" font-size="8" fill="#6b5b2e" font-family="monospace">${sNames[si]}</text>`;
-  }
-
-  // Scale note dots: for each string × each column
-  for (let si = 0; si < 6; si++) {
-    for (let col = 0; col < N; col++) {
-      const fret = startFret + col;
-      const noteClass = (OPEN_MIDI[si] + fret) % 12;
-      if (!scaleNotes.has(noteClass)) continue;
-      const x = 28 + col * cellW + cellW / 2;
-      const y = 11 + si * cellH + cellH / 2;
-      const isRoot = noteClass === root;
-      const fill = isRoot ? '#f59e0b' : '#4ade80';
-      const r = cellH / 2 - 3;
-      s += `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" opacity="${isRoot ? 0.92 : 0.72}"/>`;
-      s += `<text x="${x}" y="${y+3}" text-anchor="middle" font-size="6.5" fill="${isRoot ? '#000' : '#052e16'}" font-weight="bold" font-family="monospace">${NOTES[noteClass]}</text>`;
-    }
-  }
-
-  s += '</svg>';
-  return s;
+  return fbNeckSvg({ minFret: startFret === 0 ? 0 : startFret - 1, maxFret: startFret + 4, notes, fluid: true, cls: 'mini-fb', aria: 'Posizione della scala' });
 }
 
 // ── Popup tablatura accordo ─────────────────────────────────────────────────
@@ -12896,47 +12325,6 @@ function buildEquatorView(keyIdx, quality, pairIdx) {
   return { notes, minFret, maxFret, equatorFrets, lowName, highName, rootClass };
 }
 
-// ── Manico condiviso per Tecnica avanzata: stessa geometria, font e pallini ovunque
-// (modello: il diagramma delle pentatoniche dominanti). note: {string, fret, label, fill, ring, txt}
-// columns: [{fret, color}] colonne evidenziate (es. equatore)
-const TECH_IV_NAME = { 0:'1', 1:'♭2', 2:'2', 3:'♭3', 4:'3', 5:'4', 6:'♭5', 7:'5', 8:'♭6', 9:'6', 10:'♭7', 11:'7' };
-function techFretSvg({ minFret, maxFret, notes, columns = [], aria = 'Diagramma sul manico', minSpan = 4 }) {
-  const sNames = ['e','B','G','D','A','E'];
-  const span = Math.max(maxFret - minFret, minSpan);
-  const open = minFret === 0;   // corde a vuoto a sinistra del capotasto
-  const cellW = 40, cellH = 28, leftPad = open ? 58 : 30, topPad = 18, dotR = 12;
-  const W = leftPad + span * cellW + 16, H = topPad + 5 * cellH + 28;
-  const colX = f => leftPad + (f - minFret) * cellW - cellW / 2;
-  const hiFret = new Map(columns.map(c => [c.fret, c.color]));
-  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:${W}px" role="img" aria-label="${aria}">`;
-  svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="10"/>`;
-  columns.forEach(c => {
-    svg += `<rect x="${colX(c.fret) - cellW / 2 + 2}" y="${topPad - 4}" width="${cellW - 4}" height="${5 * cellH + 8}" fill="${c.color}" opacity="0.10" stroke="${c.color}" stroke-width="1.8" stroke-opacity="0.55" rx="4"/>`;
-  });
-  for (let f = 0; f <= span; f++) {
-    const x = leftPad + f * cellW, fn = minFret + f;
-    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad + 5 * cellH}" stroke="${open && f === 0 ? '#d4af6a' : '#2e2e2e'}" stroke-width="${open && f === 0 ? 4 : 1}"/>`;
-    if (f > 0 && [3, 5, 7, 9, 12, 15, 17].includes(fn)) svg += `<circle cx="${x - cellW / 2}" cy="${topPad + 2.5 * cellH}" r="${fn === 12 ? 4 : 3}" fill="#2a2a2a"/>`;
-    if (f > 0 && fn > 0) {
-      const hc = hiFret.get(fn);
-      svg += `<text x="${x - cellW / 2}" y="${H - 5}" text-anchor="middle" font-size="10" fill="${hc || '#8a8a8a'}" font-weight="${hc ? 'bold' : 'normal'}" font-family="'Space Mono',monospace">${fn}</text>`;
-    }
-  }
-  for (let st = 0; st < 6; st++) {
-    const y = topPad + st * cellH;
-    svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + span * cellW}" y2="${y}" stroke="#555" stroke-width="${st === 0 ? 0.7 : st === 5 ? 1.6 : 1}"/>`;
-    svg += `<text x="${open ? 10 : leftPad - 8}" y="${y + 4}" text-anchor="${open ? 'start' : 'end'}" font-size="10" fill="#888" font-family="'Space Mono',monospace">${sNames[st]}</text>`;
-  }
-  notes.forEach(n => {
-    const x = colX(n.fret), y = topPad + n.string * cellH;
-    svg += `<g class="tf-dot" data-tf="${n.string}:${n.fret}"><circle cx="${x}" cy="${y}" r="${dotR}" fill="${n.fill}" stroke="${n.ringColor || (n.ring ? '#fff' : 'none')}" stroke-width="2"/>`;
-    svg += `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="10" fill="${n.txt || '#fff'}" font-family="'Space Mono',monospace" font-weight="bold">${n.label}</text></g>`;
-  });
-  return svg + '</svg>';
-}
-// schema colori comune: tonica = ambra piena, note dell'accordo = anello bianco, altre = colore della sezione
-const TECH_ROOT = '#f59e0b';
-
 function drawEquatorSvg(view) {
   const COL_LOW = '#3b82f6', COL_HIGH = '#a855f7', COL_EQ = '#ef4444';
   const { notes, minFret, maxFret, equatorFrets, rootClass } = view;
@@ -13323,53 +12711,13 @@ function mdxFretsOnSet(stringIndices, intervals, inversion, rootNoteIdx) {
 
 // SVG diagramma compatto verticale per un voicing (3 o 4 note)
 function mdxDrawVoicing(notes, rootMidi, color) {
-  const stringsAll = [0,1,2,3,4,5]; // mostro tutte e 6 le corde, evidenzio quelle suonate
-  const playedSet = new Map(notes.map(n => [n.string, n]));
-  const allFrets = notes.map(n => n.fret);
-  const minF = Math.max(0, Math.min(...allFrets) - 1);
-  const maxF = Math.max(...allFrets) + 1;
-  const fretCount = Math.max(3, maxF - minF);
-  const cellW = 14, cellH = 16, leftPad = 14, topPad = 16, dotR = 6;
-  const W = leftPad + 6 * cellW + 4;
-  const H = topPad + (fretCount) * cellH + 14;
-  let svg = `<svg class="mdx-inv-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="6"/>`;
-  // Strings (vertical, e on right per convenzione diagramma accordi)
-  // Ordine corde: 0=e (alta) a destra, 5=E (grave) a sinistra
-  for (let s = 0; s < 6; s++) {
-    const x = leftPad + (5 - s) * cellW;
-    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad + fretCount * cellH}" stroke="#555" stroke-width="${s===5?1.5:s===0?0.7:1}"/>`;
-  }
-  // Fret labels (sinistra)
-  for (let f = 0; f <= fretCount; f++) {
-    const y = topPad + f * cellH;
-    svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + 5 * cellW}" y2="${y}" stroke="${f===0&&minF===0?'#c8a84b':'#333'}" stroke-width="${f===0&&minF===0?2.5:1}"/>`;
-  }
-  // First-fret label
-  if (minF > 0) {
-    svg += `<text x="2" y="${topPad + cellH/2 + 3}" font-size="9" fill="#888" font-family="'Space Mono',monospace">${minF + 1}fr</text>`;
-  }
-  // Mute/open markers above strings
-  stringsAll.forEach(s => {
-    const x = leftPad + (5 - s) * cellW;
-    if (!playedSet.has(s)) {
-      svg += `<text x="${x}" y="${topPad - 4}" text-anchor="middle" font-size="8" fill="#8a8a8a" font-family="monospace">×</text>`;
-    } else if (playedSet.get(s).fret === 0) {
-      svg += `<circle cx="${x}" cy="${topPad - 6}" r="3" fill="none" stroke="#aaa" stroke-width="1"/>`;
-    }
+  const used = new Set(notes.map(n => n.string));
+  const dots = notes.map(n => {
+    const iv = ((n.midi - rootMidi) % 12 + 12) % 12;
+    return { string: n.string, fret: n.fret, label: TECH_IV_NAME[iv], ...fbDot(iv === 0 ? 'root' : 'chord') };
   });
-  // Note dots
-  notes.forEach(n => {
-    if (n.fret <= 0) return;
-    const x = leftPad + (5 - n.string) * cellW;
-    const y = topPad + (n.fret - minF - 0.5) * cellH;
-    const isRoot = n.midi === rootMidi;
-    const fill = isRoot ? (color || '#f59e0b') : '#cfd8dc';
-    const stroke = isRoot ? '#fff' : 'none';
-    svg += `<circle cx="${x}" cy="${y}" r="${dotR}" fill="${fill}" stroke="${stroke}" stroke-width="1.2"/>`;
-  });
-  svg += '</svg>';
-  return svg;
+  const box = fbChordBox(dots, { muted: [0,1,2,3,4,5].filter(st => !used.has(st)), aria: 'Voicing' });
+  return box.replace('class="mini-fb"', 'class="mdx-inv-svg"').replace('max-width:', 'max-width:150px;--w:');
 }
 
 function setMdxVoicing(v) {
@@ -13981,48 +13329,17 @@ function _drawCmCircle(root){
 }
 
 function _drawCmFretboard(root){
+  // stesso manico degli altri diagrammi: gradi del modo, tonica ambra, triade del modo con anello
   const mode=CM_MODES[_cmMode];
-  const notesPc=new Set(mode.intervals.map(iv=>(root+iv)%12));
-  const OPEN_S=[4,11,7,2,9,4],SNAMES=['e','B','G','D','A','E'];
-  const NS='http://www.w3.org/2000/svg';
-  const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);return e;};
-  const tx=(t,a,s)=>{const e=el(t,a);e.textContent=s;return e;};
-  const svg=document.getElementById('cm-fb-svg');svg.innerHTML='';
-  const ML=22,MT=12,FW=42,SH=19,FRETS=13;
-  svg.setAttribute('viewBox',`0 0 ${ML+FRETS*FW} ${MT+5*SH+14}`);
-  // nut
-  svg.appendChild(el('line',{x1:ML,y1:MT,x2:ML,y2:MT+5*SH,stroke:'#c8a84b','stroke-width':'3'}));
-  // fret lines
-  for(let f=1;f<=12;f++){
-    const x=ML+f*FW;
-    svg.appendChild(el('line',{x1:x,y1:MT,x2:x,y2:MT+5*SH,stroke:'#3d3020','stroke-width':'1.5'}));
+  const chordIvs=fbChordIvs(mode.intervals);
+  const notes=[];
+  for(let st=0;st<6;st++)for(let f=0;f<=12;f++){
+    const iv=((OPEN_STRINGS[st]+f)%12-root%12+12)%12;
+    if(!mode.intervals.includes(iv))continue;
+    notes.push({string:st,fret:f,label:TECH_IV_NAME[iv],...fbDot(iv===0?'root':chordIvs.has(iv)?'chord':'other',mode.color)});
   }
-  // inlay dots
-  [3,5,7,9].forEach(f=>svg.appendChild(el('circle',{cx:ML+(f-0.5)*FW,cy:MT+2.5*SH,r:'3',fill:'#222'})));
-  [12].forEach(f=>{svg.appendChild(el('circle',{cx:ML+(f-0.5)*FW,cy:MT+1.5*SH,r:'3',fill:'#222'}));
-    svg.appendChild(el('circle',{cx:ML+(f-0.5)*FW,cy:MT+3.5*SH,r:'3',fill:'#222'}));});
-  for(let s=0;s<6;s++){
-    const y=MT+s*SH;
-    svg.appendChild(el('line',{x1:ML,y1:y,x2:ML+12*FW,y2:y,stroke:'#c8a84b','stroke-width':s<3?'1':'1.5'}));
-    svg.appendChild(tx('text',{x:ML-3,y,'text-anchor':'end','dominant-baseline':'middle',
-      'font-family':'Space Mono,monospace','font-size':'8',fill:'#8a8a8a'},SNAMES[s]));
-    for(let f=0;f<=12;f++){
-      const pc=(OPEN_S[s]+f)%12;
-      if(!notesPc.has(pc))continue;
-      const isRoot=(pc===root%12);
-      const cx=f===0?ML-10:ML+(f-0.5)*FW;
-      svg.appendChild(el('circle',{cx,cy:y,r:isRoot?8:7,
-        fill:isRoot?mode.color:'#111',stroke:mode.color,'stroke-width':isRoot?0:1.5}));
-      svg.appendChild(tx('text',{x:cx,y,'text-anchor':'middle','dominant-baseline':'middle',
-        'font-family':'Space Mono,monospace','font-size':'7','font-weight':isRoot?'700':'400',
-        fill:isRoot?'#000':mode.color},CM_NOTES[pc]));
-    }
-  }
-  // fret numbers
-  for(let f=0;f<=12;f++){
-    svg.appendChild(tx('text',{x:f===0?ML-10:ML+(f-0.5)*FW,y:MT+5*SH+10,'text-anchor':'middle',
-      'font-family':'Space Mono,monospace','font-size':'8',fill:'#8a8a8a'},f));
-  }
+  const svg=document.getElementById('cm-fb-svg');
+  if(svg) svg.outerHTML=fbNeckSvg({minFret:0,maxFret:12,notes,fluid:true,id:'cm-fb-svg',aria:mode.name+' sul manico'});
 }
 
 function showCircleSubpage(tab) {
