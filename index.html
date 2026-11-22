@@ -1089,6 +1089,12 @@
   }
   .tech-tab:hover { color:var(--text); }
   .tech-tab.active { color:var(--amber); border-bottom-color:var(--amber); background:var(--amber-glow); }
+  /* desktop: niente scorrimento laterale nascosto (col mouse non si scopre); le voci vanno a capo */
+  @media (min-width: 901px) {
+    .tech-tabs { flex-wrap: wrap; overflow: visible; row-gap: 2px; }
+    nav { flex-wrap: wrap; overflow: visible; row-gap: 0; }
+    nav .nav-btn { min-height: 38px; }
+  }
   .tech-panel { display:none; }
   /* pallino che suona: si ingrandisce e si accende (Equator, Blend, Sweep, Eric Johnson) */
   .tf-dot { transform-box: fill-box; transform-origin: center; transition: transform .08s ease-out; }
@@ -10968,8 +10974,8 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="eq-legend-row" style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin:14px 0">
       <span class="eq-legend-chip"><span class="eq-legend-dot" style="background:#3b82f6"></span>Box basso</span>
       <span class="eq-legend-chip"><span class="eq-legend-dot" style="background:#ef4444"></span>EQUATORE · note in comune</span>
-      <span class="eq-legend-chip"><span class="eq-legend-dot" style="background:#f59e0b"></span>Box alto</span>
-      <span class="eq-legend-chip"><span class="eq-legend-dot" style="background:#fff;border:2px solid #ef4444;width:8px;height:8px"></span>Tonica</span>
+      <span class="eq-legend-chip"><span class="eq-legend-dot" style="background:#a855f7"></span>Box alto</span>
+      <span class="eq-legend-chip"><span class="eq-legend-dot" style="background:#f59e0b;box-shadow:0 0 0 2px #fff"></span>Tonica</span>
     </div>
 
     <div class="eq-play-row" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:20px">
@@ -12890,69 +12896,59 @@ function buildEquatorView(keyIdx, quality, pairIdx) {
   return { notes, minFret, maxFret, equatorFrets, lowName, highName, rootClass };
 }
 
-function drawEquatorSvg(view) {
-  const sNames = ['e','B','G','D','A','E']; // index 0..5
-  const NOTES_LBL = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-  const COL_LOW = '#3b82f6', COL_HIGH = '#f59e0b', COL_EQ = '#ef4444';
-  const { notes, minFret, maxFret, equatorFrets, rootClass } = view;
-  const fretSpan = maxFret - minFret;
-  const cellW = 36, cellH = 26, leftPad = 30, topPad = 20, dotR = 11;
-  const W = leftPad + fretSpan * cellW + 16;
-  const H = topPad + 5 * cellH + 28;
-
-  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:${W}px">`;
+// ── Manico condiviso per Tecnica avanzata: stessa geometria, font e pallini ovunque
+// (modello: il diagramma delle pentatoniche dominanti). note: {string, fret, label, fill, ring, txt}
+// columns: [{fret, color}] colonne evidenziate (es. equatore)
+const TECH_IV_NAME = { 0:'1', 1:'♭2', 2:'2', 3:'♭3', 4:'3', 5:'4', 6:'♭5', 7:'5', 8:'♭6', 9:'6', 10:'♭7', 11:'7' };
+function techFretSvg({ minFret, maxFret, notes, columns = [], aria = 'Diagramma sul manico', minSpan = 4 }) {
+  const sNames = ['e','B','G','D','A','E'];
+  const span = Math.max(maxFret - minFret, minSpan);
+  const open = minFret === 0;   // corde a vuoto a sinistra del capotasto
+  const cellW = 40, cellH = 28, leftPad = open ? 58 : 30, topPad = 18, dotR = 12;
+  const W = leftPad + span * cellW + 16, H = topPad + 5 * cellH + 28;
+  const colX = f => leftPad + (f - minFret) * cellW - cellW / 2;
+  const hiFret = new Map(columns.map(c => [c.fret, c.color]));
+  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:${W}px" role="img" aria-label="${aria}">`;
   svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="10"/>`;
-
-  // Highlight equator columns (red translucent box)
-  equatorFrets.forEach(f => {
-    const cx = leftPad + (f - minFret) * cellW - cellW/2;
-    svg += `<rect x="${cx - cellW/2 + 2}" y="${topPad - 4}" width="${cellW - 4}" height="${5*cellH + 8}" fill="${COL_EQ}" opacity="0.10" stroke="${COL_EQ}" stroke-width="1.8" stroke-opacity="0.55" rx="4"/>`;
+  columns.forEach(c => {
+    svg += `<rect x="${colX(c.fret) - cellW / 2 + 2}" y="${topPad - 4}" width="${cellW - 4}" height="${5 * cellH + 8}" fill="${c.color}" opacity="0.10" stroke="${c.color}" stroke-width="1.8" stroke-opacity="0.55" rx="4"/>`;
   });
-
-  // Fret lines + numbers
-  for (let f = 0; f <= fretSpan; f++) {
-    const x = leftPad + f * cellW;
-    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+5*cellH}" stroke="#2e2e2e" stroke-width="1"/>`;
-    const fn = minFret + f;
-    if (f > 0 && fn > 0) svg += `<text x="${x - cellW/2}" y="${H-5}" text-anchor="middle" font-size="10" fill="${equatorFrets.includes(fn) ? COL_EQ : '#8a8a8a'}" font-family="'Space Mono',monospace" font-weight="${equatorFrets.includes(fn) ? 'bold' : 'normal'}">${fn}</text>`;
-  }
-
-  // Inlay markers
-  [3,5,7,9,12,15].forEach(f => {
-    if (f >= minFret + 1 && f <= maxFret) {
-      const x = leftPad + (f - minFret) * cellW - cellW/2;
-      const y = topPad + 5*cellH + 8;
-      svg += `<circle cx="${x}" cy="${y}" r="2" fill="#3a2e1a"/>`;
-      if (f === 12) {
-        svg += `<circle cx="${x-5}" cy="${y}" r="2" fill="#3a2e1a"/>`;
-        svg += `<circle cx="${x+5}" cy="${y}" r="2" fill="#3a2e1a"/>`;
-      }
+  for (let f = 0; f <= span; f++) {
+    const x = leftPad + f * cellW, fn = minFret + f;
+    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad + 5 * cellH}" stroke="${open && f === 0 ? '#d4af6a' : '#2e2e2e'}" stroke-width="${open && f === 0 ? 4 : 1}"/>`;
+    if (f > 0 && [3, 5, 7, 9, 12, 15, 17].includes(fn)) svg += `<circle cx="${x - cellW / 2}" cy="${topPad + 2.5 * cellH}" r="${fn === 12 ? 4 : 3}" fill="#2a2a2a"/>`;
+    if (f > 0 && fn > 0) {
+      const hc = hiFret.get(fn);
+      svg += `<text x="${x - cellW / 2}" y="${H - 5}" text-anchor="middle" font-size="10" fill="${hc || '#8a8a8a'}" font-weight="${hc ? 'bold' : 'normal'}" font-family="'Space Mono',monospace">${fn}</text>`;
     }
-  });
-
-  // String lines
-  for (let s = 0; s < 6; s++) {
-    const y = topPad + s * cellH;
-    const w = s===0 ? 0.7 : s===5 ? 1.6 : 1;
-    svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + fretSpan * cellW}" y2="${y}" stroke="#555" stroke-width="${w}"/>`;
-    svg += `<text x="${leftPad-8}" y="${y+4}" text-anchor="end" font-size="10" fill="#888" font-family="'Space Mono',monospace">${sNames[s]}</text>`;
   }
-
-  // Note dots
+  for (let st = 0; st < 6; st++) {
+    const y = topPad + st * cellH;
+    svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + span * cellW}" y2="${y}" stroke="#555" stroke-width="${st === 0 ? 0.7 : st === 5 ? 1.6 : 1}"/>`;
+    svg += `<text x="${open ? 10 : leftPad - 8}" y="${y + 4}" text-anchor="${open ? 'start' : 'end'}" font-size="10" fill="#888" font-family="'Space Mono',monospace">${sNames[st]}</text>`;
+  }
   notes.forEach(n => {
-    if (n.fret <= 0) return;
-    const dotX = leftPad + (n.fret - minFret) * cellW - cellW/2;
-    const dotY = topPad + n.string * cellH;
-    const fill = n.box === 'equator' ? COL_EQ : (n.box === 'low' ? COL_LOW : COL_HIGH);
-    const strokeC = n.isRoot ? '#fff' : 'none';
-    const sw = n.isRoot ? 2 : 0;
-    const noteLbl = NOTES_LBL[n.noteClass];
-    svg += `<g class="tf-dot" data-tf="${n.string}:${n.fret}"><circle cx="${dotX}" cy="${dotY}" r="${dotR}" fill="${fill}" stroke="${strokeC}" stroke-width="${sw}" opacity="${n.isRoot ? 1 : 0.92}"/>`;
-    svg += `<text x="${dotX}" y="${dotY+3}" text-anchor="middle" font-size="8" fill="#fff" font-family="'Space Mono',monospace" font-weight="bold">${noteLbl}</text></g>`;
+    const x = colX(n.fret), y = topPad + n.string * cellH;
+    svg += `<g class="tf-dot" data-tf="${n.string}:${n.fret}"><circle cx="${x}" cy="${y}" r="${dotR}" fill="${n.fill}" stroke="${n.ringColor || (n.ring ? '#fff' : 'none')}" stroke-width="2"/>`;
+    svg += `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="10" fill="${n.txt || '#fff'}" font-family="'Space Mono',monospace" font-weight="bold">${n.label}</text></g>`;
   });
+  return svg + '</svg>';
+}
+// schema colori comune: tonica = ambra piena, note dell'accordo = anello bianco, altre = colore della sezione
+const TECH_ROOT = '#f59e0b';
 
-  svg += '</svg>';
-  return svg;
+function drawEquatorSvg(view) {
+  const COL_LOW = '#3b82f6', COL_HIGH = '#a855f7', COL_EQ = '#ef4444';
+  const { notes, minFret, maxFret, equatorFrets, rootClass } = view;
+  return techFretSvg({
+    minFret, maxFret, aria: 'Coppia di box con le note in comune',
+    columns: equatorFrets.map(f => ({ fret: f, color: COL_EQ })),
+    notes: notes.map(n => {
+      const box = n.box === 'equator' ? COL_EQ : (n.box === 'low' ? COL_LOW : COL_HIGH);
+      return { string: n.string, fret: n.fret, label: TECH_IV_NAME[(n.noteClass - rootClass + 12) % 12],
+               fill: n.isRoot ? TECH_ROOT : box, ring: n.isRoot, txt: n.isRoot ? '#111' : '#fff' };
+    })
+  });
 }
 
 function setEqQuality(q) {
@@ -13061,43 +13057,13 @@ const EQ_BLEND_BOXES = {
 };
 
 function buildEqBlendSvg(c) {
-  const cellW = 38, cellH = 22, leftPad = 24, topPad = 16, dotR = 11;
-  const fretSpan = c.maxFret - c.minFret;
-  const W = leftPad + fretSpan * cellW + 10;
-  const H = topPad + 5 * cellH + 22;
-  const sNames = ['e','B','G','D','A','E'];
-  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:${W}px">`;
-  svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="10"/>`;
-  for (let f = 0; f <= fretSpan; f++) {
-    const x = leftPad + f * cellW;
-    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+5*cellH}" stroke="#2e2e2e" stroke-width="1"/>`;
-    const fn = c.minFret + f;
-    if (f > 0 && fn > 0) svg += `<text x="${x - cellW/2}" y="${H-5}" text-anchor="middle" font-size="9" fill="#8a8a8a" font-family="'Space Mono',monospace">${fn}</text>`;
-  }
-  [3,5,7,9].forEach(f => {
-    if (f > c.minFret && f <= c.maxFret) {
-      const cx = leftPad + (f - c.minFret) * cellW - cellW/2;
-      const cy = topPad + 5*cellH + 7;
-      svg += `<circle cx="${cx}" cy="${cy}" r="2" fill="#3a2e1a"/>`;
-    }
+  return techFretSvg({
+    minFret: c.minFret, maxFret: c.maxFret, aria: 'Box della pentatonica',
+    notes: c.notes.map(n => ({ string: n.string, fret: n.fret, label: n.role,
+      fill: n.root ? TECH_ROOT : (n.third ? c.thirdColor : '#1c1c1c'),
+      ring: !!(n.root || n.third), ringColor: n.root || n.third ? null : c.color,
+      txt: n.root ? '#111' : '#fff' }))
   });
-  for (let s = 0; s < 6; s++) {
-    const y = topPad + s * cellH;
-    const w = s===0?0.7:s===5?1.6:1;
-    svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + fretSpan * cellW}" y2="${y}" stroke="#555" stroke-width="${w}"/>`;
-    svg += `<text x="${leftPad-7}" y="${y+4}" text-anchor="end" font-size="9" fill="#888" font-family="'Space Mono',monospace">${sNames[s]}</text>`;
-  }
-  c.notes.forEach(n => {
-    const dotX = leftPad + (n.fret - c.minFret) * cellW - cellW/2;
-    const dotY = topPad + n.string * cellH;
-    let fill='#2c3e50', stroke='none', sw=0, txt='#cfd8dc';
-    if (n.root)       { fill=c.color;      stroke='#fff'; sw=1.5; txt='#000'; }
-    else if (n.third) { fill=c.thirdColor; stroke='#fff'; sw=1.4; txt='#fff'; }
-    svg += `<g class="tf-dot" data-tf="${n.string}:${n.fret}"><circle cx="${dotX}" cy="${dotY}" r="${dotR}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
-    svg += `<text x="${dotX}" y="${dotY+3}" text-anchor="middle" font-size="8" fill="${txt}" font-family="'Space Mono',monospace" font-weight="bold">${n.label}</text></g>`;
-  });
-  svg += '</svg>';
-  return svg;
 }
 
 function renderEqBlendDiagrams() {
@@ -13199,36 +13165,13 @@ function buildEjView(keyIdx, colourId, pos) {
 }
 
 function drawEjSvg(view) {
-  const sNames = ['e','B','G','D','A','E'];
   const { col, notes, minFret, maxFret } = view;
-  const span = maxFret - minFret;
-  const open = minFret === 0;   // tutto il manico: le corde a vuoto stanno a sinistra del capotasto
-  const cellW = 40, cellH = 28, leftPad = open ? 58 : 30, topPad = 18, dotR = 12;
-  const W = leftPad + span * cellW + 16, H = topPad + 5 * cellH + 28;
-  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:${W}px" role="img" aria-label="${col.name} sul manico">`;
-  svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="10"/>`;
-  for (let f = 0; f <= span; f++) {
-    const x = leftPad + f * cellW;
-    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad + 5 * cellH}" stroke="${open && f === 0 ? '#d4af6a' : '#2e2e2e'}" stroke-width="${open && f === 0 ? 4 : 1}"/>`;
-    if ([3, 5, 7, 9, 15].includes(minFret + f) || minFret + f === 12) svg += `<circle cx="${x - cellW / 2}" cy="${topPad + 2.5 * cellH}" r="${minFret + f === 12 ? 4 : 3}" fill="#2a2a2a"/>`;
-    const fn = minFret + f;
-    if (f > 0 && fn > 0) svg += `<text x="${x - cellW / 2}" y="${H - 5}" text-anchor="middle" font-size="10" fill="#8a8a8a" font-family="'Space Mono',monospace">${fn}</text>`;
-  }
-  for (let s = 0; s < 6; s++) {
-    const y = topPad + s * cellH;
-    svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + span * cellW}" y2="${y}" stroke="#555" stroke-width="${s === 0 ? 0.7 : s === 5 ? 1.6 : 1}"/>`;
-    svg += `<text x="${open ? 10 : leftPad - 8}" y="${y + 4}" text-anchor="${open ? 'start' : 'end'}" font-size="10" fill="#888" font-family="'Space Mono',monospace">${sNames[s]}</text>`;
-  }
-  notes.forEach(n => {
-    const x = leftPad + (n.fret - minFret) * cellW - cellW / 2;
-    const y = topPad + n.string * cellH;
-    const fill = n.isRoot ? '#f59e0b' : (n.isChord ? '#1c1c1c' : col.color);
-    const stroke = n.isRoot || n.isChord ? '#fff' : 'none';
-    const txt = n.isRoot ? '#111' : '#fff';
-    svg += `<g class="tf-dot" data-tf="${n.string}:${n.fret}"><circle cx="${x}" cy="${y}" r="${dotR}" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
-    svg += `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="10" fill="${txt}" font-family="'Space Mono',monospace" font-weight="bold">${EJ_IV_NAME[n.iv]}</text></g>`;
+  return techFretSvg({
+    minFret, maxFret, aria: `${col.name} sul manico`,
+    notes: notes.map(n => ({ string: n.string, fret: n.fret, label: EJ_IV_NAME[n.iv],
+      fill: n.isRoot ? TECH_ROOT : (n.isChord ? '#1c1c1c' : col.color),
+      ring: n.isRoot || n.isChord, txt: n.isRoot ? '#111' : '#fff' }))
   });
-  return svg + '</svg>';
 }
 
 function renderEjView() {
@@ -13660,50 +13603,16 @@ function renderSweepPanel() {
   // Compute actual frets for this key
   const frets = computeArpFrets(keyIdx, shape.strings, shape.semitones);
 
-  // Build mini fretboard diagram
-  const minFret = Math.max(0, Math.min(...frets) - 1);
-  const maxFret = Math.max(...frets) + 1;
-  const cellW = 26, cellH = 22, leftPad = 18, topPad = 14, dotR = 8;
-  const fretSpan = Math.max(maxFret - minFret, 4);
-  const W = leftPad + fretSpan * cellW + 14;
-  const H = topPad + 6 * cellH + 10;
-  const sNames = ['e','B','G','D','A','E'];
-
-  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;min-width:${W}px">`;
-  svg += `<rect width="${W}" height="${H}" fill="#151515" rx="8"/>`;
-
-  // Nut
-  if (minFret === 0) {
-    svg += `<line x1="${leftPad}" y1="${topPad}" x2="${leftPad}" y2="${topPad+5*cellH}" stroke="#aaa" stroke-width="3"/>`;
-  }
-
-  // Fret lines & numbers
-  for (let f = 0; f <= fretSpan; f++) {
-    const x = leftPad + f * cellW;
-    svg += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad+5*cellH}" stroke="#333" stroke-width="1"/>`;
-    const fn = minFret + f;
-    if (f > 0 && fn > 0) svg += `<text x="${x - cellW/2}" y="${topPad-5}" text-anchor="middle" font-size="8" fill="#8a8a8a" font-family="monospace">${fn}</text>`;
-  }
-
-  // Strings
-  for (let s = 0; s < 6; s++) {
-    const y = topPad + s * cellH;
-    svg += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + fretSpan * cellW}" y2="${y}" stroke="#555" stroke-width="${s===0?0.7:s===5?1.5:1}"/>`;
-    svg += `<text x="${leftPad-4}" y="${y+4}" text-anchor="end" font-size="8" fill="#888" font-family="monospace">${sNames[s]}</text>`;
-  }
-
-  // Dots for this shape
-  const shapeStringsForward = [...shape.strings]; // e.g. [5,4,3,2,1] or [5,4,3,2,1,0]
-  shapeStringsForward.forEach((si, ii) => {
-    const f = frets[ii];
-    const dotX = leftPad + (f - minFret) * cellW - cellW / 2;
-    const dotY = topPad + si * cellH;
-    const isRoot = shape.semitones[ii] === 0;
-    svg += `<g class="tf-dot" data-tf="${si}:${f}"><circle cx="${dotX}" cy="${dotY}" r="${dotR}" fill="${isRoot ? shape.color : '#2563eb'}" stroke="${isRoot ? '#fff' : 'none'}" stroke-width="1.5"/>`;
-    svg += `<text x="${dotX}" y="${dotY+3}" text-anchor="middle" font-size="7" fill="#fff" font-family="monospace" font-weight="bold">${f}</text></g>`;
+  // diagramma: stesso manico del resto di Tecnica avanzata; arpeggio = tutte note dell'accordo
+  const svg = techFretSvg({
+    minFret: Math.max(0, Math.min(...frets) - 1), maxFret: Math.max(...frets) + 1,
+    aria: `${keyName} ${shape.name}`,
+    notes: shape.strings.map((si, ii) => {
+      const isRoot = shape.semitones[ii] % 12 === 0;
+      return { string: si, fret: frets[ii], label: TECH_IV_NAME[shape.semitones[ii] % 12],
+               fill: isRoot ? TECH_ROOT : '#1c1c1c', ring: true, txt: isRoot ? '#111' : '#fff' };
+    })
   });
-
-  svg += '</svg>';
 
   document.getElementById('sweep-diagram').innerHTML = svg;
   document.getElementById('sweep-shape-name').textContent = keyName + ' ' + shape.name;
