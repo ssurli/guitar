@@ -3349,6 +3349,19 @@
   .fb-options[open] > .fb-options-sum::before { transform: rotate(90deg); }
   .fb-options-hint { font-weight: 400; font-size: var(--fs-ui); color: var(--text-dim); }
   .fb-options-body { padding: 4px 16px 8px; margin-bottom: 0; }
+  .fold { margin: 16px 0; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-lg); }
+  .fold-sum {
+    min-height: var(--tap); padding: 10px 16px; cursor: pointer; list-style: none;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; color: var(--text);
+  }
+  .fold-sum::-webkit-details-marker { display: none; }
+  .fold-sum::before { content: '▸'; color: var(--amber); transition: transform .15s; }
+  .fold[open] > .fold-sum::before { transform: rotate(90deg); }
+  .fold-hint { font-weight: 400; font-size: var(--fs-ui); color: var(--text-dim); }
+  .fold-body { padding: 0 12px 12px; }
+  .fold-body > .custom-chords-panel, .fold-body > .metro-panel, .fold-body > .pitch-panel { margin: 0; border: none; background: none; }
+  .micfb-start { min-height: var(--tap); font-size: 15px; }
   .fb-options-toggles { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 0 16px 12px; }
   @media (max-width: 900px) {
     header > nav { display: none; }                       /* via la nav a 10 voci: resta la bottom-nav */
@@ -3363,6 +3376,17 @@
       background: var(--bg3); border: 1px solid var(--border); color: var(--text);
       font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; white-space: nowrap;
     }
+    #page-jam > .cpage-tabs { display: none; }   /* le sotto-pagine sono già nelle schede hub */
+    #page-jam .cpage-view > h2, #page-audio > h2 { display: none; }   /* il titolo è già la scheda attiva */
+    /* Basi: Play → manico → info modo → progressione/metronomo */
+    #bpage-basi.active { display: flex; flex-direction: column; }
+    #bpage-basi .jam-main { display: contents; }
+    #bpage-basi .mode-info-panel { order: 2; margin-top: 16px; }
+    #bpage-basi > details.fold { order: 3; }
+    #bpage-basi .jam-controls-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.3fr) minmax(0,1.2fr); gap: 8px; }
+    #bpage-basi .jam-controls-row select { width: 100%; min-width: 0; padding-left: 10px; padding-right: 6px; }
+    #page-jam .subtitle, #page-audio .subtitle { display: none; }
+    #bpage-accordatore .tuner-display { margin-top: 8px; }
     .hub-tab.active { background: var(--amber); border-color: var(--amber); color: var(--on-accent); font-weight: 700; }
     .bnav-btn { font-family: 'DM Sans', sans-serif; font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 500; }
     .ctrl-label { font-family: 'DM Sans', sans-serif; font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--text-mid); }
@@ -9575,7 +9599,7 @@ function showPage(name, keepReturn) {
 // I link "Vedi sul manico" / "Apri nel Fretboard" / "Studia" saltano ad un'altra
 // pagina; qui memorizziamo la pagina di partenza e mostriamo un pulsante per
 // tornarci esattamente dove si era (le sotto-pagine restano intatte).
-const NAV_PAGE_LABELS = { setlist:'Setlist', fretboard:'Fretboard', scales:'Scale & Accordi', caged:'CAGED', penta5:'5 Box Penta', circle:'Circolo', jam:'Basi', audio:'Audio', technique:'Tecnica avanzata', coscienza:'Coscienza' };
+const NAV_PAGE_LABELS = { setlist:'Setlist', fretboard:'Fretboard', scales:'Scale & Accordi', caged:'CAGED', penta5:'5 Box Penta', circle:'Circolo', jam:'Basi', audio:'Suono', technique:'Tecnica avanzata', coscienza:'Coscienza' };
 // Return-STACK (max 3 livelli, B-20): canzone → Triadi → altro → il ritorno alla
 // canzone non si perde più. API navArm/navReturn/navDisarm invariata all'esterno.
 let _navReturn = [];
@@ -10333,40 +10357,6 @@ window.addEventListener('DOMContentLoaded', function() {
   <!-- Stato visibile della sorgente in play quando arriva dalla setlist (B-13) -->
   <div class="jam-song-banner" id="jam-song-banner" role="status"></div>
 
-  <!-- ── Progressione accordi personalizzata ── -->
-  <div class="custom-chords-panel">
-    <div class="ccp-head">
-      <span class="ccp-title">🎼 La tua progressione</span>
-      <span class="ccp-hint">// scrivi gli accordi di un brano → il manico mostra le scale su cui improvvisare</span>
-    </div>
-    <div class="ccp-input-row">
-      <input type="text" id="jam-custom-chords" class="ccp-input"
-             placeholder='es.  C  G  Am  F   ·   durata con  ":"   →  C:2 G Am F'
-             onkeydown="if(event.key==='Enter')jamLoadCustomProgression()">
-      <button class="ccp-btn load" onclick="jamLoadCustomProgression()">▶ Carica</button>
-      <button class="ccp-btn reset" onclick="jamResetCustomProgression()" title="Torna alla base generata da tonalità/modo">✕ Base</button>
-    </div>
-    <div class="ccp-quick" id="jam-quick-chords"></div>
-    <div class="jam-custom-status" id="jam-custom-status"></div>
-    <div class="scale-seq" id="jam-scale-seq"></div>
-  </div>
-
-  <!-- Metronomo standalone -->
-  <div class="metro-panel">
-    <span class="ctrl-label">Metronomo</span>
-    <button id="metro-btn" class="tap-btn" onclick="metroToggle()">▶ Metronomo</button>
-    <div class="ctrl-group">
-      <div class="ctrl-label">Suddivisione</div>
-      <select id="metro-sub">
-        <option value="4">Quarti (♩)</option>
-        <option value="8">Ottavi (♪♪)</option>
-        <option value="12">Terzine (♪♪♪)</option>
-        <option value="16">Sedicesimi</option>
-      </select>
-    </div>
-    <span class="ctrl-label" style="color:var(--text-dim);font-size:11px">// usa il BPM del jam · indipendente dalla base</span>
-  </div>
-
   <div class="jam-controls-row">
     <div class="ctrl-group">
       <div class="ctrl-label">Tonalità</div>
@@ -10516,11 +10506,53 @@ window.addEventListener('DOMContentLoaded', function() {
     <span><i class="lg" style="background:transparent;box-shadow:0 0 0 2px rgba(255,255,255,0.9)"></i>Guide tone (3ª/7ª dell'accordo)</span>
     <span><i class="lg lg-live"></i>Nota che suoni (mic)</span>
     <span class="lg-hint">// attiva <strong>🎤 Suona live</strong>: la nota che suoni dal microfono si cerchia sul manico — vedi insieme scala e note reali</span>
-    <span class="lg-hint" style="color:var(--amber);font-weight:700">build v8 · 05-07 17:20</span>
   </div>
   <div class="fretboard-wrap">
     <div class="fretboard" id="jam-fretboard"></div>
   </div>
+  <!-- Strumenti secondari, richiudibili: prima si suona, poi si personalizza -->
+  <details class="fold" id="jam-fold-prog">
+    <summary class="fold-sum">✍️ La tua progressione <span class="fold-hint">scrivi gli accordi di un brano</span></summary>
+    <div class="fold-body">
+  <div class="custom-chords-panel">
+    <div class="ccp-head">
+      <span class="ccp-title">🎼 La tua progressione</span>
+      <span class="ccp-hint">// scrivi gli accordi di un brano → il manico mostra le scale su cui improvvisare</span>
+    </div>
+    <div class="ccp-input-row">
+      <input type="text" id="jam-custom-chords" class="ccp-input"
+             placeholder='es.  C  G  Am  F   ·   durata con  ":"   →  C:2 G Am F'
+             onkeydown="if(event.key==='Enter')jamLoadCustomProgression()">
+      <button class="ccp-btn load" onclick="jamLoadCustomProgression()">▶ Carica</button>
+      <button class="ccp-btn reset" onclick="jamResetCustomProgression()" title="Torna alla base generata da tonalità/modo">✕ Base</button>
+    </div>
+    <div class="ccp-quick" id="jam-quick-chords"></div>
+    <div class="jam-custom-status" id="jam-custom-status"></div>
+    <div class="scale-seq" id="jam-scale-seq"></div>
+  </div>
+
+    </div>
+  </details>
+  <details class="fold" id="jam-fold-metro">
+    <summary class="fold-sum">⏱ Metronomo <span class="fold-hint">indipendente dalla base</span></summary>
+    <div class="fold-body">
+  <div class="metro-panel">
+    <span class="ctrl-label">Metronomo</span>
+    <button id="metro-btn" class="tap-btn" onclick="metroToggle()">▶ Metronomo</button>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Suddivisione</div>
+      <select id="metro-sub">
+        <option value="4">Quarti (♩)</option>
+        <option value="8">Ottavi (♪♪)</option>
+        <option value="12">Terzine (♪♪♪)</option>
+        <option value="16">Sedicesimi</option>
+      </select>
+    </div>
+    <span class="ctrl-label" style="color:var(--text-dim);font-size:11px">// usa il BPM del jam · indipendente dalla base</span>
+  </div>
+
+    </div>
+  </details>
   </div><!-- /bpage-basi -->
   <div id="bpage-canzoni" class="cpage-view">
     <!-- SONGLAB promosso a pagina principale (page-setlist): questa subtab resta
@@ -10532,8 +10564,6 @@ window.addEventListener('DOMContentLoaded', function() {
   <div id="bpage-accordatore" class="cpage-view">
     <h2>Accordatore</h2>
     <div class="subtitle">// usa il microfono per accordare la chitarra · A = 440 Hz</div>
-
-    <div class="pitch-panel" data-pitch-panel></div>
 
     <div class="controls" style="margin-bottom:16px">
       <div class="ctrl-group">
@@ -10576,15 +10606,17 @@ window.addEventListener('DOMContentLoaded', function() {
       <div class="tuner-str" onclick="tunerPlayRef(4)" title="Tocca per sentire il tono di riferimento"><div class="str-name">B</div><div class="str-freq">246.9 Hz</div><div class="ctrl-label">2ª</div><div class="str-hint">▶ tono</div></div>
       <div class="tuner-str" onclick="tunerPlayRef(5)" title="Tocca per sentire il tono di riferimento"><div class="str-name">E</div><div class="str-freq">329.6 Hz</div><div class="ctrl-label">1ª</div><div class="str-hint">▶ tono</div></div>
     </div>
+    <details class="fold fold-mic">
+      <summary class="fold-sum">🎚 Microfono e taratura <span class="fold-hint">strumento · sorgente · calibrazione</span></summary>
+      <div class="fold-body"><div class="pitch-panel" data-pitch-panel></div></div>
+    </details>
   </div><!-- /bpage-accordatore -->
   <div id="bpage-micfb" class="cpage-view">
     <h2>Manico Live</h2>
     <div class="subtitle">// suona la tua chitarra: il manico mostra in tempo reale la nota rilevata dal microfono</div>
 
-    <div class="pitch-panel" data-pitch-panel></div>
-
     <div class="controls" style="margin-bottom:16px">
-      <button id="micfb-btn" class="tap-btn" onclick="micFbToggle()">🎤 Avvia ascolto</button>
+      <button id="micfb-btn" class="play-btn micfb-start" onclick="micFbToggle()">🎤 Avvia ascolto</button>
       <div class="pp-chips" style="align-self:center">
         <button type="button" class="pp-chip active" id="micfb-mode-mono" onclick="micFbSetChordMode(false)">Note singole</button>
         <button type="button" class="pp-chip" id="micfb-mode-chord" onclick="micFbSetChordMode(true)">Accordi (beta)</button>
@@ -10603,6 +10635,10 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="fretboard-wrap">
       <div class="fretboard" id="micfb-fretboard"></div>
     </div>
+    <details class="fold fold-mic">
+      <summary class="fold-sum">🎚 Microfono e taratura <span class="fold-hint">strumento · sorgente · calibrazione</span></summary>
+      <div class="fold-body"><div class="pitch-panel" data-pitch-panel></div></div>
+    </details>
 
     <div class="hint-box" style="font-size:12px;max-width:720px">
       <strong>Come usarlo:</strong> suona una nota alla volta sulla chitarra: si accende in ambra la
@@ -10660,8 +10696,8 @@ window.addEventListener('DOMContentLoaded', function() {
 
 <!-- ═══════════════════════════ AUDIO ENHANCEMENT ═══════════════════════════ -->
 <div id="page-audio" class="page">
-  <h2>🎛 Audio Enhancement</h2>
-  <div class="subtitle">// sintetizzatore, reverb, EQ, distorsione — personalizza il suono</div>
+  <h2>🎛 Suono</h2>
+  <div class="subtitle">Riverbero e distorsione del suono sintetizzato: basi, scale ed esercizi.</div>
 
   <div class="controls" style="margin-bottom:20px;background:rgba(245,158,11,0.05);border-left:3px solid var(--amber);padding:16px;border-radius:4px">
     <div class="ctrl-group">
@@ -13970,6 +14006,8 @@ function showBasiSubpage(tab) {
     b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('#page-jam .cpage-view').forEach(v=>
     v.classList.toggle('active', v.id==='bpage-'+tab));
+  // le schede hub (mobile) seguono la sotto-pagina, anche quando ci si arriva da un link interno
+  if (document.getElementById('page-jam').classList.contains('active') && typeof navRenderHubTabs === 'function') navRenderHubTabs('jam');
 }
 function showTechSubpage(tab) {
   if (tab === 'tecnica' && typeof initTechPage === 'function') initTechPage();
@@ -14231,10 +14269,40 @@ function navOpenPage(page) {
   else if (page === 'circle') { try { renderCircleOfFifths(); } catch (e) {} }
   else if (page === 'technique' && typeof showTechSubpage === 'function') showTechSubpage('tecnica');
 }
+// Hub Suona: le schede sono le sotto-pagine delle Basi (prima: «Basi · Audio» e poi
+// altre 5 schede dentro Basi, con «Manico Live» fuori schermo).
+const NAV_PLAY_TABS = [
+  { page: 'jam', sub: 'basi', label: 'Basi' },
+  { page: 'jam', sub: 'accordatore', label: 'Accordatore' },
+  { page: 'jam', sub: 'micfb', label: 'Manico live' },
+  { page: 'jam', sub: 'looper', label: 'Looper' },
+  { page: 'audio', label: 'Suono' },
+];
+function navOpenPlayTab(i) {
+  const t = NAV_PLAY_TABS[i];
+  if (!t) return;
+  if (t.page === 'jam') {
+    if (!document.getElementById('page-jam').classList.contains('active')) navOpenPage('jam');
+    showBasiSubpage(t.sub);
+    if (t.sub === 'micfb' && typeof micFbInit === 'function') micFbInit();
+  } else navOpenPage(t.page);
+  navRenderHubTabs(t.page);
+}
 function navRenderHubTabs(page) {
   const el = document.getElementById('hub-tabs');
   if (!el) return;
   const hub = NAV_HUB_OF[page];
+  if (hub === 'play') {
+    const sub = (document.querySelector('#page-jam .cpage-view.active') || {}).id || 'bpage-basi';
+    el.hidden = false;
+    el.innerHTML = NAV_PLAY_TABS.map((t, i) => {
+      const on = t.page === page && (t.page !== 'jam' || sub === 'bpage-' + t.sub);
+      return `<button class="hub-tab${on ? ' active' : ''}" role="tab" aria-selected="${on}" onclick="navOpenPlayTab(${i})">${t.label}</button>`;
+    }).join('');
+    const act = el.querySelector('.hub-tab.active');
+    if (act && act.scrollIntoView) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    return;
+  }
   const pages = Object.keys(NAV_HUB_OF).filter(p => NAV_HUB_OF[p] === hub);
   if (!hub || pages.length < 2) { el.innerHTML = ''; el.hidden = true; return; }
   el.hidden = false;
@@ -14663,6 +14731,8 @@ window.addEventListener('DOMContentLoaded', function () {
   // Pannello opzioni del manico: aperto su desktop, chiuso su mobile (il manico resta in vista)
   const fbo = document.getElementById('fb-options');
   if (fbo && window.matchMedia && window.matchMedia('(min-width: 901px)').matches) fbo.open = true;
+  // pannelli richiudibili delle pagine Suona: aperti su desktop, chiusi su mobile
+  if (window.matchMedia && window.matchMedia('(min-width: 901px)').matches) document.querySelectorAll('details.fold').forEach(d => { d.open = true; });
   if (hadCtx) {
     try {
       jamSetBPM(GCTX.bpm);
