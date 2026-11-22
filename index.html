@@ -3372,8 +3372,27 @@
   .looper-sync-hint { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-dim); }
   .looper-lat-help { font-size: 13px; line-height: 1.5; color: var(--text-mid); margin: 8px 0 0; }
   .fb-options-toggles { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 0 16px 12px; }
+  .nav-btn-star { color: var(--amber); }
+  .tabsel { display: none; }
   @media (max-width: 900px) {
     header > nav { display: none; }                       /* via la nav a 10 voci: resta la bottom-nav */
+    /* menu con 5+ voci → una tendina (vedi navTabsSelect): la striscia di schede sparisce */
+    .has-tabsel { display: none !important; }
+    .tabsel { display: block; margin: 0 0 14px; }
+    .tabsel select {
+      width: 100%; min-height: var(--tap); padding: 0 40px 0 14px; border-radius: 12px;
+      background: var(--bg3); border: 1px solid var(--amber-dim); color: var(--amber);
+      font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700;
+    }
+    /* schede hub: sfumatura a destra = "ce ne sono altre"; Tecnica evidenziata */
+    .hub-tabs { -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); padding-right: 36px !important; }
+    .hub-tab.hub-tab-star { border-color: var(--amber); color: var(--amber); font-weight: 700; }
+    .hub-tab.hub-tab-star.active { color: #111; }
+  }
+  @media (max-width: 600px) {
+    /* titoli di pagina compatti: il nome è già nella scheda attiva, lo spazio va al manico */
+    .page > h2, .cpage-view > h2 { font-size: 22px; margin-bottom: 6px; padding-bottom: 6px; }
+    .page > .subtitle, .cpage-view > .subtitle { display: none; }
     .hub-tabs {
       display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
       padding: 8px 12px; border-top: 1px solid var(--border);
@@ -3492,13 +3511,13 @@
   <!-- Riga 2: nav sempre sotto, scrollabile -->
   <nav>
     <button class="nav-btn active" onclick="showPage('fretboard')">Fretboard</button>
+    <button class="nav-btn nav-btn-star" onclick="showPage('technique');showTechSubpage('tecnica')">⚡ Tecnica</button>
     <button class="nav-btn" onclick="showPage('scales')">Scale &amp; Accordi</button>
     <button class="nav-btn" onclick="showPage('caged')">CAGED</button>
     <button class="nav-btn" onclick="showPage('penta5')">5 Box Penta</button>
     <button class="nav-btn" onclick="showPage('circle');renderCircleOfFifths()">♯♭ Circolo</button>
     <button class="nav-btn" onclick="showPage('jam')">🎸 Basi</button>
     <button class="nav-btn" onclick="showPage('audio')">🎛 Audio</button>
-    <button class="nav-btn" onclick="showPage('technique');showTechSubpage('tecnica')">⚡ Tecnica</button>
     <button class="nav-btn" onclick="showPage('coscienza');FCUI&&FCUI.init()">🧠 Coscienza</button>
     <a class="nav-btn nav-btn-ext" href="https://ssurli.github.io/chordlab/" target="_blank" rel="noopener" title="Apri ChordLab (progetto companion)">🎵 ChordLab ↗</a>
   </nav>
@@ -12165,6 +12184,7 @@ function initTechPage() {
   tabsEl.innerHTML = tabs.map(t =>
     `<button class="tech-tab${t.id==='sweep'?' active':''}" data-tab-id="${t.id}" onclick="showTechTab('${t.id}')">${t.label}</button>`
   ).join('');
+  if (typeof navTabsSelect === 'function') navTabsSelect(tabsEl);   // su mobile: tendina
 
   // Sweep shape buttons
   const shapeBtns = document.getElementById('sweep-shape-btns');
@@ -13511,9 +13531,9 @@ function showChordScaleSubpage(tab) {
 
 <!-- ═══════════ BOTTOM-NAV 4 voci (IA_REDESIGN §2.1 — B-01/B-02) ═══════════ -->
 <div class="bottom-nav" id="bottom-nav" role="navigation" aria-label="Navigazione principale">
-  <button class="bnav-btn" data-hub="setlist" onclick="navGo('setlist')"><span class="bnav-ico">🎼</span>Setlist</button>
-  <button class="bnav-btn" data-hub="play" onclick="navGo('play')"><span class="bnav-ico">▶</span>Suona</button>
   <button class="bnav-btn" data-hub="neck" onclick="navGo('neck')"><span class="bnav-ico">🎸</span>Manico</button>
+  <button class="bnav-btn" data-hub="play" onclick="navGo('play')"><span class="bnav-ico">▶</span>Suona</button>
+  <button class="bnav-btn" data-hub="setlist" onclick="navGo('setlist')"><span class="bnav-ico">🎼</span>Setlist</button>
   <button class="bnav-btn" data-hub="train" onclick="navGo('train')"><span class="bnav-ico">🧠</span>Allena</button>
 </div>
 
@@ -13604,11 +13624,15 @@ function ctxSetKey(v, opts) {
 }
 
 // ── Bottom-nav: 4 hub su showPage esistente + memoria subtab (IA_REDESIGN §4.3) ──
-const NAV_HUB_OF = {
-  setlist: 'setlist', jam: 'play', audio: 'play',
-  fretboard: 'neck', scales: 'neck', caged: 'neck', penta5: 'neck', circle: 'neck',
-  technique: 'train', coscienza: 'train',
+// ordine delle schede dentro ogni hub (Tecnica sta in Manico, subito dopo Fretboard)
+const NAV_HUB_PAGES = {
+  setlist: ['setlist'], play: ['jam', 'audio'],
+  neck: ['fretboard', 'technique', 'scales', 'caged', 'penta5', 'circle'],
+  train: ['coscienza'],
 };
+const NAV_HUB_OF = {};
+Object.keys(NAV_HUB_PAGES).forEach(h => NAV_HUB_PAGES[h].forEach(p => { NAV_HUB_OF[p] = h; }));
+const NAV_HUB_STAR = { technique: '⚡ Tecnica' };   // schede evidenziate
 const NAV_HUB_DEFAULT = { play: 'jam', neck: 'fretboard', train: 'coscienza' };
 // Schede dell'hub attivo (solo mobile, CSS): stesse pagine e stessi init della nav in alto
 function navOpenPage(page) {
@@ -13651,10 +13675,10 @@ function navRenderHubTabs(page) {
     if (act && act.scrollIntoView) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     return;
   }
-  const pages = Object.keys(NAV_HUB_OF).filter(p => NAV_HUB_OF[p] === hub);
+  const pages = NAV_HUB_PAGES[hub] || [];
   if (!hub || pages.length < 2) { el.innerHTML = ''; el.hidden = true; return; }
   el.hidden = false;
-  el.innerHTML = pages.map(p => `<button class="hub-tab${p === page ? ' active' : ''}" role="tab" aria-selected="${p === page}" onclick="navOpenPage('${p}')">${NAV_PAGE_LABELS[p] || p}</button>`).join('');
+  el.innerHTML = pages.map(p => `<button class="hub-tab${p === page ? ' active' : ''}${NAV_HUB_STAR[p] ? ' hub-tab-star' : ''}" role="tab" aria-selected="${p === page}" onclick="navOpenPage('${p}')">${NAV_HUB_STAR[p] || NAV_PAGE_LABELS[p] || p}</button>`).join('');
   const act = el.querySelector('.hub-tab.active');
   if (act && act.scrollIntoView) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
@@ -13670,11 +13694,46 @@ function navUpdateBottomNav(page) {
 function navGo(hub) {
   if (hub === 'setlist') { showSetlistPage(); return; }
   let page = (GCTX.lastSubtab && GCTX.lastSubtab[hub]) || NAV_HUB_DEFAULT[hub];
-  if (!document.getElementById('page-' + page)) page = NAV_HUB_DEFAULT[hub];
+  if (!document.getElementById('page-' + page) || NAV_HUB_OF[page] !== hub) page = NAV_HUB_DEFAULT[hub];
   showPage(page);
   if (page === 'coscienza' && window.FCUI) FCUI.init();
   else if (page === 'circle') { try { renderCircleOfFifths(); } catch (e) {} }
+  else if (page === 'technique' && typeof showTechSubpage === 'function') showTechSubpage('tecnica');
 }
+
+// ── Menu lunghi su mobile: una tendina al posto di una striscia di schede ──
+// Le righe di schede con 5+ voci (Scale & Accordi: 7, Tecnica avanzata: 11) su
+// telefono diventano un <select>: una riga sola, tutte le voci visibili al tocco,
+// e il manico/diagramma resta in vista. I pulsanti restano la fonte di verità:
+// la tendina li "clicca" e si riallinea quando cambia la scheda attiva.
+function navTabsSelect(row) {
+  if (!row || row.dataset.tabsel || row.closest('#page-jam')) return;   // Basi: già nelle schede hub
+  const btns = () => [...row.querySelectorAll(':scope > button')];
+  if (btns().length < 5) return;
+  row.dataset.tabsel = '1';
+  row.classList.add('has-tabsel');
+  const wrap = document.createElement('label');
+  wrap.className = 'tabsel';
+  const sel = document.createElement('select');
+  sel.setAttribute('aria-label', 'Sezione');
+  wrap.appendChild(sel);
+  row.parentNode.insertBefore(wrap, row);
+  const sync = () => {
+    const bs = btns();
+    sel.innerHTML = bs.map((b, i) => `<option value="${i}">${b.textContent.trim()}</option>`).join('');
+    const a = bs.findIndex(b => b.classList.contains('active'));
+    if (a >= 0) sel.value = String(a);
+  };
+  sel.addEventListener('change', () => { const b = btns()[+sel.value]; if (b) b.click(); });
+  new MutationObserver(sync).observe(row, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  sync();
+}
+function navTabsSelectAll() {
+  document.querySelectorAll('.cpage-tabs, #tech-tabs').forEach(navTabsSelect);
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', navTabsSelectAll);
+else navTabsSelectAll();
+setTimeout(navTabsSelectAll, 0);   // #tech-tabs viene riempito da JS al primo render
 
 // ── Vista SETLIST (lazy: si renderizza al primo accesso, nessun init eager) ──
 const SETLIST_UI = { view: 'home' };
