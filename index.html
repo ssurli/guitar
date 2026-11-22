@@ -1163,7 +1163,21 @@
   }
   /* card esercizio: manico (dove) + tab disegnata (in che ordine), stesso stile dei diagrammi */
   .ex-neck { margin:8px 0 6px; }
-  .ex-tabsvg { display:flex; flex-direction:column; gap:6px; margin:6px 0; }
+  .ex-tabsvg { margin:6px 0; }
+  .ex-tab-line { display:flex; align-items:stretch; background:#0d0d0d; border-radius:10px; overflow:hidden; }
+  .ex-tab-names { flex:0 0 22px; display:block; }
+  .ex-tab-scroll { flex:1; min-width:0; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:#3a3a3a transparent; }
+  .ex-tab-scroll::-webkit-scrollbar { height:5px; } .ex-tab-scroll::-webkit-scrollbar-thumb { background:#3a3a3a; border-radius:3px; }
+  .ex-tab-svg { display:block; }
+  /* sfumatura sul lato che continua */
+  .ex-tab-scroll.more-right { -webkit-mask-image:linear-gradient(90deg,#000 85%,transparent); mask-image:linear-gradient(90deg,#000 85%,transparent); }
+  .ex-tab-scroll.more-left { -webkit-mask-image:linear-gradient(90deg,transparent,#000 15%); mask-image:linear-gradient(90deg,transparent,#000 15%); }
+  .ex-tab-scroll.more-left.more-right { -webkit-mask-image:linear-gradient(90deg,transparent,#000 15%,#000 85%,transparent); mask-image:linear-gradient(90deg,transparent,#000 15%,#000 85%,transparent); }
+  @media (min-width: 901px) {
+    .ex-grid { grid-auto-flow: row dense; }
+    .ex-card-wide { grid-column: span 2; }
+    .ex-card-full { grid-column: 1 / -1; }
+  }
   .ex-tab-note, .ex-key { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-dim); margin:4px 0; }
   .ex-tab-text { margin:4px 0 6px; }
   .ex-tab-text > summary { cursor:pointer; font-family:'Space Mono',monospace; font-size:11px; color:var(--text-dim); }
@@ -12177,56 +12191,71 @@ function techExNeckSvg(ex, parsed) {
 }
 // Tab disegnata: stesse corde e pallini del manico, in orizzontale l'ordine di
 // esecuzione; nel pallino il tasto, il colore dice il grado. A capo ogni ~10 colonne.
+// Tab disegnata su UNA riga, come una tab vera: stesse corde e pallini del manico,
+// in orizzontale l'ordine di esecuzione; nel pallino il tasto, il colore dice il grado.
+// I nomi delle corde stanno fermi a sinistra; se la riga è più larga della card scorre
+// di lato e durante il Play segue la nota che suona (techFlashIdx).
 function techExTabSvg(ex, parsed) {
   const ki = techKeyInfo(ex.key);
   if (ki && ex.chordIvs) ki.chord = ex.chordIvs;
   const cols = [...new Set(parsed.notes.map(n => n.col))].sort((a, b) => a - b);
-  const STEP = 30, BAR = 14, LEFT = 30, MAXW = 330, cellH = 24, top = 16;
-  const bars = parsed.bars;
-  const rows = [];
-  let row = { cols: [], x: LEFT }, lastCol = -1;
+  const STEP = 28, BAR = 12, LEFT = 10, cellH = 22, top = 16;
+  const X = new Map(), barX = [];
+  let x = LEFT, lastCol = -1;
   cols.forEach(c => {
-    const barBefore = bars.some(b => b > lastCol && b < c) && row.cols.length > 0;
-    const need = (barBefore ? BAR : 0) + STEP;
-    if (row.x + need > MAXW && row.cols.length) { rows.push(row); row = { cols: [], x: LEFT }; }
-    else if (barBefore) { row.cols.push({ bar: true, x: row.x + 2 }); row.x += BAR; }
-    row.cols.push({ col: c, x: row.x + STEP / 2 });
-    row.x += STEP; lastCol = c;
+    if (lastCol >= 0 && parsed.bars.some(b => b > lastCol && b < c)) { barX.push(x + BAR / 2); x += BAR; }
+    X.set(c, x + STEP / 2); x += STEP; lastCol = c;
   });
-  if (row.cols.length) rows.push(row);
-  // tutte le righe con la stessa larghezza: stessa scala, pallini uguali in ogni riga
-  const W = Math.max(...rows.map(r => r.x)) + 8, H = top + 5 * cellH + 12;
-  return rows.map(r => {
-    const X = new Map(r.cols.filter(k => !k.bar).map(k => [k.col, k.x]));
-    let svg = `<svg class="ex-tab-svg" viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;height:auto;display:block" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tablatura">`;
-    svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="10"/>`;
-    ['e','B','G','D','A','E'].forEach((nm, st) => {
-      const y = top + st * cellH;
-      svg += `<line x1="${LEFT - 6}" y1="${y}" x2="${W - 6}" y2="${y}" stroke="#555" stroke-width="${st === 5 ? 1.6 : st === 0 ? 0.7 : 1}"/>`;
-      svg += `<text x="8" y="${y + 4}" font-size="10" fill="#888" font-family="'Space Mono',monospace">${nm}</text>`;
-    });
-    r.cols.filter(k => k.bar).forEach(k => { svg += `<line x1="${k.x}" y1="${top}" x2="${k.x}" y2="${top + 5 * cellH}" stroke="#3a3a3a" stroke-width="1.5"/>`; });
-    parsed.notes.filter(n => X.has(n.col)).forEach(n => {
-      const x = X.get(n.col), y = top + n.string * cellH, d = _techDot(n.string, n.fret, ki, String(n.fret));
-      svg += `<g class="tf-dot" data-ti="${n.i}"><circle cx="${x}" cy="${y}" r="11" fill="${d.fill}" stroke="${d.ring ? '#fff' : 'none'}" stroke-width="2"/>`;
-      svg += `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="${n.fret > 9 ? 9 : 10}" fill="${d.txt}" font-weight="bold" font-family="'Space Mono',monospace">${n.fret}</text></g>`;
-      const mark = n.tech === 'b' ? `b${n.bendTo}` : n.tech;
-      if (mark) svg += `<text x="${x + 14}" y="${y - 7}" text-anchor="middle" font-size="9" fill="${TECH_ROOT}" font-family="'Space Mono',monospace">${mark}</text>`;
-      if (n.tap) svg += `<text x="${x - 13}" y="${y - 7}" text-anchor="middle" font-size="9" fill="${TECH_ROOT}" font-weight="bold" font-family="'Space Mono',monospace">T</text>`;
-    });
-    return svg + '</svg>';
-  }).join('');
+  const W = x + 10, H = top + 5 * cellH + 12;
+  const names = `<svg class="ex-tab-names" viewBox="0 0 22 ${H}" width="22" height="${H}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">` +
+    ['e','B','G','D','A','E'].map((nm, st) => `<text x="8" y="${top + st * cellH + 4}" font-size="10" fill="#888" font-family="'Space Mono',monospace">${nm}</text>`).join('') + '</svg>';
+  let svg = `<svg class="ex-tab-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tablatura">`;
+  for (let st = 0; st < 6; st++) {
+    const y = top + st * cellH;
+    svg += `<line x1="0" y1="${y}" x2="${W - 6}" y2="${y}" stroke="#555" stroke-width="${st === 5 ? 1.6 : st === 0 ? 0.7 : 1}"/>`;
+  }
+  barX.forEach(bx => { svg += `<line x1="${bx}" y1="${top}" x2="${bx}" y2="${top + 5 * cellH}" stroke="#3a3a3a" stroke-width="1.5"/>`; });
+  parsed.notes.forEach(n => {
+    const nx = X.get(n.col), y = top + n.string * cellH, d = _techDot(n.string, n.fret, ki, String(n.fret));
+    svg += `<g class="tf-dot" data-ti="${n.i}"><circle cx="${nx}" cy="${y}" r="10.5" fill="${d.fill}" stroke="${d.ring ? '#fff' : 'none'}" stroke-width="2"/>`;
+    svg += `<text x="${nx}" y="${y + 4}" text-anchor="middle" font-size="${n.fret > 9 ? 9 : 10}" fill="${d.txt}" font-weight="bold" font-family="'Space Mono',monospace">${n.fret}</text></g>`;
+    const mark = n.tech === 'b' ? `b${n.bendTo}` : n.tech;
+    if (mark) svg += `<text x="${nx + 14}" y="${y - 7}" text-anchor="middle" font-size="9" fill="${TECH_ROOT}" font-family="'Space Mono',monospace">${mark}</text>`;
+    if (n.tap) svg += `<text x="${nx - 13}" y="${y - 7}" text-anchor="middle" font-size="9" fill="${TECH_ROOT}" font-weight="bold" font-family="'Space Mono',monospace">T</text>`;
+  });
+  svg += '</svg>';
+  return `<div class="ex-tab-line" data-w="${W}">${names}<div class="ex-tab-scroll">${svg}</div></div>`;
 }
+// Accende il pallino i-esimo della tab e, se la riga scorre, la porta in vista
 function techFlashIdx(rootEl, i, delayMs, holdMs) {
   if (!rootEl) return;
   const on = setTimeout(() => {
     rootEl.querySelectorAll(`[data-ti="${i}"]`).forEach(g => {
       g.classList.add('tf-on');
       _techFlashTimers.push(setTimeout(() => g.classList.remove('tf-on'), holdMs || 260));
+      const sc = g.closest('.ex-tab-scroll');
+      if (sc && sc.scrollWidth > sc.clientWidth) {
+        const c = g.querySelector('circle'), cx = c ? parseFloat(c.getAttribute('cx')) : 0;
+        const target = Math.max(0, cx - sc.clientWidth * 0.35);
+        if (Math.abs(sc.scrollLeft - target) > sc.clientWidth * 0.25) sc.scrollTo({ left: target, behavior: 'smooth' });
+      }
     });
   }, Math.max(0, delayMs));
   _techFlashTimers.push(on);
 }
+// Dopo il render: sfumatura sul lato che continua (si capisce che la riga scorre)
+function techTabScrollHints(root) {
+  (root || document).querySelectorAll('.ex-tab-scroll').forEach(sc => {
+    const upd = () => {
+      const more = sc.scrollWidth > sc.clientWidth + 2;
+      sc.classList.toggle('more-right', more && sc.scrollLeft + sc.clientWidth < sc.scrollWidth - 4);
+      sc.classList.toggle('more-left', more && sc.scrollLeft > 4);
+    };
+    if (!sc.dataset.hint) { sc.dataset.hint = '1'; sc.addEventListener('scroll', upd, { passive: true }); }
+    upd();
+  });
+}
+window.addEventListener('resize', () => techTabScrollHints());
 
 const MAESTRI = [
   {
@@ -12373,6 +12402,12 @@ function initTechPage() {
         </div>
       </div>
     `).join('');
+    // su PC le tab lunghe hanno una card larga (2 colonne o tutta la riga) invece di scorrere
+    grid.querySelectorAll('.ex-card').forEach(card => {
+      const w = +((card.querySelector('.ex-tab-line') || {}).dataset || {}).w || 0;
+      card.classList.toggle('ex-card-wide', w > 200 && w <= 470);
+      card.classList.toggle('ex-card-full', w > 470);
+    });
   });
 
   // Render maestri
@@ -13050,6 +13085,7 @@ function showTechTab(id) {
   // Activate matching panel
   const panel = document.getElementById('tp-' + id);
   if (panel) panel.classList.add('active');
+  if (panel) techTabScrollHints(panel);   // ora che è visibile si misura la larghezza
 }
 
 let _sweepShapeIdx = 0;
