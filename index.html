@@ -1128,12 +1128,7 @@
     font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px;
     margin-bottom:4px;
   }
-  .sweep-tab-display {
-    font-family:'Space Mono',monospace; font-size:11px; color:var(--green);
-    background:#0a120a; border:1px solid #1a2a1a; border-radius:8px;
-    padding:10px 14px; line-height:1.85; overflow-x:auto;
-    white-space:pre; margin:10px 0; -webkit-overflow-scrolling:touch;
-  }
+  .sweep-tab-display { margin:10px 0; max-width:420px; }
   .sweep-interval-row { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 12px; }
   .sweep-pill {
     font-family:'Space Mono',monospace; font-size:11px; padding:2px 8px;
@@ -1166,6 +1161,13 @@
     padding:8px 10px; line-height:1.7; overflow-x:auto; white-space:pre;
     margin:8px 0; -webkit-overflow-scrolling:touch;
   }
+  /* card esercizio: manico (dove) + tab disegnata (in che ordine), stesso stile dei diagrammi */
+  .ex-neck { margin:8px 0 6px; }
+  .ex-tabsvg { display:flex; flex-direction:column; gap:6px; margin:6px 0; }
+  .ex-tab-note, .ex-key { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-dim); margin:4px 0; }
+  .ex-tab-text { margin:4px 0 6px; }
+  .ex-tab-text > summary { cursor:pointer; font-family:'Space Mono',monospace; font-size:11px; color:var(--text-dim); }
+  .ex-tab-text .ex-tab { color:var(--text-mid); background:#0d0d0d; border-color:var(--border); }
   .ex-desc { font-size:12px; color:var(--text-mid); line-height:1.5; margin-bottom:6px; }
   .ex-chips { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; }
   .ex-chip {
@@ -12096,6 +12098,136 @@ const TECH_EXERCISES = {
   ]
 };
 
+// Tonalità di riferimento di ogni esercizio (stesso ordine di TECH_EXERCISES): serve
+// a scrivere i gradi nei pallini. 'Am' = minore, 'A' = maggiore, 'A7' = dominante
+// (gradi come le pentatoniche dominanti: 9, 11, 13). '' = senza tonalità (cromatici,
+// trilli): nel manico compare il nome della nota.
+const TECH_EX_KEYS = {
+  alternate:         ['', 'Am', 'Am', 'Am'],
+  legato:            ['Am', 'Am', 'Am', ''],
+  tapping:           ['Am', 'Am', 'Am', 'A'],
+  skipping:          ['Am', 'Am', 'D'],
+  dwps:              ['Am', 'Am', '', 'Am'],
+  'legato-phrasing': ['Am', '', '', ''],
+  ejohnson:          ['A7', 'Am', 'A7'],
+  equator:           ['A7', 'A7', 'A7', 'A7', 'A7'],
+  doublestops:       ['A', 'Am', 'A', 'Am', 'Am'],
+};
+Object.keys(TECH_EX_KEYS).forEach(c => TECH_EX_KEYS[c].forEach((k, i) => {
+  if (TECH_EXERCISES[c] && TECH_EXERCISES[c][i]) TECH_EXERCISES[c][i].key = k || null;
+}));
+
+// Legge una tab ASCII: note in ordine di lettura (sinistra→destra, poi dal basso),
+// stanghette e righe di commento. Lo usano sia il Play sia il disegno della card,
+// così l'indice di ogni nota è lo stesso nei due.
+function techTabParse(tab) {
+  const SM = { e: 0, b: 1, g: 2, d: 3, a: 4, E: 5 };
+  const notes = [], bars = new Set(), notesText = [];
+  tab.split('\n').forEach(line => {
+    const m = line.match(/^([a-zA-Z])\s*\|(.*)$/);
+    if (!m) { if (line.trim()) notesText.push(line.trim()); return; }
+    const idx = SM[m[1]] !== undefined ? SM[m[1]] : SM[m[1].toLowerCase()];
+    if (idx === undefined) return;
+    const raw = m[2];
+    const data = raw.replace(/\([^)]*\)/g, x => ' '.repeat(x.length));
+    for (let i = 0; i < data.length;) {
+      const c = data[i];
+      if (c === '|') { bars.add(i); i++; continue; }
+      if (/\d/.test(c)) {
+        const two = i + 1 < data.length && /\d/.test(data[i + 1]);
+        const fret = parseInt(two ? c + data[i + 1] : c);
+        const end = i + (two ? 2 : 1);
+        const note = { string: idx, fret, col: i };
+        if (raw[i - 1] === 'T') note.tap = true;
+        const after = raw[end];
+        if (after === 'b') {
+          const bt = /^b\((\d{1,2})\)/.exec(raw.slice(end));
+          note.bendTo = bt ? parseInt(bt[1]) : fret + 2;
+          note.tech = 'b';
+        } else if (after && /[hps\/\\~]/.test(after)) note.tech = after;
+        notes.push(note);
+        i = end;
+      } else i++;
+    }
+  });
+  notes.sort((a, b) => a.col - b.col || b.string - a.string);
+  notes.forEach((n, i) => { n.i = i; });
+  return { notes, bars: [...bars].sort((a, b) => a - b), notesText };
+}
+function techKeyInfo(key) {
+  const m = key && /^([A-G][#b]?)(m|7)?$/.exec(key);
+  if (!m) return null;
+  const pc = NOTES.indexOf(m[1]);
+  const q = m[2] || '';
+  return { pc, chord: q === 'm' ? [0, 3, 7] : q === '7' ? [0, 4, 7, 10] : [0, 4, 7], names: q === '7' ? EJ_IV_NAME : TECH_IV_NAME };
+}
+function _techDot(st, f, ki, label) {
+  if (!ki) return { label: label != null ? label : NOTES[(OPEN_STRINGS[st] + f) % 12], ...fbDot('other', '#3b82f6') };
+  const iv = ((OPEN_STRINGS[st] + f) % 12 - ki.pc + 12) % 12;
+  return { label: label != null ? label : ki.names[iv], ...fbDot(iv === 0 ? 'root' : ki.chord.includes(iv) ? 'chord' : 'other', '#3b82f6') };
+}
+// Manico dell'esercizio: dove stanno le note (gradi nei pallini)
+function techExNeckSvg(ex, parsed) {
+  const ki = techKeyInfo(ex.key), seen = new Map();
+  parsed.notes.forEach(n => { seen.set(n.string + ':' + n.fret, n); if (n.bendTo != null) seen.set(n.string + ':' + n.bendTo, { string: n.string, fret: n.bendTo, ghost: true }); });
+  const pos = [...seen.values()];
+  const fr = pos.map(n => n.fret), lo = Math.min(...fr), hi = Math.max(...fr);
+  return fbNeckSvg({ minFret: lo === 0 ? 0 : lo - 1, maxFret: hi, fluid: true, aria: 'Note dell’esercizio sul manico',
+    notes: pos.map(n => ({ string: n.string, fret: n.fret, ...(_techDot(n.string, n.fret, ki)), dim: !!n.ghost })) });
+}
+// Tab disegnata: stesse corde e pallini del manico, in orizzontale l'ordine di
+// esecuzione; nel pallino il tasto, il colore dice il grado. A capo ogni ~10 colonne.
+function techExTabSvg(ex, parsed) {
+  const ki = techKeyInfo(ex.key);
+  if (ki && ex.chordIvs) ki.chord = ex.chordIvs;
+  const cols = [...new Set(parsed.notes.map(n => n.col))].sort((a, b) => a - b);
+  const STEP = 30, BAR = 14, LEFT = 30, MAXW = 330, cellH = 24, top = 16;
+  const bars = parsed.bars;
+  const rows = [];
+  let row = { cols: [], x: LEFT }, lastCol = -1;
+  cols.forEach(c => {
+    const barBefore = bars.some(b => b > lastCol && b < c) && row.cols.length > 0;
+    const need = (barBefore ? BAR : 0) + STEP;
+    if (row.x + need > MAXW && row.cols.length) { rows.push(row); row = { cols: [], x: LEFT }; }
+    else if (barBefore) { row.cols.push({ bar: true, x: row.x + 2 }); row.x += BAR; }
+    row.cols.push({ col: c, x: row.x + STEP / 2 });
+    row.x += STEP; lastCol = c;
+  });
+  if (row.cols.length) rows.push(row);
+  // tutte le righe con la stessa larghezza: stessa scala, pallini uguali in ogni riga
+  const W = Math.max(...rows.map(r => r.x)) + 8, H = top + 5 * cellH + 12;
+  return rows.map(r => {
+    const X = new Map(r.cols.filter(k => !k.bar).map(k => [k.col, k.x]));
+    let svg = `<svg class="ex-tab-svg" viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;height:auto;display:block" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tablatura">`;
+    svg += `<rect width="${W}" height="${H}" fill="#0d0d0d" rx="10"/>`;
+    ['e','B','G','D','A','E'].forEach((nm, st) => {
+      const y = top + st * cellH;
+      svg += `<line x1="${LEFT - 6}" y1="${y}" x2="${W - 6}" y2="${y}" stroke="#555" stroke-width="${st === 5 ? 1.6 : st === 0 ? 0.7 : 1}"/>`;
+      svg += `<text x="8" y="${y + 4}" font-size="10" fill="#888" font-family="'Space Mono',monospace">${nm}</text>`;
+    });
+    r.cols.filter(k => k.bar).forEach(k => { svg += `<line x1="${k.x}" y1="${top}" x2="${k.x}" y2="${top + 5 * cellH}" stroke="#3a3a3a" stroke-width="1.5"/>`; });
+    parsed.notes.filter(n => X.has(n.col)).forEach(n => {
+      const x = X.get(n.col), y = top + n.string * cellH, d = _techDot(n.string, n.fret, ki, String(n.fret));
+      svg += `<g class="tf-dot" data-ti="${n.i}"><circle cx="${x}" cy="${y}" r="11" fill="${d.fill}" stroke="${d.ring ? '#fff' : 'none'}" stroke-width="2"/>`;
+      svg += `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="${n.fret > 9 ? 9 : 10}" fill="${d.txt}" font-weight="bold" font-family="'Space Mono',monospace">${n.fret}</text></g>`;
+      const mark = n.tech === 'b' ? `b${n.bendTo}` : n.tech;
+      if (mark) svg += `<text x="${x + 14}" y="${y - 7}" text-anchor="middle" font-size="9" fill="${TECH_ROOT}" font-family="'Space Mono',monospace">${mark}</text>`;
+      if (n.tap) svg += `<text x="${x - 13}" y="${y - 7}" text-anchor="middle" font-size="9" fill="${TECH_ROOT}" font-weight="bold" font-family="'Space Mono',monospace">T</text>`;
+    });
+    return svg + '</svg>';
+  }).join('');
+}
+function techFlashIdx(rootEl, i, delayMs, holdMs) {
+  if (!rootEl) return;
+  const on = setTimeout(() => {
+    rootEl.querySelectorAll(`[data-ti="${i}"]`).forEach(g => {
+      g.classList.add('tf-on');
+      _techFlashTimers.push(setTimeout(() => g.classList.remove('tf-on'), holdMs || 260));
+    });
+  }, Math.max(0, delayMs));
+  _techFlashTimers.push(on);
+}
+
 const MAESTRI = [
   {
     name:'Yngwie Malmsteen', origin:'Svezia', active:'1980–presente', color:'#f97316',
@@ -12222,7 +12354,12 @@ function initTechPage() {
           <span class="ex-card-title">${ex.title}</span>
           <span class="ex-diff">${'⬅'.repeat(ex.diff)}<span style="color:var(--text-dim)">${'⬅'.repeat(5-ex.diff)}</span></span>
         </div>
-        <pre class="ex-tab">${normalizeTab(ex.tab)}</pre>
+        ${(() => { const pt = techTabParse(ex.tab); return `
+        <div class="ex-neck">${techExNeckSvg(ex, pt)}</div>
+        <div class="ex-tabsvg">${techExTabSvg(ex, pt)}</div>
+        ${pt.notesText.length ? `<div class="ex-tab-note">${pt.notesText.join(' ')}</div>` : ''}
+        <div class="ex-key">${ex.key ? 'Gradi riferiti a ' + ex.key.replace(/m$/, ' minore').replace(/7$/, '7').replace(/^([A-G][#b]?)$/, '$1 maggiore') : 'Esercizio cromatico: nel manico i nomi delle note'}</div>
+        <details class="ex-tab-text"><summary>Tab in testo</summary><pre class="ex-tab">${normalizeTab(ex.tab)}</pre></details>`; })()}
         <div class="ex-bpm-row">
           <span class="ex-bpm-slow">Slow ${ex.bpmSlow}</span>
           <span class="ex-bpm-mid">Mid ${ex.bpmMid}</span>
@@ -12989,7 +13126,7 @@ function renderSweepPanel() {
   // Intervals
   const intervals = shape.intervals || [];
   document.getElementById('sweep-interval-row').innerHTML =
-    intervals.map((iv, i) => `<span class="sweep-pill" style="background:${shape.semitones[i]===0?shape.color:'rgba(59,130,246,0.25)'}">${iv}</span>`).join('');
+    intervals.map((iv, i) => `<span class="sweep-pill" style="${shape.semitones[i] % 12 === 0 ? 'background:#f59e0b;color:#111' : 'background:#1c1c1c;box-shadow:0 0 0 2px #fff inset'}">${iv}</span>`).join('');
 
   // Tab — note sfalsate nell'ordine di esecuzione dello sweep (NON impilate:
   // ogni nota occupa una colonna diversa, così si legge come una sequenza e non come un accordo)
@@ -12999,7 +13136,12 @@ function renderSweepPanel() {
     cells[si][ii] = (String(frets[ii]) + '----').slice(0, 4);
   });
   const tabLines = ['e','B','G','D','A','E'].map((sn, si) => `${sn} |--${cells[si].join('')}|`);
-  document.getElementById('sweep-tab-display').textContent = tabLines.join('\n') + '\n   ▲ sweep up';
+  // stessa tab disegnata delle card esercizio (gradi riferiti all'accordo dell'arpeggio)
+  // nell'arpeggio sono tutte note dell'accordo: anello bianco per tutte, tonica ambra
+  const sem = [...new Set(shape.semitones.map(x => x % 12))];
+  const sweepEx = { key: keyName + (sem.includes(4) && sem.includes(10) ? '7' : sem.includes(3) ? 'm' : ''), chordIvs: sem };
+  document.getElementById('sweep-tab-display').innerHTML =
+    techExTabSvg(sweepEx, techTabParse(tabLines.join('\n'))) + '<div class="ex-tab-note">▲ sweep up</div>';
 
   // Players
   if (shape.players && shape.players.length) {
@@ -13044,54 +13186,12 @@ function playTechExercise(techKey, exIndex, slowMode) {
   if (!exercises || !exercises[exIndex]) return;
 
   const ex = exercises[exIndex];
-  const tab = ex.tab;
-  // Map string labels to MIDI indices: high e, B, G, D, A, low E
-  const stringMap = { 'e': 0, 'b': 1, 'g': 2, 'd': 3, 'a': 4, 'E': 5 };
-
-  // Parse every note keeping its horizontal column in the tab so the
-  // playback follows left-to-right reading order across all strings.
-  const notes = [];
-  tab.split('\n').forEach(line => {
-    const m = line.match(/^([a-zA-Z])\s*\|(.*)$/);
-    if (!m) return;
-    const s = m[1];
-    const idx = stringMap[s] !== undefined ? stringMap[s] : stringMap[s.toLowerCase()];
-    if (idx === undefined) return;
-
-    // Strip parenthetical annotations (e.g. "(A7)", "(9)" bend target) so
-    // they don't get misread as fret numbers — but keep a bend target "b(9)".
-    const raw = m[2];
-    const data = raw.replace(/\([^)]*\)/g, match => ' '.repeat(match.length));
-
-    let i = 0;
-    while (i < data.length) {
-      const c = data[i];
-      if (/\d/.test(c)) {
-        const twoDigit = i + 1 < data.length && /\d/.test(data[i + 1]);
-        const fret = parseInt(twoDigit ? c + data[i + 1] : c);
-        const end = i + (twoDigit ? 2 : 1);
-        const note = { string: idx, fret, col: i };
-        // bend: "8b(9)" → sale al 9; "8b" senza target → un tono (+2)
-        if (raw[end] === 'b') {
-          const bt = /^b\((\d{1,2})\)/.exec(raw.slice(end));
-          note.bendTo = bt ? parseInt(bt[1]) : fret + 2;
-        }
-        notes.push(note);
-        i = end;
-      } else {
-        i++;
-      }
-    }
-  });
-
+  const notes = techTabParse(ex.tab).notes;   // ordine di lettura, come nel disegno
   if (notes.length === 0) return;
 
-  // Read order: left→right by column, then (within a column) from the low E
-  // string up to the high e. Crucially EVERY note is its own sequential step —
-  // these exercises are single-note lines / scales, never chords, so notes
-  // aligned in the same tab column (e.g. a pentatonic box drawn as a grid)
-  // must play one after another, not all at once.
-  notes.sort((a, b) => a.col - b.col || b.string - a.string);
+  // Ordine: sinistra→destra, poi dalla corda grave (già fatto da techTabParse).
+  // Ogni nota è un passo a sé, salvo ex.chords (note nella stessa colonna insieme).
+  const card = document.querySelectorAll('#ex-' + techKey + '-grid .ex-card')[exIndex];
 
   // Tie spacing to the exercise BPM so notes don't overlap into a wash.
   // Treat each notated note as an 8th note at the chosen tempo.
@@ -13115,6 +13215,9 @@ function playTechExercise(techKey, exIndex, slowMode) {
   steps.forEach((grp, i) => {
     const t = now + i * step;
     grp.forEach(n => {
+      const delay = (t - ctx.currentTime) * 1000;
+      techFlash(card && card.querySelector('.ex-neck'), n.string, n.fret, delay, step * 900);
+      techFlashIdx(card, n.i, delay, step * 900);
       if (n.bendTo != null) {
         // il bend si sente: nota di partenza breve, poi l'arrivo
         playNote(hz(n.string, n.fret), t, step * 0.5, dest);
