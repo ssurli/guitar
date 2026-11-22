@@ -4,7 +4,7 @@
 
 **▶ Provalo:** https://ssurli.github.io/guitar/
 
-![Anteprima di Guitar Improv Lab](og-image.jpg)
+![Anteprima di Guitar Improv Lab](og-image.png)
 
 ---
 

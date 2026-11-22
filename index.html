@@ -25,12 +25,15 @@
 <meta property="og:title" content="Guitar Improv Lab">
 <meta property="og:description" content="Manico, scale, CAGED, pentatoniche, basi jam e tecnica avanzata — il laboratorio interattivo per improvvisare alla chitarra, gratis nel browser.">
 <meta property="og:url" content="https://ssurli.github.io/guitar/">
-<meta property="og:image" content="https://ssurli.github.io/guitar/og-image.jpg">
+<meta property="og:image" content="https://ssurli.github.io/guitar/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Guitar Improv Lab: il box 1 della pentatonica di La minore sul manico">
 <meta property="og:locale" content="it_IT">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Guitar Improv Lab">
 <meta name="twitter:description" content="Manico, scale, CAGED, pentatoniche, basi jam e tecnica avanzata — il laboratorio interattivo per improvvisare alla chitarra.">
-<meta name="twitter:image" content="https://ssurli.github.io/guitar/og-image.jpg">
+<meta name="twitter:image" content="https://ssurli.github.io/guitar/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
@@ -243,21 +246,6 @@
   }
   .global-key-wrap select:focus,
   .global-key-wrap select:hover { border-color: var(--amber); }
-
-  /* ── SURLI LOGO ── */
-  .surli-logo {
-    margin-left: 16px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-  }
-  .surli-logo img {
-    height: 40px;
-    width: auto;
-    border-radius: 5px;
-    object-fit: cover;
-    display: block;
-  }
 
   /* ── LAYOUT ── */
   .page { display: none; padding: clamp(12px, 4vw, 24px); max-width: 1200px; margin: 0 auto; }
@@ -3470,9 +3458,6 @@
   <!-- Riga 1: logo + key selector — struttura fissa, niente flex-wrap -->
   <div class="header-top">
     <div class="logo">GUITAR <span>IMPROV</span> LAB</div>
-    <div class="surli-logo">
-      <img src="surli_charvel.png" alt="Surli guitar headstock">
-    </div>
     <!-- Tonalità globale (B-05): riattiva il CSS .global-key-wrap già previsto.
          Unica sorgente di verità propagata a fretboard/jam/triadi/7ª/9ª/CAGED/penta. -->
     <div class="global-key-wrap" style="margin-left:auto">
