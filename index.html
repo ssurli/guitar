@@ -4469,12 +4469,13 @@ let audioCtx = null;
 let _reverbNode = null;    // shared convolution reverb
 let _masterComp = null;    // master compressor
 let _masterOut = null;     // master output gain
+let _reverbGain = null;    // livello del riverbero (slider Reverb Wet)
 
 function getAudioCtx() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    _buildMasterChain();
-  }
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // la catena master va creata una volta sola; se un altro punto del codice ha creato
+  // il contesto da solo, la costruiamo qui (senza _masterOut nessuna nota suona)
+  if (!_masterOut) _buildMasterChain();
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
@@ -4498,7 +4499,8 @@ function _buildMasterChain() {
   _reverbNode.buffer = _makeReverb(ctx, 1.4, 0.22);
 
   const reverbGain = ctx.createGain();
-  reverbGain.gain.value = 0.18;
+  reverbGain.gain.value = _audioParams.reverbWet;
+  _reverbGain = reverbGain;
 
   _masterOut.connect(_masterComp);
   _masterComp.connect(ctx.destination);
@@ -4547,8 +4549,8 @@ function setReverbWet(val) {
   const v = parseFloat(val) / 100;
   _audioParams.reverbWet = v;
   document.getElementById('reverb-wet-val').textContent = val;
-  // Ricostruisci la chain se il reverb è attivo
-  if (_reverbNode) _rebuildReverbChain();
+  // livello del riverbero in tempo reale
+  if (_reverbGain) _reverbGain.gain.setTargetAtTime(v, audioCtx.currentTime, 0.05);
 }
 
 function setReverbDuration(val) {
@@ -8802,8 +8804,7 @@ function renderCaged() {
     card.style.borderColor = idx === CAGED_STATE.selected ? def.color : '';
     card.onclick = () => {
       // Prima suona l'accordo (prima che renderCaged() ricrei il DOM)
-      const actx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-      if (!audioCtx) audioCtx = actx;
+      const actx = getAudioCtx();   // crea anche la catena master (senza, nessun suono)
       const now = actx.currentTime;
       playedFrets.slice().reverse().forEach((n, j) => {
         playNote(midiToFreq(OPEN_STRING_MIDI[n.s] + n.fret), now + j * 0.06, 1.2);
@@ -8869,7 +8870,7 @@ function setCagedQuality(q) {
 }
 
 function playCagedArpeggio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  getAudioCtx();   // crea anche la catena master (senza, nessun suono)
   const now = audioCtx.currentTime;
   let t = now + 0.05;
   CAGED_ORDER.forEach(name => {
@@ -9118,7 +9119,7 @@ function setP5Quality(q) {
 }
 
 function playP5Box() {
-  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  getAudioCtx();   // crea anche la catena master (senza, nessun suono)
   const boxes = P5_STATE.quality === 'minor' ? P5_MINOR_BOXES : P5_MAJOR_BOXES;
   const box = boxes[P5_STATE.box];
   const fretsByString = p5BoxFrets(box, P5_STATE.keyIdx);
