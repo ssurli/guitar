@@ -4,7 +4,7 @@
 
 **▶ Provalo:** https://ssurli.github.io/guitar/
 
-![Anteprima di Guitar Improv Lab](og-image.jpg)
+![Anteprima di Guitar Improv Lab](og-image.png)
 
 ---
 
@@ -83,6 +83,10 @@ Il sito viene servito da **GitHub Pages** dal branch `main`. Un merge su `main` 
 - [ChordLab](https://ssurli.github.io/chordlab/): accordi e setlist
 - [Guitarzorn](https://github.com/ssurli/guitarzorn): i riff tradotti in pittura
 
+## Logo
+
+Il logo **surlis71** è una paletta di chitarra con sei baluardi delle Mura di Lucca al posto delle sei meccaniche, uno per corda. Il manico entra dal baluardo San Donato. Le posizioni dei baluardi derivano da dati © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) (ODbL). File: `favicon.svg`, `apple-touch-icon.png`, `og-image.png`.
+
 ## Licenza
 
-[MIT](LICENSE) © 2026 Stefano Surlinelli
+Codice [MIT](LICENSE) © 2026 Stefano Surlinelli. Il nome e il logo surlis71 non rientrano nella licenza: puoi riusare il codice, ma non presentarlo con questo logo.
