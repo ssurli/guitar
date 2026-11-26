@@ -13393,9 +13393,11 @@ function renderSweepPanel() {
   const svg = techFretSvg({
     minFret: Math.max(0, Math.min(...frets) - 1), maxFret: Math.max(...frets) + 1,
     aria: `${keyName} ${shape.name}`,
+    // percorso dello sweep up, come nei manici degli esercizi; inizio tratteggiato
+    path: shape.strings.map((si, ii) => ({ string: si, fret: frets[ii] })),
     notes: shape.strings.map((si, ii) => {
       const isRoot = shape.semitones[ii] % 12 === 0;
-      return { string: si, fret: frets[ii], label: TECH_IV_NAME[shape.semitones[ii] % 12],
+      return { string: si, fret: frets[ii], label: TECH_IV_NAME[shape.semitones[ii] % 12], dash: ii === 0,
                fill: isRoot ? TECH_ROOT : '#1c1c1c', ring: true, txt: isRoot ? '#111' : '#fff' };
     })
   });
@@ -13414,7 +13416,8 @@ function renderSweepPanel() {
   const cells = Array.from({ length: 6 }, () => Array(N).fill('----'));
   shape.strings.forEach((si, ii) => {
     // due note di fila sulla stessa corda (in cima allo sweep): si legano con un hammer-on
-    const leg = shape.strings[ii + 1] === si ? 'h' : '';
+    // fino a 4 tasti hammer-on; oltre (es. 5→10 sul cantino) si arriva con uno slide
+    const leg = shape.strings[ii + 1] === si ? (Math.abs(frets[ii + 1] - frets[ii]) >= 5 ? '/' : 'h') : '';
     cells[si][ii] = (String(frets[ii]) + leg + '----').slice(0, 4);
   });
   const tabLines = ['e','B','G','D','A','E'].map((sn, si) => `${sn} |--${cells[si].join('')}|`);
