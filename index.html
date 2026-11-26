@@ -13949,7 +13949,7 @@ function ctxSetKey(v, opts) {
   ctxKeyBadgeUpdate();
   ctxSave();
   if (opts.silent) return;
-  ['fb-key', 'prog-key', 'tr-key', 's7-key', 'n9-key', 'caged-key', 'p5-key'].forEach(id => {
+  ['fb-key', 'prog-key', 'tr-key', 's7-key', 'n9-key', 'caged-key', 'p5-key', 'sweep-key', 'eq-key', 'ej-key'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = String(v);
   });
@@ -13964,6 +13964,10 @@ function ctxSetKey(v, opts) {
   try { renderCaged(); } catch (e) {}
   try { renderModi(); } catch (e) {}
   try { renderPenta5(); } catch (e) {}
+  // Tecnica avanzata: Sweep, Equator e pentatoniche dominanti seguono la tonalità dell'app
+  try { renderSweepPanel(); } catch (e) {}
+  try { renderEquatorView(); } catch (e) {}
+  try { renderEjView(); } catch (e) {}
   // jam: mai trasporre una canzone in play (la tonalità dichiarata della canzone comanda)
   if (!opts.skipJam && typeof BT !== 'undefined' && !(BT.useCustom && BT.playing)) {
     const k = document.getElementById('jam-key');
@@ -14480,7 +14484,7 @@ function songlabGoDrill(drillId) {
 window.addEventListener('DOMContentLoaded', function () {
   const hadCtx = ctxLoad();
   // two-way: i selettori locali di tonalità aggiornano il contesto globale
-  ['fb-key', 'prog-key', 'tr-key', 's7-key', 'n9-key', 'caged-key', 'p5-key'].forEach(id => {
+  ['fb-key', 'prog-key', 'tr-key', 's7-key', 'n9-key', 'caged-key', 'p5-key', 'sweep-key', 'eq-key', 'ej-key'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('change', function () { ctxSetKey(this.value, { skipJam: true }); });
   });
