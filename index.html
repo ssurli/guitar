@@ -6451,9 +6451,10 @@ function pivotOnStep(loopStep, activeIdx) {
     PV.nextPc = t.pc;
     _pvMark('pv-next', t.pc);
     const { root } = pivotChordTones(nc);
-    if (nextEl) nextEl.textContent = `→ ${NOTES[root]}${CHORD_QUAL_LABEL[nc.t] || ''}: arriva su ${NOTES[t.pc]} (${_pvFnName(t.fn)})`;
+    const same = PV.curPc === t.pc ? ' · stessa nota, non muoverti' : '';
+    if (nextEl) nextEl.textContent = `→ ${NOTES[root]}${CHORD_QUAL_LABEL[nc.t] || ''}: arriva su ${NOTES[t.pc]} = ${_pvFnName(t.fn)}${same}`;
   } else if (left >= win && nextEl && PV.nextPc == null) {
-    nextEl.textContent = PV.curPc != null && (PV.anticipa || PV.loop) ? `ora: ${NOTES[PV.curPc]}` : '';
+    nextEl.textContent = PV.curPc != null && (PV.anticipa || PV.loop) ? `ora: ${NOTES[PV.curPc]} = ${_pvFnName(jamDegreeLabel(PV.curPc) === '1' ? 'R' : jamDegreeLabel(PV.curPc))}` : '';
   }
 }
 // dal microfono (jamLiveTick): la nota suonata entro ~350 ms dal cambio è sul bersaglio?
@@ -6491,6 +6492,8 @@ function pivotLoopToggle() {
   PV.loop = !PV.loop;
   document.getElementById('pivot-loop-btn').classList.toggle('active', PV.loop);
   PV.giro = 0; PV.hits = 0; PV.tries = 0; PV.perGiro = []; PV.pending = null; PV.prevIdx = -1;
+  if (PV.loop && !_jamLblUser) jamSetLabel('gradi', false);
+  if (!PV.loop && !_jamLblUser) jamSetLabel('note', false);
   if (PV.loop) {
     // nessuna progressione scritta: usa quella dell'esercizio (Am F C G, 2 battute ciascuno)
     if (!BT.useCustom) {
@@ -7053,7 +7056,41 @@ function renderJamFretboard() {
   if (JLIVE.running) JLIVE.lastMidi = -1;
   // bersagli PIVOT: i dot sono nuovi, rimetti gli anelli
   if (typeof PV !== 'undefined') { _pvMark('pv-cur', PV.curPc); _pvMark('pv-next', PV.nextPc); }
+  if (JAM_LBL === 'gradi') jamRelabel();
 }
+
+// ── Etichette del manico live: NOTE (Do, Mi…) o GRADI riferiti all'accordo che
+// suona (1, ♭3, 5, ♭7, 9…; fuori dall'accordo l'intervallo dalla sua tonica).
+// Senza accordo attivo i gradi sono riferiti alla tonalità della base.
+let JAM_LBL = 'note';
+let _jamLblUser = false;          // l'utente ha scelto a mano (il PIVOT Loop non la tocca)
+let _jamLblChord = null;          // { root, toneMap } dell'accordo corrente
+try { const v = localStorage.getItem('jamLabels'); if (v === 'note' || v === 'gradi') { JAM_LBL = v; _jamLblUser = true; } } catch (e) {}
+function jamSetLabel(mode, byUser) {
+  JAM_LBL = mode;
+  if (byUser) { _jamLblUser = true; try { localStorage.setItem('jamLabels', mode); } catch (e) {} }
+  document.querySelectorAll('#jam-lbl-toggle button').forEach(b => b.classList.toggle('active', b.dataset.lbl === mode));
+  jamRelabel();
+}
+function jamDegreeLabel(pc) {
+  const c = _jamLblChord;
+  if (c) {
+    const fn = c.toneMap[pc];
+    if (fn !== undefined) return fn === 'R' ? '1' : fn;
+    return TECH_IV_NAME[(pc - c.root + 12) % 12];
+  }
+  return TECH_IV_NAME[(pc - BT.rootIdx + 12) % 12];
+}
+function jamRelabel() {
+  const fb = document.getElementById('jam-fretboard');
+  if (!fb) return;
+  fb.querySelectorAll('.note-dot').forEach(d => {
+    const pc = parseInt(d.dataset.pc);
+    if (isNaN(pc)) return;
+    d.textContent = JAM_LBL === 'gradi' ? jamDegreeLabel(pc) : NOTES[pc];
+  });
+}
+document.addEventListener('DOMContentLoaded', () => jamSetLabel(JAM_LBL, false));
 
 // Accende i toni dell'accordo corrente colorandoli per FUNZIONE (R/3/5/7/9),
 // attenua le altre note della scala. Le guide tone (3ª/7ª) hanno il ring bianco.
@@ -7077,6 +7114,8 @@ function jamHighlightChord(chordRootPc, chordType) {
       if (isGuideTone(fn)) dot.classList.add('gt');
     }
   });
+  _jamLblChord = { root: chordRootPc, toneMap };
+  if (JAM_LBL === 'gradi') jamRelabel();
   const badge = document.getElementById('jam-now-chord');
   if (badge) {
     badge.textContent = NOTES[chordRootPc] + (CHORD_QUAL_LABEL[chordType] || '');
@@ -7092,6 +7131,8 @@ function jamClearChordHighlight() {
   const badge = document.getElementById('jam-now-chord');
   if (badge) badge.textContent = '—';
   _jamChordIdx = -1;
+  _jamLblChord = null;
+  if (JAM_LBL === 'gradi') jamRelabel();
   if (typeof pivotReset === 'function') pivotReset();
   // spegni anche l'evidenziazione sul chart della canzone
   _songChartIdx = -1;
@@ -10144,6 +10185,10 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="jam-fb-toggle" id="jam-fb-toggle">
       <button class="active" data-fbmode="scale" onclick="jamSetFbMode('scale')">SCALA</button>
       <button data-fbmode="arp" onclick="jamSetFbMode('arp')">ARPEGGIO ACCORDO</button>
+    </div>
+    <div class="jam-fb-toggle" id="jam-lbl-toggle" title="Etichette dei pallini: nome della nota o grado riferito all'accordo che suona">
+      <button data-lbl="note" onclick="jamSetLabel('note', true)">NOTE</button>
+      <button data-lbl="gradi" onclick="jamSetLabel('gradi', true)">GRADI</button>
     </div>
     <button class="jam-live-btn" id="jam-live-btn" onclick="jamLiveToggle()">🎤 Suona live</button>
     <button class="jam-live-btn active" id="jam-single-btn" onclick="liveToggleSingle()" title="Mostra una sola posizione della nota, invece di tutti i punti dove si può suonare">1 posizione</button>
