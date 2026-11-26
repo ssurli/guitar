@@ -12114,64 +12114,45 @@ const TECH_OPEN_MIDI = [64, 59, 55, 50, 45, 40];
 // Sweep arpeggio shapes — each entry has:
 //   name, quality, intervals (display), color
 //   shapes: array of {string (0=e..5=E), interval (semitones from root)}
+// Forme di sweep reali, scritte in La (A) come [corda, tasto] nell'ordine dello sweep up
+// (corda 0 = e acuto … 5 = E grave) e trasportate di blocco nelle altre tonalità
+// (sweepFrets): così la forma resta compatta e suonabile. Gradi e semitoni sono
+// ricavati dalle note, non scritti a mano.
 const SWEEP_SHAPES = [
-  {
-    id:'am5', name:'Am Minore 5 corde', quality:'minor', color:'#ef4444',
-    intervals:['1','b3','5','b3','1'],
-    strings:[5,4,3,2,1],  // E A D G B
-    semitones:[0,3,7,3,0],
-    tab: 'e ---|-----|---\nB ---|-----|---\nG ---|--5--|---\nD ---|--5--|---\nA --7|-----|---\nE --5|-----|---\n     ▲  sweep up',
-    players:['Al Di Meola','Frank Gambale','Jason Becker']
-  },
-  {
-    id:'am6', name:'Am Minore 6 corde', quality:'minor', color:'#f97316',
-    intervals:['1','b3','5','1','b3','1'],
-    strings:[5,4,3,2,1,0],
-    semitones:[0,3,7,0,3,0],
-    tab: 'e --5|-----|---\nB ---|--8--|---\nG ---|--5--|---\nD ---|--7--|---\nA --7|-----|---\nE --5|-----|---\n     ▲  sweep up',
-    players:['Yngwie Malmsteen','Jason Becker','Marty Friedman']
-  },
-  {
-    id:'maj5', name:'Maggiore 5 corde', quality:'major', color:'#22c55e',
-    intervals:['1','3','5','3','1'],
-    strings:[5,4,3,2,1],
-    semitones:[0,4,7,4,0],
-    tab: 'e ---|-----|---\nB ---|--5--|---\nG ---|--6--|---\nD ---|--6--|---\nA --7|-----|---\nE --5|-----|---\n     ▲  sweep up',
-    players:['Frank Gambale','Tony MacAlpine','Vinnie Moore']
-  },
-  {
-    id:'maj6', name:'Maggiore 6 corde', quality:'major', color:'#3b82f6',
-    intervals:['1','3','5','1','3','1'],
-    strings:[5,4,3,2,1,0],
-    semitones:[0,4,7,0,4,0],
-    tab: 'e --5|-----|---\nB ---|--9--|---\nG ---|--6--|---\nD ---|--7--|---\nA --7|-----|---\nE --5|-----|---\n     ▲  sweep up',
-    players:['Yngwie Malmsteen','Richie Kotzen']
-  },
-  {
-    id:'dim5', name:'Diminuito 5 corde', quality:'dim', color:'#a855f7',
-    intervals:['1','b3','b5','b3','1'],
-    strings:[5,4,3,2,1],
-    semitones:[0,3,6,3,0],
-    tab: 'e ---|-----|---\nB ---|--4--|---\nG ---|--4--|---\nD ---|--4--|---\nA --6|-----|---\nE --5|-----|---\n     ▲  sweep up',
-    players:['Jason Becker','Shawn Lane']
-  },
-  {
-    id:'dom7', name:'Dom7 4 corde', quality:'dom7', color:'#eab308',
-    intervals:['1','3','b7','5'],
-    strings:[4,3,2,1],
-    semitones:[0,4,10,7],
-    tab: 'e ---|-----|---\nB ---|--8--|---\nG ---|--7--|---\nD ---|--7--|---\nA --7|-----|---\nE ---|-----|---\n     ▲  sweep up',
-    players:['Frank Gambale','Guthrie Govan']
-  },
-  {
-    id:'min7', name:'Min7 4 corde', quality:'min7', color:'#06b6d4',
-    intervals:['1','b3','b7','5'],
-    strings:[4,3,2,1],
-    semitones:[0,3,10,7],
-    tab: 'e ---|-----|---\nB ---|--8--|---\nG ---|--6--|---\nD ---|--5--|---\nA --7|-----|---\nE ---|-----|---\n     ▲  sweep up',
-    players:['John Petrucci','Michael Romeo']
-  }
+  { id:'am5',  name:'Minore 5 corde',     color:'#ef4444', inA:[[4,12],[3,14],[2,14],[1,13],[0,12],[0,17]],
+    players:['Al Di Meola','Frank Gambale','Jason Becker'] },
+  { id:'am6',  name:'Minore 6 corde',     color:'#f97316', inA:[[5,5],[4,7],[3,7],[2,5],[1,5],[0,5],[0,8]],
+    players:['Yngwie Malmsteen','Jason Becker','Marty Friedman'] },
+  { id:'maj5', name:'Maggiore 5 corde',   color:'#22c55e', inA:[[4,12],[3,14],[2,14],[1,14],[0,12],[0,17]],
+    players:['Frank Gambale','Tony MacAlpine','Vinnie Moore'] },
+  { id:'maj6', name:'Maggiore 6 corde',   color:'#3b82f6', inA:[[5,5],[4,7],[3,7],[2,6],[1,5],[0,5],[0,9]],
+    players:['Yngwie Malmsteen','Richie Kotzen'] },
+  { id:'dim5', name:'Diminuito 5 corde',  color:'#a855f7', inA:[[4,12],[3,13],[2,14],[1,13],[0,11]],
+    players:['Jason Becker','Shawn Lane'] },
+  { id:'dom7', name:'Dom7 5 corde',       color:'#eab308', inA:[[4,12],[3,11],[2,12],[1,10],[0,12]],
+    players:['Frank Gambale','Guthrie Govan'] },
+  { id:'min7', name:'Min7 5 corde',       color:'#06b6d4', inA:[[4,12],[3,10],[2,12],[1,10],[0,12]],
+    players:['John Petrucci','Michael Romeo'] },
 ];
+(function () {
+  const OPEN = [4, 11, 7, 2, 9, 4];
+  const NAME = { 0:'1', 3:'b3', 4:'3', 6:'b5', 7:'5', 10:'b7', 11:'7' };
+  SWEEP_SHAPES.forEach(sh => {
+    sh.strings = sh.inA.map(([st]) => st);
+    sh.semitones = sh.inA.map(([st, f]) => ((OPEN[st] + f) % 12 - 9 + 12) % 12);
+    sh.intervals = sh.semitones.map(iv => NAME[iv] || String(iv));
+  });
+})();
+// tasti della forma nella tonalità keyIdx: stessa forma, spostata di blocco;
+// si sceglie l'ottava che non usa corde a vuoto e sta più in basso possibile
+function sweepFrets(keyIdx, shape) {
+  const d = ((keyIdx - 9) % 12 + 12) % 12;
+  const base = shape.inA.map(([, f]) => f);
+  const opts = [d, d - 12, d + 12].map(sh => base.map(f => f + sh))
+    .filter(fr => Math.min(...fr) >= 1 && Math.max(...fr) <= 21);
+  opts.sort((a, b) => Math.max(...a) - Math.max(...b));
+  return opts[0] || base.map(f => f + d);
+}
 
 const TECH_EXERCISES = {
   alternate: [
@@ -13369,7 +13350,7 @@ function renderSweepPanel() {
   const keyName = NOTES_TECH[keyIdx];
 
   // Compute actual frets for this key
-  const frets = computeArpFrets(keyIdx, shape.strings, shape.semitones);
+  const frets = sweepFrets(keyIdx, shape);
 
   // diagramma: stesso manico del resto di Tecnica avanzata; arpeggio = tutte note dell'accordo
   const svg = techFretSvg({
@@ -13395,7 +13376,9 @@ function renderSweepPanel() {
   const N = shape.strings.length;
   const cells = Array.from({ length: 6 }, () => Array(N).fill('----'));
   shape.strings.forEach((si, ii) => {
-    cells[si][ii] = (String(frets[ii]) + '----').slice(0, 4);
+    // due note di fila sulla stessa corda (in cima allo sweep): si legano con un hammer-on
+    const leg = shape.strings[ii + 1] === si ? 'h' : '';
+    cells[si][ii] = (String(frets[ii]) + leg + '----').slice(0, 4);
   });
   const tabLines = ['e','B','G','D','A','E'].map((sn, si) => `${sn} |--${cells[si].join('')}|`);
   // stessa tab disegnata delle card esercizio (gradi riferiti all'accordo dell'arpeggio)
@@ -13418,7 +13401,7 @@ function playSweepArp(direction) {
   const shape = SWEEP_SHAPES[_sweepShapeIdx];
   if (!shape) return;
   const keyIdx = parseInt(document.getElementById('sweep-key')?.value || '9');
-  const frets = computeArpFrets(keyIdx, shape.strings, shape.semitones);
+  const frets = sweepFrets(keyIdx, shape);
 
   // Sequenza di {corda, tasto, midi}: serve anche per accendere il pallino giusto
   const pts = shape.strings.map((si, ii) => ({ s: si, f: frets[ii], midi: TECH_OPEN_MIDI[si] + frets[ii] }));
