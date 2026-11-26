@@ -600,6 +600,23 @@
     padding: 5px 14px; border: 1px solid var(--amber-dim); border-radius: 8px;
     background: var(--amber-glow); transition: transform .15s, box-shadow .15s;
   }
+  /* ── Bersaglio armonico (PIVOT): nota d'arrivo del prossimo accordo ── */
+  .pivot-bar { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:6px 0 8px; font-size:12px; color:var(--text-mid); }
+  .pivot-opt { display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .pivot-bar select { background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:5px 8px; font-size:12px; }
+  .pivot-next { font-family:'Space Mono',monospace; color:var(--amber); }
+  .pivot-loop { background:var(--bg2); border:1px solid var(--amber-dim); border-radius:12px; padding:10px 12px; margin:0 0 10px; }
+  .pivot-steps { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+  .pivot-step { border:1px solid var(--border); border-radius:8px; padding:6px 8px; font-size:11px; line-height:1.35; color:var(--text-dim); }
+  .pivot-step b { display:block; font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:1px; color:var(--text-mid); }
+  .pivot-step.on { border-color:var(--amber); color:var(--text); background:var(--amber-glow); }
+  .pivot-step.on b { color:var(--amber); }
+  .pivot-score { margin-top:8px; font-size:12px; color:var(--text-mid); }
+  @media (max-width:600px){ .pivot-steps { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  #jam-fretboard .note-dot.pv-next { outline:3px dashed var(--amber) !important; outline-offset:3px; animation:pvPulse .5s ease-in-out infinite alternate; z-index:7; opacity:1 !important; filter:none !important; }
+  #jam-fretboard .note-dot.pv-cur { outline:3px solid var(--amber) !important; outline-offset:3px; z-index:6; }
+  #jam-fretboard.arp-mode .note-dot.chord-dim.pv-next { display:flex; }
+  @keyframes pvPulse { from { outline-offset:2px; } to { outline-offset:6px; } }
   .jam-now-chord.pulse {
     transform: scale(1.12);
     box-shadow: 0 0 18px rgba(245,158,11,0.6);
@@ -6359,7 +6376,149 @@ function jamUpdateChordBlocks(loopStep) {
   }
   // Chord Lab canzoni: segui l'accordo corrente anche sul chart della canzone
   songChartFollow(activeIdx);
+  pivotOnStep(loopStep, activeIdx);
 }
+
+// ─── BERSAGLIO ARMONICO + PIVOT LOOP ─────────────────────────────────────────
+// Una battuta prima del cambio d'accordo la nota d'arrivo del prossimo accordo pulsa
+// sul manico (pv-next); dopo il cambio resta segnata (pv-cur). Bersaglio = la 3ª
+// del prossimo accordo, oppure ("linea minima") la nota dell'accordo più vicina al
+// bersaglio precedente: su Am F C G dà Do Do Do Si, la mano quasi non si muove.
+const PV = { anticipa: true, mode: 'third', loop: false, giro: 0, prevIdx: -1,
+             curPc: null, nextPc: null, hits: 0, tries: 0, pending: null, perGiro: [] };
+try {
+  const saved = JSON.parse(localStorage.getItem('pivotOpts') || '{}');
+  if (typeof saved.anticipa === 'boolean') PV.anticipa = saved.anticipa;
+  if (saved.mode === 'near' || saved.mode === 'third') PV.mode = saved.mode;
+} catch (e) {}
+const PV_STEPS = [
+  ['Giro 1 · Triadi', 'Solo note dell\u2019accordo, niente scala (il manico mostra l\u2019arpeggio)'],
+  ['Giro 2 · Penta → terza', 'Pentatonica, ma ogni cambio atterra sul bersaglio'],
+  ['Giro 3 · Bending', 'Arriva sul bersaglio con un bending (o uno slide)'],
+  ['Giro 4 · Libero', 'Cambia posizione e tecnica, sempre sul bersaglio'],
+];
+function pivotChordTones(chord) {
+  const root = (BT.rootIdx + chord.s) % 12, lib = CHORD_LIB[chord.t];
+  const ivs = lib ? lib.ivs : [[0,'R'],[4,'3'],[7,'5']];
+  return { root, tones: ivs.map(([st, fn]) => ({ pc: (root + st) % 12, fn })) };
+}
+function pivotTargetFor(chord, prevPc) {
+  const { root, tones } = pivotChordTones(chord);
+  const third = tones.find(t => t.fn === '3' || t.fn === '♭3');
+  if (PV.mode === 'near' && prevPc != null) {
+    // nota dell'accordo più vicina (in semitoni) al bersaglio precedente; a pari distanza la 3ª
+    const dist = pc => { const d = Math.abs(pc - prevPc) % 12; return Math.min(d, 12 - d); };
+    const core = tones.filter(t => /^(R|♭?3|[♭♯]?5|♭?7|6)$/.test(t.fn));
+    core.sort((a, b) => dist(a.pc) - dist(b.pc) || ((b === third) - (a === third)));
+    return { pc: core[0].pc, fn: core[0].fn };
+  }
+  return third ? { pc: third.pc, fn: third.fn } : { pc: root, fn: 'R' };
+}
+function _pvMark(cls, pc) {
+  const fb = document.getElementById('jam-fretboard');
+  if (!fb) return;
+  fb.querySelectorAll('.note-dot.' + cls).forEach(d => d.classList.remove(cls));
+  if (pc == null) return;
+  fb.querySelectorAll('.note-dot').forEach(d => { if (+d.dataset.pc === pc) d.classList.add(cls); });
+}
+function _pvFnName(fn) { return fn === 'R' ? 'tonica' : fn.replace('♭', '♭') + 'ª'; }
+// chiamata a ogni sedicesimo dal loop visivo della base
+function pivotOnStep(loopStep, activeIdx) {
+  if (activeIdx < 0 || !BT.progression.length) return;
+  const prog = BT.progression, n = prog.length;
+  if (activeIdx !== PV.prevIdx) {
+    // cambio d'accordo: chiudi il tentativo precedente, fissa il nuovo bersaglio
+    if (PV.pending && !PV.pending.done) { PV.tries++; _pvScoreGiro(false); }
+    if (PV.loop && PV.prevIdx === n - 1 && activeIdx === 0) pivotNextGiro();
+    if (PV.loop && PV.prevIdx === -1) pivotNextGiro();
+    const tgt = PV.nextPc != null ? { pc: PV.nextPc } : pivotTargetFor(prog[activeIdx], PV.curPc);
+    PV.curPc = tgt.pc; PV.nextPc = null;
+    PV.prevIdx = activeIdx;
+    _pvMark('pv-next', null);
+    _pvMark('pv-cur', PV.anticipa || PV.loop ? PV.curPc : null);
+    PV.pending = (PV.loop && typeof JLIVE !== 'undefined' && JLIVE.running) ? { pc: PV.curPc, at: performance.now(), done: false } : null;
+    // la nota era già sul bersaglio al momento del cambio (arrivo anticipato) → centrato
+    if (PV.pending && JLIVE.lastMidi >= 0 && ((JLIVE.lastMidi % 12) + 12) % 12 === PV.curPc && performance.now() - JLIVE.lastSignalAt < 200) pivotHit();
+    pivotRenderLoop();
+  }
+  // anticipo: nell'ultima battuta dell'accordo (metà, se l'accordo dura una battuta)
+  const c = prog[activeIdx], len = c.end - c.start + 1, left = c.end - loopStep;
+  const win = len >= 32 ? 16 : Math.max(4, Math.floor(len / 2));
+  const nextEl = document.getElementById('pivot-next');
+  if (PV.anticipa && left < win && PV.nextPc == null) {
+    const nc = prog[(activeIdx + 1) % n];
+    const t = pivotTargetFor(nc, PV.curPc);
+    PV.nextPc = t.pc;
+    _pvMark('pv-next', t.pc);
+    const { root } = pivotChordTones(nc);
+    if (nextEl) nextEl.textContent = `→ ${NOTES[root]}${CHORD_QUAL_LABEL[nc.t] || ''}: arriva su ${NOTES[t.pc]} (${_pvFnName(t.fn)})`;
+  } else if (left >= win && nextEl && PV.nextPc == null) {
+    nextEl.textContent = PV.curPc != null && (PV.anticipa || PV.loop) ? `ora: ${NOTES[PV.curPc]}` : '';
+  }
+}
+// dal microfono (jamLiveTick): la nota suonata entro ~350 ms dal cambio è sul bersaglio?
+function pivotOnLiveNote(midi) {
+  const pd = PV.pending;
+  if (!pd || pd.done) return;
+  if (performance.now() - pd.at > 350) return;
+  if (((midi % 12) + 12) % 12 === pd.pc) pivotHit();
+}
+function pivotHit() { if (!PV.pending || PV.pending.done) return; PV.pending.done = true; PV.hits++; PV.tries++; _pvScoreGiro(true); pivotRenderLoop(); }
+function _pvScoreGiro(hit) {
+  const g = Math.max(0, PV.giro - 1);
+  PV.perGiro[g] = PV.perGiro[g] || { h: 0, t: 0 };
+  PV.perGiro[g].t++; if (hit) PV.perGiro[g].h++;
+}
+function pivotNextGiro() {
+  PV.giro = PV.giro % 4 + 1;
+  jamSetFbMode(PV.giro === 1 ? 'arp' : 'scale');
+}
+function pivotRenderLoop() {
+  const box = document.getElementById('pivot-loop');
+  if (!box) return;
+  box.hidden = !PV.loop;
+  if (!PV.loop) return;
+  document.getElementById('pivot-steps').innerHTML = PV_STEPS.map(([t, d], i) =>
+    `<div class="pivot-step${PV.giro === i + 1 ? ' on' : ''}"><b>${t}</b>${d}</div>`).join('');
+  const sc = document.getElementById('pivot-score');
+  const live = typeof JLIVE !== 'undefined' && JLIVE.running;
+  if (!BT.playing) sc.textContent = 'Premi ▶ sulla base: il loop parte dal primo accordo.';
+  else if (!live) sc.innerHTML = 'Attiva <strong>🎤 Suona live</strong> per contare i bersagli centrati sul tempo forte.';
+  else sc.textContent = `Bersagli centrati: ${PV.hits}/${PV.tries}` + (PV.tries ? ` (${Math.round(100 * PV.hits / PV.tries)}%)` : '') +
+    ' · per giro: ' + PV.perGiro.map((g, i) => g ? `${i + 1}: ${g.h}/${g.t}` : '').filter(Boolean).join(' · ');
+}
+function pivotLoopToggle() {
+  PV.loop = !PV.loop;
+  document.getElementById('pivot-loop-btn').classList.toggle('active', PV.loop);
+  PV.giro = 0; PV.hits = 0; PV.tries = 0; PV.perGiro = []; PV.pending = null; PV.prevIdx = -1;
+  if (PV.loop) {
+    // nessuna progressione scritta: usa quella dell'esercizio (Am F C G, 2 battute ciascuno)
+    if (!BT.useCustom) {
+      const inp = document.getElementById('jam-custom-chords');
+      if (inp) { inp.value = 'Am:2 F:2 C:2 G:2'; jamLoadCustomProgression(); }
+      if (BT.bpm > 90) jamSetBPM(80);
+    }
+    if (BT.playing) _jamRestartPlayback();
+  } else jamSetFbMode('scale');
+  pivotRenderLoop();
+}
+function pivotSetOpt() {
+  PV.anticipa = document.getElementById('pivot-anticipa').checked;
+  PV.mode = document.getElementById('pivot-mode').value;
+  try { localStorage.setItem('pivotOpts', JSON.stringify({ anticipa: PV.anticipa, mode: PV.mode })); } catch (e) {}
+  PV.nextPc = null;
+  if (!PV.anticipa && !PV.loop) { _pvMark('pv-next', null); _pvMark('pv-cur', null); const n = document.getElementById('pivot-next'); if (n) n.textContent = ''; }
+}
+function pivotReset() {
+  PV.prevIdx = -1; PV.curPc = null; PV.nextPc = null; PV.pending = null;
+  _pvMark('pv-next', null); _pvMark('pv-cur', null);
+  const n = document.getElementById('pivot-next'); if (n) n.textContent = '';
+  pivotRenderLoop();
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const a = document.getElementById('pivot-anticipa'), m = document.getElementById('pivot-mode');
+  if (a) a.checked = PV.anticipa; if (m) m.value = PV.mode;
+});
 
 // ─── PUBLIC API ──────────────────────────────────────────────────────────────
 function jamTogglePlay() {
@@ -6755,6 +6914,7 @@ function _jamRestartPlayback() {
     if (!BT.playing) return;
     btBuildProg();
     _jamChordIdx = -1;
+    if (typeof pivotReset === 'function') pivotReset();
     BT.absoluteStep = 0;
     BT.nextNoteTime = BT.ctx.currentTime + 0.02;
     g.setValueAtTime(0.7, BT.ctx.currentTime);
@@ -6891,6 +7051,8 @@ function renderJamFretboard() {
   }
   // Manico live attivo: i dot sono stati ricreati → forza il re-highlight al prossimo tick
   if (JLIVE.running) JLIVE.lastMidi = -1;
+  // bersagli PIVOT: i dot sono nuovi, rimetti gli anelli
+  if (typeof PV !== 'undefined') { _pvMark('pv-cur', PV.curPc); _pvMark('pv-next', PV.nextPc); }
 }
 
 // Accende i toni dell'accordo corrente colorandoli per FUNZIONE (R/3/5/7/9),
@@ -6930,6 +7092,7 @@ function jamClearChordHighlight() {
   const badge = document.getElementById('jam-now-chord');
   if (badge) badge.textContent = '—';
   _jamChordIdx = -1;
+  if (typeof pivotReset === 'function') pivotReset();
   // spegni anche l'evidenziazione sul chart della canzone
   _songChartIdx = -1;
   document.querySelectorAll('#song-chart .sc-chord.now').forEach(d => d.classList.remove('now'));
@@ -7087,6 +7250,7 @@ function jamLiveTick() {
         }
         JLIVE.lastMidi = midi;
         jamLiveHighlight(midi);
+        pivotOnLiveNote(midi);
       }
       // Readout: nota + eventuale bend. Il bend si mostra solo se il pitch grezzo è
       // vicino alla nota stabilizzata (durante un salto d'ottava lo scostamento è
@@ -10003,7 +10167,24 @@ window.addEventListener('DOMContentLoaded', function() {
     <span><i class="lg" style="background:#ec4899"></i>9ª</span>
     <span><i class="lg" style="background:transparent;box-shadow:0 0 0 2px rgba(255,255,255,0.9)"></i>Guide tone (3ª/7ª dell'accordo)</span>
     <span><i class="lg lg-live"></i>Nota che suoni (mic)</span>
+    <span><i class="lg" style="background:transparent;box-shadow:0 0 0 2px var(--amber)"></i>Bersaglio ora</span>
+    <span><i class="lg" style="background:transparent;outline:2px dashed var(--amber);outline-offset:1px"></i>Bersaglio del prossimo accordo</span>
     <span class="lg-hint">// attiva <strong>🎤 Suona live</strong>: la nota che suoni dal microfono si cerchia sul manico — vedi insieme scala e note reali</span>
+  </div>
+  <div class="pivot-bar" id="pivot-bar">
+    <label class="pivot-opt" title="Una battuta prima del cambio, la nota bersaglio del prossimo accordo pulsa sul manico">
+      <input type="checkbox" id="pivot-anticipa" checked onchange="pivotSetOpt()"> 🎯 Bersaglio in anticipo
+    </label>
+    <select id="pivot-mode" onchange="pivotSetOpt()" aria-label="Quale nota fa da bersaglio">
+      <option value="third">la 3ª del prossimo accordo</option>
+      <option value="near">la nota dell'accordo più vicina (linea minima)</option>
+    </select>
+    <span class="pivot-next" id="pivot-next"></span>
+    <button class="jam-live-btn" id="pivot-loop-btn" onclick="pivotLoopToggle()" title="Esercizio guidato: 4 giri della progressione, ognuno con un vincolo diverso">🔁 PIVOT Loop</button>
+  </div>
+  <div class="pivot-loop" id="pivot-loop" hidden>
+    <div class="pivot-steps" id="pivot-steps"></div>
+    <div class="pivot-score" id="pivot-score"></div>
   </div>
   <div class="fretboard-wrap">
     <div class="fretboard" id="jam-fretboard"></div>
